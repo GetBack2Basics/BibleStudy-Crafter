@@ -1,0 +1,119 @@
+# Provider registry. Every entry is optional: if its env_key is absent the
+# provider is skipped, so the app always runs with an empty .env (free tier only).
+#
+# tier: free  -> never costs money, no confirmation needed
+#       paid  -> gated behind the CostGate modal + monthly budget
+
+text:
+  chain: [openrouter_free, ollama, gemini_free]
+
+  providers:
+    openrouter_free:
+      label: "OpenRouter (free pool)"
+      kind: openai_compatible
+      base_url: "https://openrouter.ai/api/v1"
+      env_key: OPENROUTER_API_KEY
+      tier: free
+      cost_per_1k_in: 0.0
+      cost_per_1k_out: 0.0
+      models:
+        - id: "meta-llama/llama-3.3-70b-instruct:free"
+          label: "Llama 3.3 70B (free)"
+          context: 65536
+        - id: "google/gemma-2-9b-it:free"
+          label: "Gemma 2 9B (free)"
+          context: 8192
+        - id: "qwen/qwen-2.5-72b-instruct:free"
+          label: "Qwen 2.5 72B (free)"
+          context: 32768
+
+    ollama:
+      label: "Ollama (local, offline)"
+      kind: ollama
+      base_url_setting: ollama_base_url
+      env_key: null            # no key needed
+      tier: free
+      cost_per_1k_in: 0.0
+      cost_per_1k_out: 0.0
+      models:
+        - id: "llama3.1:8b"
+          label: "Llama 3.1 8B (local)"
+          context: 32768
+        - id: "mistral:7b"
+          label: "Mistral 7B (local)"
+          context: 32768
+
+    gemini_free:
+      label: "Google Gemini (free tier)"
+      kind: gemini
+      base_url: "https://generativelanguage.googleapis.com/v1beta"
+      env_key: GEMINI_API_KEY
+      tier: free
+      cost_per_1k_in: 0.0
+      cost_per_1k_out: 0.0
+      models:
+        - id: "gemini-2.0-flash"
+          label: "Gemini 2.0 Flash"
+          context: 1048576
+
+    openrouter_paid:
+      label: "OpenRouter (paid models)"
+      kind: openai_compatible
+      base_url: "https://openrouter.ai/api/v1"
+      env_key: OPENROUTER_API_KEY
+      tier: paid
+      cost_per_1k_in: 0.0002
+      cost_per_1k_out: 0.0008
+      models:
+        - id: "anthropic/claude-3.5-haiku"
+          label: "Claude 3.5 Haiku"
+          context: 200000
+        - id: "openai/gpt-4o-mini"
+          label: "GPT-4o mini"
+          context: 128000
+
+image:
+  chain: [fal_cheap]
+
+  providers:
+    fal_cheap:
+      label: "fal.ai (low cost)"
+      kind: fal
+      base_url: "https://fal.run"
+      env_key: FAL_KEY
+      tier: paid
+      models:
+        - id: "fal-ai/fast-sdxl"
+          label: "Fast SDXL"
+          cost_per_call: 0.0025
+        - id: "fal-ai/flux/schnell"
+          label: "FLUX schnell"
+          cost_per_call: 0.003
+
+    replicate:
+      label: "Replicate"
+      kind: replicate
+      base_url: "https://api.replicate.com/v1"
+      env_key: REPLICATE_API_TOKEN
+      tier: paid
+      models:
+        - id: "black-forest-labs/flux-schnell"
+          label: "FLUX schnell"
+          cost_per_call: 0.003
+
+audio:
+  chain: [edge_tts]
+
+  providers:
+    edge_tts:
+      label: "Edge TTS (free)"
+      kind: edge_tts
+      env_key: null
+      tier: free
+      models:
+        - id: "en-AU-NatashaNeural"
+          label: "Natasha (AU)"
+          cost_per_call: 0.0
+        - id: "en-GB-RyanNeural"
+          label: "Ryan (UK)"
+          cost_per_call: 0.0
