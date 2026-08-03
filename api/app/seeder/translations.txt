@@ -1,0 +1,11 @@
+# Public-domain / freely-licensed English translations to bundle.
+# Format: LOCAL_CODE = helloao_source_id   # name | licence
+# Verified against https://bible.helloao.org/api/available_translations.json (2026-08-04)
+KJV     = eng_kjv    # King James (Authorized) Version | public domain
+WEB     = ENGWEBP    # World English Bible | public domain
+ASV     = eng_asv    # American Standard Version 1901 | public domain
+YLT     = eng_ylt    # Young's Literal Translation | public domain
+BSB     = BSB        # Berean Standard Bible | free, berean.bible
+DARBY   = eng_dby    # Darby Translation | public domain
+BBE     = eng_bbe    # Bible in Basic English | public domain
+GNV     = eng_gnv    # Geneva Bible 1599 | public domain
