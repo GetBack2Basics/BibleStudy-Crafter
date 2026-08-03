@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_build_stamp
-from app.routers import meta
+from app.routers import bible, meta
 from app.services import events
 
 
@@ -25,3 +25,4 @@ app.add_middleware(
 )
 
 app.include_router(meta.router)
+app.include_router(bible.router)

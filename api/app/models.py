@@ -11,7 +11,12 @@ from typing import Any, Optional
 
 from sqlalchemy import Column, Index, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.types import JSON
 from sqlmodel import Field, SQLModel
+
+# JSONB on Postgres, plain JSON elsewhere (SQLite in tests). Without this the
+# SQLite type compiler raises "no attribute 'visit_JSONB'" at create_all.
+JSON_TYPE = JSONB().with_variant(JSON(), "sqlite")
 
 
 def utcnow() -> datetime:
@@ -77,7 +82,7 @@ class Study(SQLModel, table=True):
     imagery_policy: str = Field(default="symbolic", max_length=24)
     primary_translation: str = Field(default="KJV", max_length=32)
     status: str = Field(default="pending", max_length=24)  # pending|generating|ready|failed
-    outline_json: Optional[dict[str, Any]] = Field(default=None, sa_column=Column(JSONB))
+    outline_json: Optional[dict[str, Any]] = Field(default=None, sa_column=Column(JSON_TYPE))
     error: Optional[str] = Field(default=None, max_length=1000)
     created_at: datetime = Field(default_factory=utcnow)
 
@@ -93,7 +98,7 @@ class StudyDay(SQLModel, table=True):
     theme: str = Field(default="", max_length=500)
     est_minutes: int = Field(default=0)
     status: str = Field(default="pending", max_length=24)
-    blocks_json: Optional[list[Any]] = Field(default=None, sa_column=Column(JSONB))
+    blocks_json: Optional[list[Any]] = Field(default=None, sa_column=Column(JSON_TYPE))
     # Decision 5: rolling continuity summary (<=120 words), day N sees day N-1's.
     context_summary: str = Field(default="", max_length=1200)
     created_at: datetime = Field(default_factory=utcnow)
@@ -138,7 +143,7 @@ class Setting(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: Optional[int] = Field(default=None, index=True)   # Phase 7
     key: str = Field(index=True, max_length=80)
-    value_json: Optional[dict[str, Any]] = Field(default=None, sa_column=Column(JSONB))
+    value_json: Optional[dict[str, Any]] = Field(default=None, sa_column=Column(JSON_TYPE))
     is_secret: bool = Field(default=False)
 
 
