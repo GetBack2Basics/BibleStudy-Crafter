@@ -13,7 +13,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
-      - "5433:5432"
+      - "${DB_PORT:-8422}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-bible} -d ${POSTGRES_DB:-bible}"]
       interval: 5s
@@ -23,7 +23,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6380:6379"
+      - "${REDIS_PORT:-8423}:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -39,12 +39,13 @@ services:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-bible}:${POSTGRES_PASSWORD:-bible}@db:5432/${POSTGRES_DB:-bible}
       REDIS_URL: redis://redis:6379/0
       MEDIA_ROOT: /media
+      WEB_PORT: "${WEB_PORT:-8420}"
       BUILD_STAMP: "${BUILD_STAMP:-}"
     volumes:
       - ./data/media:/media
       - ./api:/app
     ports:
-      - "8000:8000"
+      - "${API_PORT:-8421}:8000"
     depends_on:
       db: {condition: service_healthy}
       redis: {condition: service_healthy}
@@ -73,11 +74,11 @@ services:
       context: ./web
       args: *build-stamp
     environment:
-      VITE_API_URL: http://localhost:8000
+      VITE_API_URL: http://localhost:${API_PORT:-8421}
     volumes:
       - ./web/src:/app/src
     ports:
-      - "5173:5173"
+      - "${WEB_PORT:-8420}:5173"
     depends_on: [api]
 
   seeder:

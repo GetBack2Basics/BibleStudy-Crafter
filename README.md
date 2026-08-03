@@ -13,11 +13,27 @@ opt-in and cost-gated.
 ## Quick start
 
 ```bash
-make up          # build + start (stamps the build), then:
-make seed        # download + load public-domain Bibles into Postgres
+cp .env.example .env
+make up          # checks ports are free, builds, starts everything
 ```
 
-Open http://localhost:5173
+Then open **http://localhost:8420**.
+
+### Ports
+
+All host ports live in `.env` and are checked before every `make up`:
+
+| Service | Default | Env var |
+|---|---|---|
+| web | 8420 | `WEB_PORT` |
+| api | 8421 | `API_PORT` |
+| postgres | 8422 | `DB_PORT` |
+| redis | 8423 | `REDIS_PORT` |
+
+`make up` runs `scripts/check_ports.py` first and **refuses to start** if any
+port is taken, printing the owning process and a free block to use instead.
+Change the value in `.env` — nothing else needs editing (the API's CORS
+allow-list is derived from `WEB_PORT`).
 
 ## Status
 

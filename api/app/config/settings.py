@@ -20,6 +20,11 @@ class Settings(BaseSettings):
     media_root: str = "/media"
     bible_cache: str = "/bibles"
 
+    # Host ports (see scripts/check_ports.py). web_port drives the CORS
+    # allow-list, so moving a port never silently breaks the browser.
+    web_port: int = 8420
+    api_port: int = 8421
+
     # Budget
     monthly_budget_usd: float = 5.00
 
