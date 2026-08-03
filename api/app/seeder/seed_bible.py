@@ -135,6 +135,17 @@ def seed_translation(client: httpx.Client, session: Session, code: str, source_i
 
     translation.verse_count = total
     session.commit()
+
+    # Sanity-check against the count helloao advertises. A large shortfall means
+    # the run was interrupted, so flag it loudly rather than leaving a silently
+    # incomplete Bible in the database.
+    expected = meta.get("totalNumberOfVerses") or 0
+    if not book_filter and expected and total < expected * 0.99:
+        msg = f"{code}: loaded {total:,} of ~{expected:,} verses - INCOMPLETE"
+        events.emit("warn", "seeder", msg)
+        print(f"  !! {msg}", file=sys.stderr, flush=True)
+        raise RuntimeError(msg)
+
     events.emit("success", "seeder", f"{code}: {total:,} verses loaded")
     return total
 
@@ -156,6 +167,8 @@ def main(argv: list[str] | None = None) -> int:
 
     events.emit("info", "seeder", f"Seeding {', '.join(allow)}")
     grand = 0
+    failures: list[tuple[str, str]] = []
+
     with httpx.Client(headers={"User-Agent": "BibleStudy-Crafter/0.1"}) as client:
         index = fetch_json(client, f"{API}/available_translations.json",
                            _cache_dir() / "available_translations.json")
@@ -163,9 +176,26 @@ def main(argv: list[str] | None = None) -> int:
         with Session(get_engine()) as session:
             for code, source_id in allow.items():
                 print(f"[{code}] <- {source_id}", flush=True)
-                grand += seed_translation(client, session, code, source_id, available, book_filter)
+                try:
+                    grand += seed_translation(client, session, code, source_id,
+                                              available, book_filter)
+                except Exception as exc:                      # noqa: BLE001
+                    # A DB restart or network blip must not look like success.
+                    # Re-running resumes from the on-disk chapter cache.
+                    session.rollback()
+                    failures.append((code, f"{type(exc).__name__}: {exc}"[:200]))
+                    print(f"  !! {code} FAILED: {type(exc).__name__}: {exc}"[:300],
+                          file=sys.stderr, flush=True)
+                    events.emit("error", "seeder", f"{code} failed: {type(exc).__name__}")
 
-    print(f"\nDone. {grand:,} verses total.")
+    print(f"\nDone. {grand:,} verses loaded this run.")
+    if failures:
+        print(f"\n{len(failures)} translation(s) FAILED:", file=sys.stderr)
+        for code, msg in failures:
+            print(f"  {code}: {msg}", file=sys.stderr)
+        print("Re-run the same command to resume (cached chapters are skipped).",
+              file=sys.stderr)
+        return 1
     return 0
 
 
