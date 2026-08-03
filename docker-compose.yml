@@ -1,0 +1,100 @@
+name: biblestudy
+
+x-build-stamp: &build-stamp
+  BUILD_STAMP: "${BUILD_STAMP:-dev}"
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-bible}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bible}
+      POSTGRES_DB: ${POSTGRES_DB:-bible}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-bible} -d ${POSTGRES_DB:-bible}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: ./api
+      args: *build-stamp
+    env_file: [.env]
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-bible}:${POSTGRES_PASSWORD:-bible}@db:5432/${POSTGRES_DB:-bible}
+      REDIS_URL: redis://redis:6379/0
+      MEDIA_ROOT: /media
+      BUILD_STAMP: "${BUILD_STAMP:-}"
+    volumes:
+      - ./data/media:/media
+      - ./api:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      db: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  worker:
+    build:
+      context: ./api
+      args: *build-stamp
+    env_file: [.env]
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-bible}:${POSTGRES_PASSWORD:-bible}@db:5432/${POSTGRES_DB:-bible}
+      REDIS_URL: redis://redis:6379/0
+      MEDIA_ROOT: /media
+      BUILD_STAMP: "${BUILD_STAMP:-}"
+    volumes:
+      - ./data/media:/media
+      - ./api:/app
+    depends_on:
+      db: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    command: python -m app.worker
+
+  web:
+    build:
+      context: ./web
+      args: *build-stamp
+    environment:
+      VITE_API_URL: http://localhost:8000
+    volumes:
+      - ./web/src:/app/src
+    ports:
+      - "5173:5173"
+    depends_on: [api]
+
+  seeder:
+    build:
+      context: ./api
+      args: *build-stamp
+    profiles: ["seed"]
+    env_file: [.env]
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-bible}:${POSTGRES_PASSWORD:-bible}@db:5432/${POSTGRES_DB:-bible}
+      BIBLE_CACHE: /bibles
+    volumes:
+      - ./data/bibles:/bibles
+      - ./api:/app
+    depends_on:
+      db: {condition: service_healthy}
+    entrypoint: ["python", "-m", "app.seeder.seed_bible"]
+
+volumes:
+  pgdata:
