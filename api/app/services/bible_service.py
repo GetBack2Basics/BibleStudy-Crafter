@@ -25,6 +25,20 @@ class Reference(NamedTuple):
     def is_whole_chapter(self) -> bool:
         return self.verse_start == 0
 
+    @property
+    def book_name(self) -> str:
+        return _NUM_TO_NAME.get(self.book, "")
+
+    @property
+    def ref(self) -> str:
+        """Canonical display form, e.g. 'John 3:16-18' or 'Psalm 23'."""
+        name = self.book_name
+        if self.is_whole_chapter:
+            return f"{name} {self.chapter}"
+        if self.verse_end and self.verse_end != self.verse_start:
+            return f"{name} {self.chapter}:{self.verse_start}-{self.verse_end}"
+        return f"{name} {self.chapter}:{self.verse_start}"
+
 
 # ---------------------------------------------------------------- name lookup
 
@@ -159,6 +173,16 @@ def parse_ref(text: str) -> Reference:
     if vend - vstart > MAX_VERSE:
         raise ValueError("verse range too large")
     return Reference(book, chapter, vstart, vend)
+
+
+def safe_parse_ref(text: str) -> Reference | None:
+    """Like parse_ref but returns None instead of raising - used where a model
+    may emit a bad reference and we want to silently drop it rather than fail
+    the whole draft."""
+    try:
+        return parse_ref(text)
+    except ValueError:
+        return None
 
 
 def format_ref(ref: Reference) -> str:

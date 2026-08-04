@@ -4,15 +4,13 @@ AUTH-FORWARD RULE (plan decision 1): Study, Asset, Setting and UsageLedger all
 carry a NULLABLE user_id from this first migration. Single-user local runs leave
 it NULL. Phase 7 adds a User table and backfills - purely additive, no rewrites.
 """
-from __future__ import annotations
-
 from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 from sqlalchemy import Column, Index, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.types import JSON
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, Relationship, SQLModel
 
 # JSONB on Postgres, plain JSON elsewhere (SQLite in tests). Without this the
 # SQLite type compiler raises "no attribute 'visit_JSONB'" at create_all.
@@ -76,6 +74,7 @@ class Study(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: Optional[int] = Field(default=None, index=True)   # Phase 7
     topic: str = Field(max_length=300)
+    title: str = Field(default="", max_length=300)   # set from the generated outline
     minutes_per_day: int
     total_days: int
     tradition: str = Field(default="non_denominational", max_length=40)
@@ -85,6 +84,10 @@ class Study(SQLModel, table=True):
     outline_json: Optional[dict[str, Any]] = Field(default=None, sa_column=Column(JSON_TYPE))
     error: Optional[str] = Field(default=None, max_length=1000)
     created_at: datetime = Field(default_factory=utcnow)
+
+    days: List["StudyDay"] = Relationship(
+        back_populates="study", sa_relationship_kwargs={"order_by": "StudyDay.day_number"}
+    )
 
 
 class StudyDay(SQLModel, table=True):
@@ -98,10 +101,12 @@ class StudyDay(SQLModel, table=True):
     theme: str = Field(default="", max_length=500)
     est_minutes: int = Field(default=0)
     status: str = Field(default="pending", max_length=24)
-    blocks_json: Optional[list[Any]] = Field(default=None, sa_column=Column(JSON_TYPE))
+    blocks_json: Optional[Any] = Field(default=None, sa_column=Column(JSON_TYPE))
     # Decision 5: rolling continuity summary (<=120 words), day N sees day N-1's.
     context_summary: str = Field(default="", max_length=1200)
     created_at: datetime = Field(default_factory=utcnow)
+
+    study: Optional["Study"] = Relationship(back_populates="days")
 
 
 class DayPassage(SQLModel, table=True):
