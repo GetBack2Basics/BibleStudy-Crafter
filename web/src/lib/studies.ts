@@ -77,6 +77,13 @@ export const studies = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ blocks_json }),
     }).then(j),
+
+  reviseDay: (id: number, day: number, instruction: string, selection?: string | null): Promise<{ day_number: number; revised: string; selection: string | null }> =>
+    fetch(`${api.url}/api/studies/${id}/days/${day}/revise`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ instruction, selection: selection ?? null }),
+    }).then(j),
 }
 
 export const TRADITIONS = [

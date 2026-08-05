@@ -174,6 +174,59 @@ class DayUpdate(BaseModel):
     blocks_json: dict[str, Any]
 
 
+class DayRevise(BaseModel):
+    instruction: str
+    selection: str | None = None
+
+
+REVISE_PROMPT = """You are helping a user revise part of a Bible-study day they wrote.
+
+The full current commentary for the day is:
+---
+{commentary}
+---
+
+{selection_block}Revise according to this instruction: {instruction}
+
+Return ONLY the revised text (no markdown fences, no commentary about what you changed). If a selection was provided, return only the revised version of that selected passage, keeping its meaning and length similar. If no selection was provided, return the revised full commentary.
+"""
+
+
+@router.post("/{study_id}/days/{day_number}/revise")
+async def revise_day_endpoint(study_id: int, day_number: int, body: DayRevise,
+                              session: Session = Depends(get_session)) -> dict:
+    """Revise a day's commentary with AI. If `selection` is given, only that
+    passage is revised (JobHunt_Crafter-style select-to-revise)."""
+    from app.services.llm import NoProviderAvailable, complete
+    from app.services.prompts import build_system
+
+    s = session.get(Study, study_id)
+    if s is None:
+        raise HTTPException(404, "study not found")
+    target = next((d for d in s.days if d.day_number == day_number), None)
+    if target is None:
+        raise HTTPException(400, "day out of range")
+    commentary = (target.blocks_json or {}).get("commentary", "") if target.blocks_json else ""
+    if not commentary:
+        raise HTTPException(400, "day has no commentary to revise yet")
+
+    selection_block = (
+        f"The user selected this passage to revise:\n---\n{body.selection}\n---\n"
+        if body.selection else ""
+    )
+    prompt = REVISE_PROMPT.format(
+        commentary=commentary, selection_block=selection_block, instruction=body.instruction)
+    try:
+        res = await complete(prompt, system=build_system(tradition=s.tradition),
+                             study_id=study_id, session=session)
+    except NoProviderAvailable as exc:
+        raise HTTPException(502, str(exc))
+    revised = res.text.strip()
+    events.emit("success", "study", f"Study {study_id} day {day_number} revised")
+    return {"day_number": day_number, "revised": revised,
+            "selection": body.selection}
+
+
 @router.put("/{study_id}/days/{day_number}")
 def update_day_endpoint(study_id: int, day_number: int, body: DayUpdate,
                         session: Session = Depends(get_session)) -> dict:

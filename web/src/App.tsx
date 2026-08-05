@@ -222,7 +222,7 @@ function StudyDetail({ id, onBack }: { id: number; onBack: () => void }) {
   )
 }
 
-/* ---------- Day card with inline editing ---------- */
+/* ---------- Day card with inline editing + select-to-revise ---------- */
 
 function DayCard({ studyId, day, onGenerate }: { studyId: number; day: DayOut; onGenerate: () => void }) {
   const [editing, setEditing] = useState(false)
@@ -231,6 +231,11 @@ function DayCard({ studyId, day, onGenerate }: { studyId: number; day: DayOut; o
   const [err, setErr] = useState<string | null>(null)
   const draftRef = useRef<DayDraft | null>(draft)
   draftRef.current = draft
+
+  // select-to-revise (JobHunt_Crafter pattern): capture highlighted text
+  const [selectedText, setSelectedText] = useState('')
+  const [instruction, setInstruction] = useState('')
+  const [revBusy, setRevBusy] = useState(false)
 
   // keep local draft in sync with the server ONLY when not actively editing,
   // so the 2s poll doesn't clobber in-progress edits
@@ -251,6 +256,35 @@ function DayCard({ studyId, day, onGenerate }: { studyId: number; day: DayOut; o
       setErr(e instanceof Error ? e.message : String(e))
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleSelection = (text: string) => {
+    const t = text.trim()
+    if (t) setSelectedText(t)
+  }
+
+  const doRevise = async () => {
+    if (!instruction.trim()) return
+    setRevBusy(true)
+    try {
+      const res = await studyApi.reviseDay(studyId, day.day_number, instruction, selectedText || null)
+      const current = draftRef.current
+      if (current) {
+        let next = res.revised
+        // if a passage was selected, splice the revision in place of it
+        if (selectedText && current.commentary.includes(selectedText)) {
+          next = current.commentary.replace(selectedText, res.revised)
+        }
+        const updated = await studyApi.updateDay(studyId, day.day_number, { ...current, commentary: next })
+        setDraft(updated.blocks_json)
+      }
+      setSelectedText('')
+      setInstruction('')
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e))
+    } finally {
+      setRevBusy(false)
     }
   }
 
@@ -288,8 +322,42 @@ function DayCard({ studyId, day, onGenerate }: { studyId: number; day: DayOut; o
 
       {err && <p className="mb-2 text-xs text-rose-400">{err}</p>}
 
+      {/* Revise-with-AI panel (mirrors JobHunt_Crafter select-to-revise) */}
+      {editing && (
+        <div className="mb-3 rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-emerald-400">
+              Revise with AI
+              {selectedText && (
+                <span className="rounded-full border border-emerald-700/40 bg-emerald-900/30 px-2 py-0.5 text-emerald-300">
+                  Focusing on selection
+                </span>
+              )}
+            </div>
+            {selectedText && (
+              <button onClick={() => setSelectedText('')} className="text-xs text-slate-500 hover:text-rose-400">× clear</button>
+            )}
+          </div>
+          {selectedText && (
+            <p className="mb-2 text-xs italic text-slate-500">Selected: "{selectedText.slice(0, 80)}{selectedText.length > 80 ? '…' : ''}"</p>
+          )}
+          <div className="flex gap-2">
+            <input
+              className="flex-1 rounded border border-slate-700 bg-slate-950 px-2 py-1 text-xs outline-none focus:border-emerald-500"
+              placeholder={selectedText ? 'Refining selected section…' : "Ask for changes (e.g. 'make it warmer', 'shorten this')"}
+              value={instruction} onChange={(e) => setInstruction(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' && instruction.trim()) doRevise() }}
+            />
+            <button onClick={doRevise} disabled={revBusy || !instruction.trim()}
+                    className="rounded bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-500 disabled:opacity-50">
+              {revBusy ? 'Revising…' : 'Revise'}
+            </button>
+          </div>
+        </div>
+      )}
+
       {draft ? (
-        <DraftEditor draft={draft} editing={editing} onChange={setDraft} />
+        <DraftEditor draft={draft} editing={editing} onChange={setDraft} onSelect={handleSelection} />
       ) : (
         <p className="text-sm text-slate-600">
           {day.status === 'generating' ? 'Working…' : 'Not generated yet.'}
@@ -301,10 +369,11 @@ function DayCard({ studyId, day, onGenerate }: { studyId: number; day: DayOut; o
 
 /* ---------- Read / edit renderer ---------- */
 
-function DraftEditor({ draft, editing, onChange }: {
+function DraftEditor({ draft, editing, onChange, onSelect }: {
   draft: DayDraft
   editing: boolean
   onChange: (d: DayDraft) => void
+  onSelect: (text: string) => void
 }) {
   const setField = (patch: Partial<DayDraft>) => onChange({ ...draft, ...patch })
 
@@ -329,10 +398,11 @@ function DraftEditor({ draft, editing, onChange }: {
               rows={2} value={draft.opening_prayer ?? ''}
               onChange={(e) => setField({ opening_prayer: e.target.value })} />
           </Labeled>
-          <Labeled label="Commentary">
+          <Labeled label="Commentary (select text, then Revise with AI)">
             <textarea className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1 outline-none focus:border-emerald-500"
               rows={6} value={draft.commentary ?? ''}
-              onChange={(e) => setField({ commentary: e.target.value })} />
+              onChange={(e) => setField({ commentary: e.target.value })}
+              onMouseUp={() => onSelect(window.getSelection()?.toString() ?? '')} />
           </Labeled>
           <Labeled label="Closing prayer">
             <textarea className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1 outline-none focus:border-emerald-500"

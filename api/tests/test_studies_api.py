@@ -133,3 +133,30 @@ def test_inline_edit_persists_blocks_json(client):
     got = client.get(f"/api/studies/{sid}").json()
     assert got["days"][0]["blocks_json"]["heading"] == "My rewrite"
     assert got["days"][0]["status"] == "ready"
+
+
+def test_revise_day_with_selection(client):
+    with patch("app.services.planner.complete", _smart_stub):
+        sid = client.post("/api/studies",
+                          json={"topic": "Revise me", "total_days": 1,
+                                "minutes_per_day": 15}).json()["study_id"]
+        import time
+        for _ in range(50):
+            if client.get(f"/api/studies/{sid}").json()["status"] == "ready":
+                break
+            time.sleep(0.1)
+    # generation done with stub; day 1 now has commentary to revise
+    assert client.get(f"/api/studies/{sid}").json()["days"][0]["blocks_json"]["commentary"]
+
+    # revise the whole commentary
+    r = client.post(f"/api/studies/{sid}/days/1/revise",
+                    json={"instruction": "Make it warmer", "selection": None})
+    assert r.status_code == 200
+    assert "revised" in r.json()
+    assert len(r.json()["revised"]) > 0
+
+    # revise only a selected passage
+    r2 = client.post(f"/api/studies/{sid}/days/1/revise",
+                     json={"instruction": "shorten", "selection": "the Lord's authority"})
+    assert r2.status_code == 200
+    assert r2.json()["selection"] == "the Lord's authority"
