@@ -107,3 +107,29 @@ def test_on_demand_day_generation(client):
     assert r.status_code == 200
     assert r.json()["status"] == "ready"
     assert "commentary" in r.json()["draft"]
+
+
+def test_inline_edit_persists_blocks_json(client):
+    with patch("app.services.planner.complete", _smart_stub):
+        sid = client.post("/api/studies",
+                          json={"topic": "Edit me", "total_days": 2,
+                                "minutes_per_day": 15}).json()["study_id"]
+    import time
+    for _ in range(50):
+        if client.get(f"/api/studies/{sid}").json()["status"] == "ready":
+            break
+        time.sleep(0.1)
+
+    edited = {"heading": "My rewrite", "opening_prayer": "Lord, help.",
+              "scripture": [], "commentary": "Edited commentary.",
+              "questions": ["Q one", "Q two"], "closing_prayer": "Amen."}
+    r = client.put(f"/api/studies/{sid}/days/1", json={"blocks_json": edited})
+    assert r.status_code == 200
+    # PUT returns the updated day
+    assert r.json()["blocks_json"]["commentary"] == "Edited commentary."
+    assert r.json()["blocks_json"]["questions"] == ["Q one", "Q two"]
+
+    # persisted on reload
+    got = client.get(f"/api/studies/{sid}").json()
+    assert got["days"][0]["blocks_json"]["heading"] == "My rewrite"
+    assert got["days"][0]["status"] == "ready"

@@ -168,3 +168,31 @@ async def generate_day_endpoint(study_id: int, day_number: int,
     except ValueError as exc:
         raise HTTPException(400, str(exc))
     return {"day_number": day_number, "status": "ready", "draft": draft}
+
+
+class DayUpdate(BaseModel):
+    blocks_json: dict[str, Any]
+
+
+@router.put("/{study_id}/days/{day_number}")
+def update_day_endpoint(study_id: int, day_number: int, body: DayUpdate,
+                        session: Session = Depends(get_session)) -> dict:
+    """Persist user edits to a day's blocks_json (inline editing)."""
+    from app.services.planner import make_summary
+
+    s = session.get(Study, study_id)
+    if s is None:
+        raise HTTPException(404, "study not found")
+    target = next((d for d in s.days if d.day_number == day_number), None)
+    if target is None:
+        raise HTTPException(400, "day out of range")
+
+    target.blocks_json = body.blocks_json
+    if target.status == "pending":
+        target.status = "ready"
+    target.context_summary = make_summary(body.blocks_json, target.context_summary)
+    session.add(target)
+    session.commit()
+    session.refresh(target)
+    events.emit("info", "study", f"Study {study_id} day {day_number} edited")
+    return _to_out(s).model_dump()["days"][day_number - 1]

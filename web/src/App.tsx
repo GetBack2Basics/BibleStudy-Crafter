@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import StatusDock from './components/StatusDock'
-import { studies as studyApi, TRADITIONS, type StudyOut, type DayOut, type DayDraft } from './lib/studies'
+import { studies as studyApi, TRADITIONS, type StudyOut, type DayOut, type DayDraft, type ScriptureBlock } from './lib/studies'
 
 type View = { kind: 'list' } | { kind: 'detail'; id: number }
 
@@ -215,32 +215,82 @@ function StudyDetail({ id, onBack }: { id: number; onBack: () => void }) {
 
       <div className="space-y-4">
         {study.days.map((d) => (
-          <DayCard key={d.day_number} day={d} onGenerate={() => genDay(d.day_number)} />
+          <DayCard key={d.day_number} studyId={id} day={d} onGenerate={() => genDay(d.day_number)} />
         ))}
       </div>
     </div>
   )
 }
 
-function DayCard({ day, onGenerate }: { day: DayOut; onGenerate: () => void }) {
+/* ---------- Day card with inline editing ---------- */
+
+function DayCard({ studyId, day, onGenerate }: { studyId: number; day: DayOut; onGenerate: () => void }) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState<DayDraft | null>(day.blocks_json)
+  const [saving, setSaving] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+  const draftRef = useRef<DayDraft | null>(draft)
+  draftRef.current = draft
+
+  // keep local draft in sync with the server ONLY when not actively editing,
+  // so the 2s poll doesn't clobber in-progress edits
+  useEffect(() => { if (!editing) setDraft(day.blocks_json) }, [day.blocks_json, editing])
+
+  const startEdit = () => { setDraft(day.blocks_json); setErr(null); setEditing(true) }
+  const cancel = () => { setDraft(day.blocks_json); setEditing(false) }
+
+  const save = async () => {
+    const current = draftRef.current
+    if (!current) return
+    setSaving(true)
+    try {
+      const updated = await studyApi.updateDay(studyId, day.day_number, current)
+      setDraft(updated.blocks_json)
+      setEditing(false)
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e))
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <article className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
       <div className="mb-2 flex items-center justify-between">
         <h3 className="font-semibold">
-          Day {day.day_number}{day.title ? ` — ${day.title}` : ''}
+          Day {day.day_number}{draft?.heading ? ` — ${draft.heading}` : (day.title ? ` — ${day.title}` : '')}
           {day.theme && <span className="ml-2 text-xs font-normal text-slate-500">· {day.theme}</span>}
         </h3>
         <div className="flex items-center gap-3">
           <span className={`text-xs ${STATUS_CLS[day.status]}`}>{day.status}</span>
-          {day.status !== 'generating' && (
-            <button onClick={onGenerate}
-                    className="rounded-md border border-slate-700 px-2 py-1 text-xs hover:bg-slate-800">
-              {day.blocks_json ? 'Regenerate' : 'Generate'}
-            </button>
+          {!editing && day.status !== 'generating' && (
+            <>
+              <button onClick={startEdit}
+                      className="rounded-md border border-slate-700 px-2 py-1 text-xs hover:bg-slate-800">Edit</button>
+              <button onClick={onGenerate}
+                      className="rounded-md border border-slate-700 px-2 py-1 text-xs hover:bg-slate-800">
+                {day.blocks_json ? 'Regenerate' : 'Generate'}
+              </button>
+            </>
+          )}
+          {editing && (
+            <>
+              <button onClick={cancel}
+                      className="rounded-md border border-slate-700 px-2 py-1 text-xs hover:bg-slate-800">Cancel</button>
+              <button onClick={save} disabled={saving}
+                      className="rounded-md bg-emerald-600 px-2 py-1 text-xs text-white hover:bg-emerald-500 disabled:opacity-50">
+                {saving ? 'Saving…' : 'Save'}
+              </button>
+            </>
           )}
         </div>
       </div>
-      {day.blocks_json ? <Draft draft={day.blocks_json} /> : (
+
+      {err && <p className="mb-2 text-xs text-rose-400">{err}</p>}
+
+      {draft ? (
+        <DraftEditor draft={draft} editing={editing} onChange={setDraft} />
+      ) : (
         <p className="text-sm text-slate-600">
           {day.status === 'generating' ? 'Working…' : 'Not generated yet.'}
         </p>
@@ -249,12 +299,20 @@ function DayCard({ day, onGenerate }: { day: DayOut; onGenerate: () => void }) {
   )
 }
 
-function Draft({ draft }: { draft: DayDraft }) {
+/* ---------- Read / edit renderer ---------- */
+
+function DraftEditor({ draft, editing, onChange }: {
+  draft: DayDraft
+  editing: boolean
+  onChange: (d: DayDraft) => void
+}) {
+  const setField = (patch: Partial<DayDraft>) => onChange({ ...draft, ...patch })
+
   return (
     <div className="space-y-3 text-sm leading-relaxed">
-      {draft.scripture?.length > 0 && (
+      {draft.scripture && draft.scripture.length > 0 && (
         <div className="space-y-2">
-          {draft.scripture.map((s, i) => (
+          {draft.scripture.map((s: ScriptureBlock, i: number) => (
             <blockquote key={i} className="border-l-2 border-emerald-700 pl-3 text-slate-300">
               <div className="text-xs uppercase tracking-wide text-emerald-500">{s.ref}</div>
               <div>{s.text}</div>
@@ -263,14 +321,68 @@ function Draft({ draft }: { draft: DayDraft }) {
           ))}
         </div>
       )}
-      {draft.opening_prayer && <p><span className="text-slate-500">Prayer · </span>{draft.opening_prayer}</p>}
-      {draft.commentary && <p className="text-slate-200">{draft.commentary}</p>}
-      {draft.questions?.length > 0 && (
-        <ul className="list-disc space-y-1 pl-5 text-slate-300">
-          {draft.questions.map((q, i) => <li key={i}>{q}</li>)}
-        </ul>
+
+      {editing ? (
+        <>
+          <Labeled label="Opening prayer">
+            <textarea className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1 outline-none focus:border-emerald-500"
+              rows={2} value={draft.opening_prayer ?? ''}
+              onChange={(e) => setField({ opening_prayer: e.target.value })} />
+          </Labeled>
+          <Labeled label="Commentary">
+            <textarea className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1 outline-none focus:border-emerald-500"
+              rows={6} value={draft.commentary ?? ''}
+              onChange={(e) => setField({ commentary: e.target.value })} />
+          </Labeled>
+          <Labeled label="Closing prayer">
+            <textarea className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1 outline-none focus:border-emerald-500"
+              rows={2} value={draft.closing_prayer ?? ''}
+              onChange={(e) => setField({ closing_prayer: e.target.value })} />
+          </Labeled>
+          <Labeled label="Reflection questions">
+            <QuestionsEditor questions={draft.questions ?? []} onChange={(q) => setField({ questions: q })} />
+          </Labeled>
+        </>
+      ) : (
+        <>
+          {draft.opening_prayer && <p><span className="text-slate-500">Prayer · </span>{draft.opening_prayer}</p>}
+          {draft.commentary && <p className="text-slate-200">{draft.commentary}</p>}
+          {draft.questions && draft.questions.length > 0 && (
+            <ul className="list-disc space-y-1 pl-5 text-slate-300">
+              {draft.questions.map((q, i) => <li key={i}>{q}</li>)}
+            </ul>
+          )}
+          {draft.closing_prayer && <p><span className="text-slate-500">Closing · </span>{draft.closing_prayer}</p>}
+        </>
       )}
-      {draft.closing_prayer && <p><span className="text-slate-500">Closing · </span>{draft.closing_prayer}</p>}
+    </div>
+  )
+}
+
+function Labeled({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="mb-1 text-xs uppercase tracking-wide text-slate-500">{label}</div>
+      {children}
+    </div>
+  )
+}
+
+function QuestionsEditor({ questions, onChange }: { questions: string[]; onChange: (q: string[]) => void }) {
+  const update = (i: number, v: string) => onChange(questions.map((q, j) => (j === i ? v : q)))
+  const add = () => onChange([...questions, ''])
+  const remove = (i: number) => onChange(questions.filter((_, j) => j !== i))
+  return (
+    <div className="space-y-1">
+      {questions.map((q, i) => (
+        <div key={i} className="flex items-start gap-2">
+          <input className="flex-1 rounded border border-slate-700 bg-slate-950 px-2 py-1 outline-none focus:border-emerald-500"
+                 value={q} onChange={(e) => update(i, e.target.value)} />
+          <button onClick={() => remove(i)}
+                  className="rounded border border-slate-700 px-2 text-xs hover:bg-slate-800">×</button>
+        </div>
+      ))}
+      <button onClick={add} className="text-xs text-emerald-400 hover:text-emerald-300">+ add question</button>
     </div>
   )
 }

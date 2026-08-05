@@ -70,6 +70,13 @@ export const studies = {
 
   generateDay: (id: number, day: number): Promise<{ day_number: number; status: string; draft: DayDraft }> =>
     fetch(`${api.url}/api/studies/${id}/days/${day}`, { method: 'POST' }).then(j),
+
+  updateDay: (id: number, day: number, blocks_json: DayDraft): Promise<DayOut> =>
+    fetch(`${api.url}/api/studies/${id}/days/${day}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ blocks_json }),
+    }).then(j),
 }
 
 export const TRADITIONS = [
