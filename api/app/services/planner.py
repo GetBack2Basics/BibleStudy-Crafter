@@ -151,7 +151,8 @@ async def generate_day(title: str, focus: str, passages: list[Passage],
                        minutes: int, day: int,
                        *, prior_summary: str | None = None,
                        tradition: str = None, session=None,
-                       study_id: int | None = None) -> dict[str, Any]:
+                       study_id: int | None = None,
+                       translation: str = "KJV") -> dict[str, Any]:
     """Draft one day. Returns a dict ready to store as blocks_json.
 
     The anti-hallucination guarantee: the LLM returns only references; we
@@ -182,7 +183,7 @@ async def generate_day(title: str, focus: str, passages: list[Passage],
         ref = safe_parse_ref(p.ref)
         if ref is None:
             continue
-        verses = _resolve(ref)
+        verses = _resolve(ref, translation)
         scripture_blocks.append({
             "ref": ref.ref,
             "book": ref.book_name,
@@ -192,11 +193,15 @@ async def generate_day(title: str, focus: str, passages: list[Passage],
 
     return {
         "heading": str(data.get("heading", focus)),
-        "opening_prayer": str(data.get("opening_prayer", "")),
+        "opening_prayer": str(data.get("opening_prayer", "")
+                              or "Lord, open our hearts to hear what You are saying today."),
         "scripture": scripture_blocks,
-        "commentary": str(data.get("commentary", "")),
-        "questions": [str(q) for q in data.get("questions", [])],
-        "closing_prayer": str(data.get("closing_prayer", "")),
+        "commentary": str(data.get("commentary", "")
+                          or "Spend time with the passage above; let its words settle slowly."),
+        "questions": [str(q) for q in data.get("questions", [])]
+                      or ["What is God highlighting to you in this passage?"],
+        "closing_prayer": str(data.get("closing_prayer", "")
+                             or "Amen."),
     }
 
 

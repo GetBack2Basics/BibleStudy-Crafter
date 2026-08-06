@@ -124,12 +124,13 @@ async def _build_outline_and_day1(study_id: int, body: StudyCreate) -> None:
                 if stub:
                     stub.title = od.title
                     stub.theme = od.focus
-            study.status = "ready"
             session.commit()
             events.emit("success", "study",
                         f"Study {study_id} outline ready ({len(outline.days)} days)")
             await study_generate_day(study, 1, session=session,
                                      tradition=study.tradition)
+            study.status = "ready"
+            session.commit()
             events.emit("success", "study", f"Study {study_id} day 1 generated")
         except Exception as exc:           # noqa: BLE001 - background job
             study.status = "failed"
@@ -181,6 +182,14 @@ class DayRevise(BaseModel):
 
 REVISE_PROMPT = """You are helping a user revise part of a Bible-study day they wrote.
 
+The scripture passages chosen for this day (quote their references only - the
+app inserts the actual verse text from its own Bible database; do NOT invent or
+rewrite any verse, but you MUST ground the commentary and prayers on these
+passages):
+---
+{scripture}
+---
+
 The full current commentary for the day is:
 ---
 {commentary}
@@ -188,8 +197,10 @@ The full current commentary for the day is:
 
 {selection_block}Revise according to this instruction: {instruction}
 
-Return ONLY the revised text (no markdown fences, no commentary about what you changed). If a selection was provided, return only the revised version of that selected passage, keeping its meaning and length similar. If no selection was provided, return the revised full commentary.
+Return ONLY the revised text (no markdown fences, no commentary about what you changed). If a selection was provided, return only the revised version of that selected passage, keeping its meaning and length similar. If no selection was provided, return the revised full commentary. The revision must stay faithful to the scripture passages above.
 """
+
+SCRIPTURE_BLOCK = "- {ref} ({translation}): {text}"
 
 
 @router.post("/{study_id}/days/{day_number}/revise")
@@ -199,6 +210,8 @@ async def revise_day_endpoint(study_id: int, day_number: int, body: DayRevise,
     passage is revised (JobHunt_Crafter-style select-to-revise)."""
     from app.services.llm import NoProviderAvailable, complete
     from app.services.prompts import build_system
+    from sqlmodel import select
+    from app.models import DayPassage
 
     s = session.get(Study, study_id)
     if s is None:
@@ -210,18 +223,32 @@ async def revise_day_endpoint(study_id: int, day_number: int, body: DayRevise,
     if not commentary:
         raise HTTPException(400, "day has no commentary to revise yet")
 
+    # Ground the revision on the day's chosen scripture passages.
+    passages = session.exec(
+        select(DayPassage).where(DayPassage.study_day_id == target.id)
+        .order_by(DayPassage.order)
+    ).all()
+    scripture_block = "\n".join(
+        SCRIPTURE_BLOCK.format(ref=p.ref, translation=p.translation, text=p.text)
+        for p in passages
+    ) or "(no passages selected for this day)"
+
     selection_block = (
         f"The user selected this passage to revise:\n---\n{body.selection}\n---\n"
         if body.selection else ""
     )
     prompt = REVISE_PROMPT.format(
-        commentary=commentary, selection_block=selection_block, instruction=body.instruction)
+        scripture=scripture_block, commentary=commentary,
+        selection_block=selection_block, instruction=body.instruction)
     try:
         res = await complete(prompt, system=build_system(tradition=s.tradition),
                              study_id=study_id, session=session)
     except NoProviderAvailable as exc:
         raise HTTPException(502, str(exc))
     revised = res.text.strip()
+    target.blocks_json = {**(target.blocks_json or {}), "commentary": revised}
+    session.add(target)
+    session.commit()
     events.emit("success", "study", f"Study {study_id} day {day_number} revised")
     return {"day_number": day_number, "revised": revised,
             "selection": body.selection}

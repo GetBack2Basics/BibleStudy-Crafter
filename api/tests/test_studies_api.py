@@ -1,14 +1,13 @@
 """Task 13: /api/studies create -> 202, poll, day-1 eager generation.
 
 Runs against an in-memory SQLite DB with the LLM stubbed (no keys needed).
+The `client` fixture lives in conftest.py.
 """
 import json
 from unittest.mock import patch
 
 import pytest
-from fastapi.testclient import TestClient
-from sqlmodel import Session, SQLModel, create_engine
-from sqlalchemy.pool import StaticPool
+from sqlmodel import Session
 
 
 async def _smart_stub(*a, **k):
@@ -18,38 +17,6 @@ async def _smart_stub(*a, **k):
     payload = DAY if "Write day" in prompt else OUTLINE
     return LLMResult(text=json.dumps(payload), provider="ollama", model="m",
                      tokens_in=1, tokens_out=1, data=payload)
-
-
-@pytest.fixture
-def client():
-    from app import db as db_mod
-    from app.main import app
-
-    engine = create_engine("sqlite://", connect_args={"check_same_thread": False},
-                           poolclass=StaticPool)
-    SQLModel.metadata.create_all(engine)
-    # Seed a couple of verses so the anti-hallucination resolve path is real
-    from app.models import Translation, Verse
-    with Session(engine) as s:
-        tr = Translation(code="KJV", source_id="eng_kjv", name="KJV")
-        s.add(tr); s.commit(); s.refresh(tr)
-        s.add(Verse(translation_id=tr.id, book_number=40, chapter=6, verse=14,
-                    text="For if you forgive others their trespasses"))
-        s.add(Verse(translation_id=tr.id, book_number=40, chapter=6, verse=15,
-                    text="but if you do not forgive others their trespasses"))
-        s.commit()
-    # The background task opens its own sessions via get_engine(); point it at
-    # the same in-memory DB.
-    db_mod._engine = engine
-
-    def _get_session():
-        return Session(engine)
-
-    app.dependency_overrides[db_mod.get_session] = _get_session
-    with TestClient(app) as c:
-        yield c
-    app.dependency_overrides.clear()
-    db_mod._engine = None
 
 
 OUTLINE = {
@@ -160,3 +127,40 @@ def test_revise_day_with_selection(client):
                      json={"instruction": "shorten", "selection": "the Lord's authority"})
     assert r2.status_code == 200
     assert r2.json()["selection"] == "the Lord's authority"
+
+
+def test_revise_grounds_on_chosen_passages(client):
+    """Regression: revise prompt must include the day's DayPassage refs+text."""
+    captured = {}
+
+    async def _spy(*a, **k):
+        from app.services.llm import LLMResult
+        captured["prompt"] = a[0] if a else ""
+        payload = {"heading": "H", "opening_prayer": "p", "commentary": "c",
+                   "questions": ["q"], "closing_prayer": "cp"}
+        return LLMResult(text="revised commentary", provider="ollama",
+                         model="m", tokens_in=1, tokens_out=1, data=payload)
+
+    with patch("app.services.planner.complete", _smart_stub):
+        sid = client.post("/api/studies",
+                          json={"topic": "Grounding", "total_days": 1,
+                                "minutes_per_day": 15}).json()["study_id"]
+        import time
+        for _ in range(50):
+            if client.get(f"/api/studies/{sid}").json()["status"] == "ready":
+                break
+            time.sleep(0.1)
+    passages = client.get(f"/api/studies/{sid}/days/1/passages").json()
+    assert passages, "day must have passages to ground on"
+
+    with patch("app.services.llm.complete", _spy):
+        r = client.post(f"/api/studies/{sid}/days/1/revise",
+                        json={"instruction": "Tie it to the verses", "selection": None})
+    assert r.status_code == 200
+    prompt = captured.get("prompt", "")
+    # every chosen passage ref must appear in the revise prompt
+    for p in passages:
+        assert p["ref"] in prompt, f"revise prompt missing passage {p['ref']}"
+    # and the revised text is persisted back to blocks_json
+    saved = client.get(f"/api/studies/{sid}").json()["days"][0]["blocks_json"]["commentary"]
+    assert saved == "revised commentary"

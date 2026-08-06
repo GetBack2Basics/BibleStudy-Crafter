@@ -112,3 +112,8 @@ class _FakeSession:
     def add(self, *a, **k): pass
     def commit(self, *a, **k): pass
     def refresh(self, *a, **k): pass
+
+    def exec(self, *a, **k):
+        class _R:
+            def all(self): return []
+        return _R()

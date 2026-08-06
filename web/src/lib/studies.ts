@@ -54,6 +54,77 @@ const j = (r: Response) => {
   return r.json()
 }
 
+export type TranslationInfo = {
+  code: string
+  name: string
+}
+
+export type CompareVerse = {
+  translation: string
+  book: number
+  chapter: number
+  verse: number
+  text: string
+  words_of_jesus?: boolean
+}
+
+export type PassageOut = {
+  id: number
+  ref: string
+  translation: string
+  text: string
+  order: number
+  rationale: string
+  highlights: { text: string; note?: string }[] | null
+}
+
+export const passages = {
+  list: (studyId: number, day: number): Promise<PassageOut[]> =>
+    fetch(`${api.url}/api/studies/${studyId}/days/${day}/passages`).then(j),
+
+  add: (studyId: number, day: number, ref: string, translation?: string): Promise<PassageOut> =>
+    fetch(`${api.url}/api/studies/${studyId}/days/${day}/passages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ref, translation: translation ?? null }),
+    }).then(j),
+
+  update: (studyId: number, day: number, passageId: number, body: {
+    translation?: string; order?: number; highlights?: { text: string; note?: string }[]; rationale?: string;
+  }): Promise<PassageOut> =>
+    fetch(`${api.url}/api/studies/${studyId}/days/${day}/passages/${passageId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).then(j),
+
+  remove: (studyId: number, day: number, passageId: number): Promise<void> =>
+    fetch(`${api.url}/api/studies/${studyId}/days/${day}/passages/${passageId}`, {
+      method: 'DELETE',
+    }).then(() => undefined),
+}
+
+export const bible = {
+  translations: (): Promise<TranslationInfo[]> =>
+    fetch(`${api.url}/api/bible/translations`).then(j).then((d) => d.translations),
+
+  compare: (ref: string, codes: string[]): Promise<{ ref: string; verses: CompareVerse[] }> =>
+    fetch(`${api.url}/api/bible/compare?ref=${encodeURIComponent(ref)}&translations=${codes.map((c) => encodeURIComponent(c)).join(',')}`)
+      .then(j),
+}
+
+export const preferences = {
+  getTranslations: (): Promise<string[]> =>
+    fetch(`${api.url}/api/preferences/translations`).then(j).then((d) => d.translations),
+
+  setTranslations: (codes: string[]): Promise<string[]> =>
+    fetch(`${api.url}/api/preferences/translations`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ translations: codes }),
+    }).then(j).then((d) => d.translations),
+}
+
 export const studies = {
   list: (): Promise<StudyOut[]> =>
     fetch(`${api.url}/api/studies`).then(j),

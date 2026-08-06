@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from app.models import Study, StudyDay
 from app.services.planner import Passage, generate_day as _generate_day, _corpus_passages
@@ -49,16 +49,46 @@ async def generate_day(study: Study, day_number: int, *, session: Session,
         tradition=tradition,
         session=session,
         study_id=study.id,
+        translation=translation,
     )
 
     target.blocks_json = draft
     target.status = "ready"
+    # Persist scripture as first-class, reorderable, version-switchable passages.
+    # (Skipped when target isn't a persisted ORM row, e.g. lightweight test fakes.)
+    if getattr(target, "id", None) is not None and hasattr(session, "exec"):
+        _sync_passages(session, target, draft.get("scripture", []), translation)
     # Rolling summary for the NEXT day (decision 5)
     target.context_summary = make_summary(draft, prior_summary)
     session.add(target)
     session.commit()
     session.refresh(target)
     return draft
+
+
+def _sync_passages(session: Session, day: "StudyDay", scripture: list[dict], translation: str) -> None:
+    """Replace a day's DayPassage rows from the draft's scripture blocks.
+
+    `text` is resolved in the study's primary translation at generation time; the
+    user can later switch any passage's version via the passages API.
+    """
+    from app.models import DayPassage
+    # drop existing
+    for old in session.exec(
+        select(DayPassage).where(DayPassage.study_day_id == day.id)
+    ).all():
+        session.delete(old)
+    for i, s in enumerate(scripture):
+        session.add(DayPassage(
+            study_day_id=day.id,
+            ref=s.get("ref", ""),
+            translation=translation,
+            text=s.get("text", ""),
+            order=i,
+            rationale=s.get("rationale", ""),
+            highlights=None,
+        ))
+    session.commit()
 
 
 def _passages_for(study: Study, day_number: int) -> list[Passage]:

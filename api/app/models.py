@@ -111,14 +111,18 @@ class StudyDay(SQLModel, table=True):
 
 class DayPassage(SQLModel, table=True):
     __tablename__ = "day_passage"
+    __table_args__ = (
+        Index("ix_day_passage_order", "study_day_id", "order"),
+    )
 
     id: Optional[int] = Field(default=None, primary_key=True)
     study_day_id: int = Field(foreign_key="study_day.id", index=True)
-    ref_book: int
-    ref_chapter: int
-    ref_verse_start: int
-    ref_verse_end: int
+    ref: str = Field(max_length=64)            # e.g. "Mark 4:35-41"
+    translation: str = Field(default="KJV", max_length=32)  # per-quote version
+    text: str = Field(default="")               # resolved text in `translation`
+    order: int = Field(default=0)
     rationale: str = Field(default="", max_length=800)
+    highlights: Any = Field(default=None, sa_column=Column(JSON_TYPE))  # [{text, note}]
     is_primary: bool = Field(default=True)
 
 
