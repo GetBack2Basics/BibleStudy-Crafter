@@ -86,7 +86,7 @@ async def test_outline_falls_back_without_provider():
 
 # ----------------------------------------------------------- anti-hallucination
 
-async def test_scripture_block_text_comes_from_db():
+async def test_scripture_block_text_comes_from_db(client):
     """The model returns a WRONG verse text; the stored block must use DB text."""
     # LLM returns a bogus 'John 3:16' wording
     bogus = {

@@ -82,6 +82,11 @@ class Study(SQLModel, table=True):
     primary_translation: str = Field(default="KJV", max_length=32)
     status: str = Field(default="pending", max_length=24)  # pending|generating|ready|failed
     outline_json: Optional[dict[str, Any]] = Field(default=None, sa_column=Column(JSON_TYPE))
+    # Compressed rolling history (plan decision): day N reads ALL prior days via
+    # {"arc": str (compressed overall), "recent": [{"day": int, "summary": str}]}.
+    history_json: Optional[dict[str, Any]] = Field(default=None, sa_column=Column(JSON_TYPE))
+    # Curated verse pool chosen by the user at create time (refs from corpus search).
+    verse_pool: Optional[list[str]] = Field(default=None, sa_column=Column(JSON_TYPE))
     error: Optional[str] = Field(default=None, max_length=1000)
     created_at: datetime = Field(default_factory=utcnow)
 
@@ -104,6 +109,8 @@ class StudyDay(SQLModel, table=True):
     blocks_json: Optional[Any] = Field(default=None, sa_column=Column(JSON_TYPE))
     # Decision 5: rolling continuity summary (<=120 words), day N sees day N-1's.
     context_summary: str = Field(default="", max_length=1200)
+    # User notes on the day's sections (commentary/prayers). JSON keys optional.
+    notes: Optional[dict[str, Any]] = Field(default=None, sa_column=Column(JSON_TYPE))
     created_at: datetime = Field(default_factory=utcnow)
 
     study: Optional["Study"] = Relationship(back_populates="days")

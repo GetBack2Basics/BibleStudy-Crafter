@@ -28,6 +28,7 @@ class PassageUpdate(BaseModel):
     order: int | None = None
     highlights: list[dict] | None = None
     rationale: str | None = None
+    note: str | None = None   # user reflection note on this verse (stored in highlights)
 
 
 class PassageOut(BaseModel):
@@ -106,6 +107,9 @@ def update_passage(study_id: int, day_number: int, passage_id: int, body: Passag
         p.highlights = body.highlights
     if body.rationale is not None:
         p.rationale = body.rationale
+    if body.note is not None:
+        # Store the user's reflection note anchored to the verse text.
+        p.highlights = [{"text": p.text, "note": body.note}]
     session.add(p)
     session.commit()
     session.refresh(p)

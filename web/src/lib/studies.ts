@@ -24,6 +24,7 @@ export type DayOut = {
   theme: string
   status: StudyStatus
   context_summary: string
+  notes: Record<string, string> | null
   blocks_json: DayDraft | null
 }
 
@@ -47,6 +48,7 @@ export type StudyCreate = {
   tradition?: string | null
   imagery_policy?: string | null
   primary_translation?: string
+  selected_refs?: string[]   // curated verse pool from corpus search
 }
 
 const j = (r: Response) => {
@@ -66,6 +68,14 @@ export type CompareVerse = {
   verse: number
   text: string
   words_of_jesus?: boolean
+}
+
+export type SearchHit = {
+  ref: string
+  book: string
+  chapter: number
+  verse: number
+  text: string
 }
 
 export type PassageOut = {
@@ -111,6 +121,10 @@ export const bible = {
   compare: (ref: string, codes: string[]): Promise<{ ref: string; verses: CompareVerse[] }> =>
     fetch(`${api.url}/api/bible/compare?ref=${encodeURIComponent(ref)}&translations=${codes.map((c) => encodeURIComponent(c)).join(',')}`)
       .then(j),
+
+  search: (q: string, translation: string, limit = 50): Promise<SearchHit[]> =>
+    fetch(`${api.url}/api/bible/search?q=${encodeURIComponent(q)}&translation=${encodeURIComponent(translation)}&limit=${limit}`)
+      .then(j).then((d) => d.results),
 }
 
 export const preferences = {
@@ -139,15 +153,24 @@ export const studies = {
       body: JSON.stringify(body),
     }).then(j),
 
+  remove: (id: number): Promise<{ deleted: number }> =>
+    fetch(`${api.url}/api/studies/${id}`, { method: 'DELETE' }).then(j),
+
+  removeAll: (): Promise<{ deleted: number }> =>
+    fetch(`${api.url}/api/studies/_all`, { method: 'DELETE' }).then(j),
+
   generateDay: (id: number, day: number): Promise<{ day_number: number; status: string; draft: DayDraft }> =>
     fetch(`${api.url}/api/studies/${id}/days/${day}`, { method: 'POST' }).then(j),
 
-  updateDay: (id: number, day: number, blocks_json: DayDraft): Promise<DayOut> =>
-    fetch(`${api.url}/api/studies/${id}/days/${day}`, {
+  updateDay: (id: number, day: number, blocks_json: DayDraft, notes?: Record<string, string> | null): Promise<DayOut> => {
+    const body: { blocks_json: DayDraft; notes?: Record<string, string> | null } = { blocks_json }
+    if (notes !== undefined) body.notes = notes
+    return fetch(`${api.url}/api/studies/${id}/days/${day}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ blocks_json }),
-    }).then(j),
+      body: JSON.stringify(body),
+    }).then(j)
+  },
 
   reviseDay: (id: number, day: number, instruction: string, selection?: string | null): Promise<{ day_number: number; revised: string; selection: string | null }> =>
     fetch(`${api.url}/api/studies/${id}/days/${day}/revise`, {

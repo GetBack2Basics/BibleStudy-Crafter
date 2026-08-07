@@ -55,6 +55,7 @@ async def test_day3_prompt_excludes_day1_body():
         id = 7
         title = "Forgiveness"
         minutes_per_day = 15
+        history_json = {"arc": "", "recent": [{"day": 2, "summary": day2_summary}]}
         outline_json = {"days": [
             {"day_number": 1, "suggested_passages": [{"ref": "John 3:16", "rationale": "r"}]},
             {"day_number": 2, "suggested_passages": [{"ref": "1 Cor 13:4", "rationale": "r"}]},
@@ -92,6 +93,7 @@ async def test_day1_works_with_no_prior_summary():
         id = 7
         title = "Love"
         minutes_per_day = 15
+        history_json = None
         outline_json = {"days": [{"day_number": 1,
                              "suggested_passages": [{"ref": "John 3:16", "rationale": "r"}]}]}
         days = [FakeDay()]

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import StatusDock from './components/StatusDock'
-import { studies as studyApi, bible, preferences, passages, TRADITIONS, type StudyOut, type DayOut, type DayDraft, type TranslationInfo, type CompareVerse, type PassageOut } from './lib/studies'
+import { api } from './lib/api'
+import { studies as studyApi, bible, preferences, passages, TRADITIONS, type StudyOut, type DayOut, type DayDraft, type TranslationInfo, type CompareVerse, type PassageOut, type SearchHit } from './lib/studies'
 
 type View = { kind: 'list' } | { kind: 'detail'; id: number }
 
@@ -19,6 +20,20 @@ export default function App() {
   const refreshList = () => {
     setLoadingList(true)
     studyApi.list().then(setStudiesList).catch(() => setStudiesList([])).finally(() => setLoadingList(false))
+  }
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('Delete this study? This cannot be undone.')) return
+    await studyApi.remove(id)
+    if (view.kind === 'detail' && view.id === id) setView({ kind: 'list' })
+    refreshList()
+  }
+
+  const handleDeleteAll = async () => {
+    if (!confirm('Delete ALL studies? The Bible translations and verses are kept.')) return
+    await studyApi.removeAll()
+    setView({ kind: 'list' })
+    refreshList()
   }
 
   useEffect(() => { refreshList() }, [])
@@ -43,6 +58,8 @@ export default function App() {
             onRefresh={refreshList}
             onCreate={() => setView({ kind: 'list' })}
             onOpen={(id) => setView({ kind: 'detail', id })}
+            onDelete={handleDelete}
+            onDeleteAll={handleDeleteAll}
           />
         ) : (
           <StudyDetail
@@ -59,19 +76,53 @@ export default function App() {
 
 /* ---------- Create form + list ---------- */
 
-function StudyList({ studies, loading, onRefresh, onCreate, onOpen }: {
+function StudyList({ studies, loading, onRefresh, onCreate, onOpen, onDelete, onDeleteAll }: {
   studies: StudyOut[]
   loading: boolean
   onRefresh: () => void
   onCreate: () => void
   onOpen: (id: number) => void
+  onDelete: (id: number) => void
+  onDeleteAll: () => void
 }) {
   const [topic, setTopic] = useState('')
   const [minutes, setMinutes] = useState(15)
   const [days, setDays] = useState(7)
   const [tradition, setTradition] = useState('non_denominational')
+  const [version, setVersion] = useState('KJV')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
+  // verse pool: search the corpus for the topic and let the user pick
+  const [allTranslations, setAllTranslations] = useState<TranslationInfo[]>([])
+  const [hits, setHits] = useState<SearchHit[]>([])
+  const [picked, setPicked] = useState<Set<string>>(new Set())
+  const [searching, setSearching] = useState(false)
+  const [searched, setSearched] = useState(false)
+
+  useEffect(() => {
+    bible.translations().then(setAllTranslations).catch(() => setAllTranslations([]))
+  }, [])
+
+  const runSearch = async () => {
+    if (!topic.trim()) { setErr('Enter a topic first to find relevant verses'); return }
+    setSearching(true)
+    try {
+      const results = await bible.search(topic.trim(), version, 50)
+      setHits(results)
+      setSearched(true)
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e))
+    } finally {
+      setSearching(false)
+    }
+  }
+
+  const toggle = (ref: string) =>
+    setPicked((prev) => {
+      const next = new Set(prev)
+      if (next.has(ref)) next.delete(ref); else next.add(ref)
+      return next
+    })
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -79,7 +130,11 @@ function StudyList({ studies, loading, onRefresh, onCreate, onOpen }: {
     if (!topic.trim()) { setErr('Topic is required'); return }
     setBusy(true)
     try {
-      const res = await studyApi.create({ topic: topic.trim(), minutes_per_day: minutes, total_days: days, tradition })
+      const res = await studyApi.create({
+        topic: topic.trim(), minutes_per_day: minutes, total_days: days,
+        tradition, primary_translation: version,
+        selected_refs: picked.size > 0 ? [...picked] : undefined,
+      })
       onCreate()
       onOpen(res.study_id)
     } catch (e) {
@@ -118,6 +173,44 @@ function StudyList({ studies, loading, onRefresh, onCreate, onOpen }: {
               {TRADITIONS.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
           </label>
+          <label className="block text-sm sm:col-span-2">
+            <span className="mb-1 block text-slate-400">Preferred Bible version</span>
+            <select className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 outline-none focus:border-emerald-500"
+                    value={version} onChange={(e) => setVersion(e.target.value)}>
+              {allTranslations.length > 0
+                ? allTranslations.map((t) => <option key={t.code} value={t.code}>{t.name} ({t.code})</option>)
+                : <option value="KJV">KJV</option>}
+            </select>
+          </label>
+
+          <div className="sm:col-span-2 flex items-end gap-3">
+            <button type="button" onClick={runSearch} disabled={searching}
+                    className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:border-emerald-500 disabled:opacity-50">
+              {searching ? 'Searching…' : 'Find relevant verses'}
+            </button>
+            <span className="text-xs text-slate-500">Searches the Bible for your topic; tick the verses you want to build the study from.</span>
+          </div>
+
+          {hits.length > 0 ? (
+            <div className="sm:col-span-2 max-h-56 space-y-1 overflow-y-auto rounded-lg border border-slate-800 bg-slate-950 p-2">
+              <div className="flex items-center justify-between px-1 pb-1">
+                <p className="text-xs text-slate-500">Showing {hits.length} verses in {version}. Tick to include ({picked.size} selected).</p>
+                <button type="button" onClick={() => setPicked(picked.size === hits.length ? new Set() : new Set(hits.map((h) => h.ref)))}
+                        className="text-xs text-emerald-400 hover:text-emerald-300">
+                  {picked.size === hits.length ? 'Select none' : 'Select all verses'}
+                </button>
+              </div>
+              {hits.map((h) => (
+                <label key={h.ref + h.text} className="flex cursor-pointer items-start gap-2 rounded px-1 py-1 hover:bg-slate-900">
+                  <input type="checkbox" className="mt-1" checked={picked.has(h.ref)} onChange={() => toggle(h.ref)} />
+                  <span className="text-sm"><span className="font-medium text-emerald-300">{h.ref}</span> — {h.text}</span>
+                </label>
+              ))}
+            </div>
+          ) : searched ? (
+            <p className="sm:col-span-2 text-sm text-slate-500">No verses found for “{topic.trim()}” in {version}. Try a different word.</p>
+          ) : null}
+
           {err && <p className="sm:col-span-2 text-sm text-rose-400">{err}</p>}
           <button type="submit" disabled={busy}
                   className="sm:col-span-2 rounded-lg bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-500 disabled:opacity-50">
@@ -129,18 +222,26 @@ function StudyList({ studies, loading, onRefresh, onCreate, onOpen }: {
       <section>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-base font-semibold">Studies</h2>
-          <button onClick={onRefresh} className="text-sm text-slate-400 hover:text-slate-200">
-            {loading ? 'Refreshing…' : 'Refresh'}
-          </button>
+          <div className="flex items-center gap-3">
+            {studies.length > 0 && (
+              <button onClick={onDeleteAll}
+                      className="text-sm text-rose-400 hover:text-rose-300">
+                Delete all
+              </button>
+            )}
+            <button onClick={onRefresh} className="text-sm text-slate-400 hover:text-slate-200">
+              {loading ? 'Refreshing…' : 'Refresh'}
+            </button>
+          </div>
         </div>
         {studies.length === 0 ? (
           <p className="text-sm text-slate-500">No studies yet — create one above.</p>
         ) : (
           <ul className="divide-y divide-slate-800 overflow-hidden rounded-xl border border-slate-800">
             {studies.map((s) => (
-              <li key={s.id}>
+              <li key={s.id} className="group flex items-center">
                 <button onClick={() => onOpen(s.id)}
-                        className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-slate-900/60">
+                        className="flex flex-1 items-center gap-3 px-4 py-3 text-left hover:bg-slate-900/60">
                   <span className={`text-xs ${STATUS_CLS[s.status]}`}>●</span>
                   <span className="flex-1">
                     <span className="font-medium">{s.title || s.topic}</span>
@@ -148,6 +249,9 @@ function StudyList({ studies, loading, onRefresh, onCreate, onOpen }: {
                   </span>
                   <span className="text-xs text-slate-600">#{s.id}</span>
                 </button>
+                <button onClick={() => onDelete(s.id)}
+                        title="Delete study"
+                        className="px-3 py-3 text-slate-600 hover:text-rose-400">×</button>
               </li>
             ))}
           </ul>
@@ -163,6 +267,10 @@ function StudyDetail({ id, onBack }: { id: number; onBack: () => void }) {
   const [study, setStudy] = useState<StudyOut | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const timer = useRef<ReturnType<typeof setInterval> | null>(null)
+  // Live generation progress fed by the SSE event stream.
+  const [progress, setProgress] = useState<number | null>(null)
+  const [progressMsg, setProgressMsg] = useState<string>("")
+  const esRef = useRef<EventSource | null>(null)
 
   const load = () => {
     studyApi.get(id).then(setStudy).catch((e) => setErr(e instanceof Error ? e.message : String(e)))
@@ -178,7 +286,27 @@ function StudyDetail({ id, onBack }: { id: number; onBack: () => void }) {
         }
       }).catch(() => {})
     }, 2000)
-    return () => { if (timer.current) clearInterval(timer.current) }
+
+    // Stream real-time progress events for this study.
+    const es = new EventSource(`${api.url}/api/events`)
+    esRef.current = es
+    es.onmessage = (ev) => {
+      try {
+        const data = JSON.parse(ev.data)
+        if (data?.study_id === id && typeof data.progress === 'number') {
+          setProgress(data.progress)
+          setProgressMsg(data.message || "")
+          if (data.progress >= 100 || data.level === 'error') {
+            es.close(); esRef.current = null
+          }
+        }
+      } catch { /* ignore malformed */ }
+    }
+
+    return () => {
+      if (timer.current) clearInterval(timer.current)
+      if (esRef.current) esRef.current.close()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
@@ -210,7 +338,17 @@ function StudyDetail({ id, onBack }: { id: number; onBack: () => void }) {
       <p className="text-sm text-slate-500">{study.total_days} days · {study.minutes_per_day} min/day · {study.tradition} · {study.primary_translation}</p>
 
       {study.status === 'generating' && (
-        <p className="text-sm text-amber-400">Generating outline & day 1… (auto-refreshing)</p>
+        <div className="rounded-lg border border-slate-800 bg-slate-900/50 p-3">
+          <div className="mb-2 flex items-center justify-between text-sm">
+            <span className="text-amber-400">{progressMsg || 'Generating outline & day 1…'}</span>
+            <span className="text-slate-500">{progress != null ? `${progress}%` : 'working…'}</span>
+          </div>
+          <div className="h-2 w-full overflow-hidden rounded bg-slate-800">
+            <div className="h-full rounded bg-emerald-500 transition-all duration-500"
+                 style={{ width: `${progress != null ? progress : 8}%` }} />
+          </div>
+          <p className="mt-1 text-xs text-slate-600">Auto-refreshing…</p>
+        </div>
       )}
 
       <div className="space-y-4">
@@ -227,10 +365,13 @@ function StudyDetail({ id, onBack }: { id: number; onBack: () => void }) {
 function DayCard({ studyId, day, onGenerate }: { studyId: number; day: DayOut; onGenerate: () => void }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState<DayDraft | null>(day.blocks_json)
+  const [notes, setNotes] = useState<Record<string, string>>(day.notes ?? {})
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const draftRef = useRef<DayDraft | null>(draft)
   draftRef.current = draft
+  const notesRef = useRef<Record<string, string>>(notes)
+  notesRef.current = notes
 
   // select-to-revise (JobHunt_Crafter pattern): capture highlighted text
   const [selectedText, setSelectedText] = useState('')
@@ -240,6 +381,8 @@ function DayCard({ studyId, day, onGenerate }: { studyId: number; day: DayOut; o
   // keep local draft in sync with the server ONLY when not actively editing,
   // so the 2s poll doesn't clobber in-progress edits
   useEffect(() => { if (!editing) setDraft(day.blocks_json) }, [day.blocks_json, editing])
+  // sync notes from server when not editing
+  useEffect(() => { if (!editing) setNotes(day.notes ?? {}) }, [day.notes, editing])
 
   const startEdit = () => { setDraft(day.blocks_json); setErr(null); setEditing(true) }
   const cancel = () => { setDraft(day.blocks_json); setEditing(false) }
@@ -249,8 +392,9 @@ function DayCard({ studyId, day, onGenerate }: { studyId: number; day: DayOut; o
     if (!current) return
     setSaving(true)
     try {
-      const updated = await studyApi.updateDay(studyId, day.day_number, current)
+      const updated = await studyApi.updateDay(studyId, day.day_number, current, notesRef.current)
       setDraft(updated.blocks_json)
+      setNotes(updated.notes ?? {})
       setEditing(false)
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e))
@@ -359,7 +503,7 @@ function DayCard({ studyId, day, onGenerate }: { studyId: number; day: DayOut; o
       )}
 
       {draft ? (
-        <DraftEditor draft={draft} studyId={studyId} day={day.day_number} editing={editing} onChange={setDraft} onSelect={handleSelection} />
+        <DraftEditor draft={draft} studyId={studyId} day={day.day_number} editing={editing} onChange={setDraft} onSelect={handleSelection} notes={notes} onNotesChange={setNotes} />
       ) : (
         <p className="text-sm text-slate-600">
           {day.status === 'generating' ? 'Working…' : 'Not generated yet.'}
@@ -371,13 +515,15 @@ function DayCard({ studyId, day, onGenerate }: { studyId: number; day: DayOut; o
 
 /* ---------- Read / edit renderer ---------- */
 
-function DraftEditor({ draft, editing, onChange, onSelect, studyId, day }: {
+function DraftEditor({ draft, editing, onChange, onSelect, studyId, day, notes, onNotesChange }: {
   draft: DayDraft
   editing: boolean
   onChange: (d: DayDraft) => void
   onSelect: (el: HTMLTextAreaElement | null) => void
   studyId: number
   day: number
+  notes: Record<string, string>
+  onNotesChange: (n: Record<string, string>) => void
 }) {
   const setField = (patch: Partial<DayDraft>) => onChange({ ...draft, ...patch })
 
@@ -396,16 +542,34 @@ function DraftEditor({ draft, editing, onChange, onSelect, studyId, day }: {
               rows={2} value={draft.opening_prayer ?? ''}
               onChange={(e) => setField({ opening_prayer: e.target.value })} />
           </Labeled>
+          <Labeled label="Your note on this opening prayer">
+            <textarea className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1 outline-none focus:border-emerald-500"
+              rows={2} value={notes.opening_prayer ?? ''}
+              placeholder="What stood out to you?"
+              onChange={(e) => onNotesChange({ ...notes, opening_prayer: e.target.value })} />
+          </Labeled>
           <Labeled label="Commentary (select text, then Revise with AI)">
             <textarea className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1 outline-none focus:border-emerald-500"
               rows={6} value={draft.commentary ?? ''}
               onChange={(e) => setField({ commentary: e.target.value })}
   onMouseUp={(e) => onSelect(e.currentTarget)} />
           </Labeled>
+          <Labeled label="Your note on the commentary">
+            <textarea className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1 outline-none focus:border-emerald-500"
+              rows={2} value={notes.commentary ?? ''}
+              placeholder="Your reflection / takeaway"
+              onChange={(e) => onNotesChange({ ...notes, commentary: e.target.value })} />
+          </Labeled>
           <Labeled label="Closing prayer">
             <textarea className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1 outline-none focus:border-emerald-500"
               rows={2} value={draft.closing_prayer ?? ''}
               onChange={(e) => setField({ closing_prayer: e.target.value })} />
+          </Labeled>
+          <Labeled label="Your note on this closing prayer">
+            <textarea className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1 outline-none focus:border-emerald-500"
+              rows={2} value={notes.closing_prayer ?? ''}
+              placeholder="What stood out to you?"
+              onChange={(e) => onNotesChange({ ...notes, closing_prayer: e.target.value })} />
           </Labeled>
           <Labeled label="Reflection questions">
             <QuestionsEditor questions={draft.questions ?? []} onChange={(q) => setField({ questions: q })} />
@@ -414,13 +578,16 @@ function DraftEditor({ draft, editing, onChange, onSelect, studyId, day }: {
       ) : (
         <>
           {draft.opening_prayer && <p><span className="text-slate-500">Prayer · </span>{draft.opening_prayer}</p>}
+          {notes.opening_prayer && <p className="rounded bg-slate-900/60 p-2 text-xs text-amber-200"><span className="text-slate-500">Your note · </span>{notes.opening_prayer}</p>}
           {draft.commentary && <p className="text-slate-200">{draft.commentary}</p>}
+          {notes.commentary && <p className="rounded bg-slate-900/60 p-2 text-xs text-amber-200"><span className="text-slate-500">Your note · </span>{notes.commentary}</p>}
           {draft.questions && draft.questions.length > 0 && (
             <ul className="list-disc space-y-1 pl-5 text-slate-300">
               {draft.questions.map((q, i) => <li key={i}>{q}</li>)}
             </ul>
           )}
           {draft.closing_prayer && <p><span className="text-slate-500">Closing · </span>{draft.closing_prayer}</p>}
+          {notes.closing_prayer && <p className="rounded bg-slate-900/60 p-2 text-xs text-amber-200"><span className="text-slate-500">Your note · </span>{notes.closing_prayer}</p>}
         </>
       )}
     </div>

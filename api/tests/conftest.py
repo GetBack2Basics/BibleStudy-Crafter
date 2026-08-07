@@ -23,6 +23,10 @@ def client():
                     text="For if you forgive others their trespasses"))
         s.add(Verse(translation_id=tr.id, book_number=40, chapter=6, verse=15,
                     text="but if you do not forgive others their trespasses"))
+        # John 3:16 (book 43) for test_scripture_block_text_comes_from_db
+        s.add(Verse(translation_id=tr.id, book_number=43, chapter=3, verse=16,
+                    text="For God so loved the world, that he gave his only "
+                         "begotten Son"))
         s.commit()
     db_mod._engine = engine
 

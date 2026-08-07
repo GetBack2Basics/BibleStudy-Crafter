@@ -12,8 +12,9 @@ from app.services import events
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Ensure all tables exist (idempotent; also covers a fresh DB after reset).
-    from app.db import create_all
+    from app.db import create_all, ensure_schema
     create_all()
+    ensure_schema()
     events.emit("info", "api", f"API started (build {get_build_stamp()})")
     yield
 

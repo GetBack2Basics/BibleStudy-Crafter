@@ -140,10 +140,12 @@ actual text from its own Bible database; do NOT write out any verse yourself):
 Produce a JSON object with exactly these keys (no other text, no markdown):
 {{
   "heading": str,
-  "opening_prayer": str (1-2 sentences),
+  "opening_prayer": str (1-2 sentences; OPEN by quoting the key verse for today,
+      e.g. "Lord, as <reference> says, '...', ..." then turn it into prayer),
   "commentary": str (~{commentary_words} words, 2-4 short paragraphs),
   "questions": [str, str, str] (exactly {questions} reflection questions),
-  "closing_prayer": str (1-2 sentences)
+  "closing_prayer": str (1-2 sentences; OPEN by quoting the key verse again,
+      then close the day in prayer)
 }}"""
 
 

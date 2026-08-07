@@ -99,17 +99,33 @@ def search(
     if row is None:
         raise HTTPException(404, f"translation not loaded: {translation}")
 
-    stmt = sql_text("""
+    # Full-text search ANDs lexemes and can miss multi-word / modern topics.
+    # Fall back to per-word substring (ILIKE) so a topic always returns hits.
+    import re
+    tokens = [t for t in re.split(r"\W+", q.strip()) if len(t) >= 2]
+    params: dict = {"q": q, "tid": row.id, "lim": limit}
+    conds = ["to_tsvector('english', text) @@ plainto_tsquery('english', :q)"]
+    if tokens:
+        for i, t in enumerate(tokens):
+            params[f"tok_{i}"] = f"%{t}%"
+        ilike = " OR ".join(f"text ILIKE :tok_{i}" for i in range(len(tokens)))
+        conds.append(f"({ilike})")
+    else:
+        params["qlike"] = f"%{q}%"
+        conds.append("text ILIKE :qlike")
+    where = " OR ".join(conds)
+
+    stmt = sql_text(f"""
         SELECT book_number, chapter, verse, text,
                ts_rank(to_tsvector('english', text),
                        plainto_tsquery('english', :q)) AS rank
         FROM verse
         WHERE translation_id = :tid
-          AND to_tsvector('english', text) @@ plainto_tsquery('english', :q)
+          AND ({where})
         ORDER BY rank DESC, book_number, chapter, verse
         LIMIT :lim
     """)
-    results = session.exec(stmt, params={"q": q, "tid": row.id, "lim": limit}).all()
+    results = session.exec(stmt, params=params).all()
     return {
         "query": q,
         "translation": row.code,

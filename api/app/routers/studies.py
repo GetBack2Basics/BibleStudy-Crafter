@@ -19,7 +19,7 @@ from sqlmodel import Session
 
 from app.config import get_settings
 from app.db import get_engine, get_session
-from app.models import Study, StudyDay
+from app.models import Study, StudyDay, DayPassage, Asset
 from app.services import events
 from app.services.studies import generate_day as study_generate_day
 
@@ -35,6 +35,7 @@ class StudyCreate(BaseModel):
     tradition: str | None = None
     imagery_policy: str | None = None
     primary_translation: str = "KJV"
+    selected_refs: list[str] | None = None   # user-curated verse pool from corpus search
 
 
 class DayOut(BaseModel):
@@ -43,6 +44,7 @@ class DayOut(BaseModel):
     theme: str = ""
     status: str
     context_summary: str = ""
+    notes: dict[str, Any] | None = None
     blocks_json: dict[str, Any] | None = None
 
 
@@ -56,6 +58,9 @@ class StudyOut(BaseModel):
     imagery_policy: str
     primary_translation: str
     status: str
+    verse_pool: list[str] | None = None
+    outline_json: dict[str, Any] | None = None
+    history_json: dict[str, Any] | None = None
     days: list[DayOut]
 
 
@@ -65,9 +70,11 @@ def _to_out(s: Study) -> StudyOut:
         minutes_per_day=s.minutes_per_day, total_days=s.total_days,
         tradition=s.tradition, imagery_policy=s.imagery_policy,
         primary_translation=s.primary_translation, status=s.status,
+        verse_pool=s.verse_pool, outline_json=s.outline_json,
+        history_json=s.history_json,
         days=[DayOut(day_number=d.day_number, title=d.title, theme=d.theme,
                      status=d.status, context_summary=d.context_summary,
-                     blocks_json=d.blocks_json) for d in s.days],
+                     notes=d.notes, blocks_json=d.blocks_json) for d in s.days],
     )
 
 
@@ -80,6 +87,7 @@ async def create_study(body: StudyCreate) -> dict[str, Any]:
         tradition=body.tradition or settings.default_tradition,
         imagery_policy=body.imagery_policy or settings.default_imagery_policy,
         primary_translation=body.primary_translation,
+        verse_pool=body.selected_refs,
         status="generating",
     )
     s.days = [StudyDay(day_number=n, status="pending")
@@ -91,7 +99,7 @@ async def create_study(body: StudyCreate) -> dict[str, Any]:
         session.refresh(s)
         study_id = s.id
 
-    events.emit("info", "study", f"Study {study_id} created: {body.topic}")
+    events.emit("info", "study", f"Study {study_id} created: {body.topic}", study_id=study_id, progress=5)
     asyncio.create_task(_build_outline_and_day1(study_id, body))
     return {"study_id": study_id, "status": "generating"}
 
@@ -103,20 +111,43 @@ async def _build_outline_and_day1(study_id: int, body: StudyCreate) -> None:
             return
         try:
             from app.services.planner import generate_outline
+            events.emit("info", "study", f"Study {study_id}: drafting outline…", study_id=study_id, progress=25)
             outline = await generate_outline(
                 body.topic, body.minutes_per_day, body.total_days,
                 tradition=study.tradition, session=session, study_id=study_id)
             study.title = outline.title
+            # Distribute the curated verse pool across the study's days so day 1
+            # doesn't absorb everything. Ordered canonically (chronological) then
+            # round-robin so each day gets a balanced share.
+            pool = list(study.verse_pool or [])
+            if pool:
+                def _sort_key(r: str):
+                    from app.services.bible_service import safe_parse_ref
+                    ref = safe_parse_ref(r)
+                    return (ref.book if ref else 999, ref.chapter if ref else 999, ref.verse_start if ref else 999, r)
+                pool.sort(key=_sort_key)
+                total = study.total_days
+                # round-robin buckets: day 1 first, then 2, ... wrapping
+                buckets: dict[int, list[str]] = {n: [] for n in range(1, total + 1)}
+                for i, ref in enumerate(pool):
+                    buckets[(i % total) + 1].append(ref)
+            outline_days = []
+            for d in outline.days:
+                day_dict = {"day_number": d.day_number, "title": d.title, "focus": d.focus,
+                            "est_minutes": d.est_minutes,
+                            "suggested_passages": [{"ref": p.ref, "rationale": p.rational}
+                                                   for p in d.suggested_passages]}
+                # Spread the user's verse pool across all days (chronological, round-robin).
+                if pool and day_dict["day_number"] in buckets:
+                    if buckets[day_dict["day_number"]]:
+                        day_dict["suggested_passages"] = [
+                            {"ref": r, "rationale": "chosen by you from the corpus search"}
+                            for r in buckets[day_dict["day_number"]]]
+                outline_days.append(day_dict)
             study.outline_json = {
                 "title": outline.title,
                 "summary": outline.summary,
-                "days": [
-                    {"day_number": d.day_number, "title": d.title, "focus": d.focus,
-                     "est_minutes": d.est_minutes,
-                     "suggested_passages": [{"ref": p.ref, "rationale": p.rational}
-                                            for p in d.suggested_passages]}
-                    for d in outline.days
-                ],
+                "days": outline_days,
             }
             by_num = {d.day_number: d for d in study.days}
             for od in outline.days:
@@ -126,12 +157,14 @@ async def _build_outline_and_day1(study_id: int, body: StudyCreate) -> None:
                     stub.theme = od.focus
             session.commit()
             events.emit("success", "study",
-                        f"Study {study_id} outline ready ({len(outline.days)} days)")
+                        f"Study {study_id} outline ready ({len(outline.days)} days)", study_id=study_id, progress=60)
+            events.emit("info", "study", f"Study {study_id}: writing day 1…", study_id=study_id, progress=75)
             await study_generate_day(study, 1, session=session,
-                                     tradition=study.tradition)
+                                     tradition=study.tradition,
+                                     translation=study.primary_translation)
             study.status = "ready"
             session.commit()
-            events.emit("success", "study", f"Study {study_id} day 1 generated")
+            events.emit("success", "study", f"Study {study_id} day 1 generated", study_id=study_id, progress=100)
         except Exception as exc:           # noqa: BLE001 - background job
             study.status = "failed"
             session.commit()
@@ -155,6 +188,48 @@ def get_study(study_id: int, session: Session = Depends(get_session)) -> StudyOu
     return _to_out(s)
 
 
+def _delete_study_data(session: Session, study: Study) -> None:
+    """Remove one study's data (days, passages, assets) without touching the Bible corpus."""
+    from sqlalchemy import text
+    eng = session.get_bind()
+    day_ids = [d.id for d in study.days]
+    if day_ids:
+        placeholders = ",".join(str(i) for i in day_ids)
+        session.exec(text(f"DELETE FROM day_passage WHERE study_day_id IN ({placeholders})"))
+        session.exec(text(f"DELETE FROM asset WHERE study_day_id IN ({placeholders})"))
+    for d in study.days:
+        session.delete(d)
+    session.delete(study)
+    session.commit()
+
+
+@router.delete("/_all")
+def delete_all_studies(session: Session = Depends(get_session)) -> dict:
+    """Delete ALL studies (days, passages, assets) but keep the Bible translations/verses.
+
+    Use this instead of wiping the DB when you only want to clear your study work.
+    Registered before /{study_id} so '_all' is not parsed as a study id.
+    """
+    from sqlmodel import select
+    studies = session.exec(select(Study)).all()
+    count = len(studies)
+    for s in studies:
+        _delete_study_data(session, s)
+    events.emit("success", "study", f"All {count} studies deleted")
+    return {"deleted": count}
+
+
+@router.delete("/{study_id}")
+def delete_study(study_id: int, session: Session = Depends(get_session)) -> dict:
+    """Delete a single study (its days, passages, assets). Bible corpus is preserved."""
+    s = session.get(Study, study_id)
+    if s is None:
+        raise HTTPException(404, "study not found")
+    _delete_study_data(session, s)
+    events.emit("success", "study", f"Study {study_id} deleted")
+    return {"deleted": study_id}
+
+
 @router.post("/{study_id}/days/{day_number}")
 async def generate_day_endpoint(study_id: int, day_number: int,
                                 session: Session = Depends(get_session)) -> dict:
@@ -165,7 +240,8 @@ async def generate_day_endpoint(study_id: int, day_number: int,
         raise HTTPException(400, "day out of range")
     try:
         draft = await study_generate_day(s, day_number, session=session,
-                                         tradition=s.tradition)
+                                         tradition=s.tradition,
+                                         translation=s.primary_translation)
     except ValueError as exc:
         raise HTTPException(400, str(exc))
     return {"day_number": day_number, "status": "ready", "draft": draft}
@@ -173,6 +249,7 @@ async def generate_day_endpoint(study_id: int, day_number: int,
 
 class DayUpdate(BaseModel):
     blocks_json: dict[str, Any]
+    notes: dict[str, Any] | None = None   # user notes on commentary/prayers sections
 
 
 class DayRevise(BaseModel):
@@ -268,6 +345,8 @@ def update_day_endpoint(study_id: int, day_number: int, body: DayUpdate,
         raise HTTPException(400, "day out of range")
 
     target.blocks_json = body.blocks_json
+    if body.notes is not None:
+        target.notes = body.notes
     if target.status == "pending":
         target.status = "ready"
     target.context_summary = make_summary(body.blocks_json, target.context_summary)

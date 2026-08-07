@@ -30,8 +30,8 @@ async def generate_day(study: Study, day_number: int, *, session: Session,
     if target is None:
         raise ValueError(f"study has no day {day_number}")
 
-    prior = next((d for d in days if d.day_number == day_number - 1), None)
-    prior_summary = prior.context_summary if prior else None
+    # Day N reads ALL prior days via the compressed rolling history (plan decision).
+    prior_summary = get_compressed_history(getattr(study, "history_json", None)) or None
 
     passages = _passages_for(study, day_number)
     # Fallback: if the outline/model suggested no passages, mine the local
@@ -58,12 +58,82 @@ async def generate_day(study: Study, day_number: int, *, session: Session,
     # (Skipped when target isn't a persisted ORM row, e.g. lightweight test fakes.)
     if getattr(target, "id", None) is not None and hasattr(session, "exec"):
         _sync_passages(session, target, draft.get("scripture", []), translation)
-    # Rolling summary for the NEXT day (decision 5)
+    # Rolling summary for the NEXT day (decision 5) + advance compressed history.
     target.context_summary = make_summary(draft, prior_summary)
+    if hasattr(study, "history_json"):
+        study.history_json = update_history(study.history_json, day_number,
+                                            target.context_summary)
     session.add(target)
     session.commit()
     session.refresh(target)
     return draft
+
+
+# ------------------------------------------------------------------------- history
+# Compressed rolling history (plan decision): day N sees ALL prior days, bounded.
+# history_json = {"arc": str, "recent": [{"day": int, "summary": str}]}
+#  - recent holds the last RECENT_CAP days verbatim (<=120w each)
+#  - arc holds everything older, deterministically compressed (no LLM calls)
+# Day N therefore receives arc + recent regardless of study length.
+
+RECENT_CAP = 4
+ARC_WORD_CAP = 400
+DAY_SUMMARY_CAP = 120
+
+
+def build_day_summary(draft: dict[str, Any]) -> str:
+    """<=120-word digest of one day (its own context_summary source)."""
+    return make_summary(draft)
+
+
+def update_history(history: dict | None, day_number: int, day_summary: str,
+                   *, recent_cap: int = RECENT_CAP,
+                   arc_word_cap: int = ARC_WORD_CAP) -> dict:
+    h = history or {"arc": "", "recent": []}
+    recent = list(h.get("recent", []))
+    arc = h.get("arc", "")
+    recent.append({"day": day_number, "summary": day_summary})
+    while len(recent) > recent_cap:
+        oldest = recent.pop(0)
+        arc = (arc + f"\nDay {oldest['day']}: {oldest['summary']}").strip()
+        arc = _wordcap(arc, arc_word_cap)
+    return {"arc": arc, "recent": recent}
+
+
+def get_compressed_history(history: dict | None) -> str:
+    if not history:
+        return ""
+    arc = (history.get("arc") or "").strip()
+    recent = history.get("recent") or []
+    parts = []
+    if arc:
+        parts.append("OVERALL ARC (compressed prior days):\n" + arc)
+    if recent:
+        lines = "\n".join(f"Day {r['day']}: {r['summary']}" for r in recent)
+        parts.append("RECENT DAYS:\n" + lines)
+    return "\n\n".join(parts)
+
+
+def rebuild_history(study: "Study") -> dict:
+    """Re-derive the compressed history from every generated day's blocks_json.
+
+    Used when a day is regenerated/edited so the arc stays consistent.
+    """
+    days = sorted(study.days, key=lambda d: d.day_number)
+    history = None
+    for d in days:
+        if d.status != "ready" or not d.blocks_json:
+            continue
+        summary = d.context_summary or build_day_summary(d.blocks_json)
+        history = update_history(history, d.day_number, summary)
+    return history
+
+
+def _wordcap(text: str, cap: int) -> str:
+    words = text.split()
+    if len(words) <= cap:
+        return text
+    return " ".join(words[:cap]) + " …"
 
 
 def _sync_passages(session: Session, day: "StudyDay", scripture: list[dict], translation: str) -> None:
