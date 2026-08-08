@@ -22,6 +22,7 @@ from app.db import get_engine, get_session
 from app.models import Study, StudyDay, DayPassage, Asset
 from app.services import events
 from app.services.studies import generate_day as study_generate_day
+from app.services.studies import build_day_discussions
 
 router = APIRouter(prefix="/api/studies", tags=["studies"])
 
@@ -45,6 +46,7 @@ class DayOut(BaseModel):
     status: str
     context_summary: str = ""
     notes: dict[str, Any] | None = None
+    discussions: dict[str, Any] | None = None
     blocks_json: dict[str, Any] | None = None
 
 
@@ -74,7 +76,8 @@ def _to_out(s: Study) -> StudyOut:
         history_json=s.history_json,
         days=[DayOut(day_number=d.day_number, title=d.title, theme=d.theme,
                      status=d.status, context_summary=d.context_summary,
-                     notes=d.notes, blocks_json=d.blocks_json) for d in s.days],
+                     notes=d.notes, discussions=d.discussions_json,
+                     blocks_json=d.blocks_json) for d in s.days],
     )
 
 
@@ -165,12 +168,31 @@ async def _build_outline_and_day1(study_id: int, body: StudyCreate) -> None:
             study.status = "ready"
             session.commit()
             events.emit("success", "study", f"Study {study_id} day 1 generated", study_id=study_id, progress=100)
+            # Best-effort: gather real, cited discussions for day 1 in the background.
+            asyncio.create_task(
+                _build_discussions_safe(study_id, 1))
         except Exception as exc:           # noqa: BLE001 - background job
             study.status = "failed"
             session.commit()
             events.emit("error", "study",
                         f"Study {study_id} failed: {type(exc).__name__}: {exc}")
             raise
+
+
+async def _build_discussions_safe(study_id: int, day_number: int) -> None:
+    """Fetch real, cited discussions for a day without disturbing its status."""
+    from sqlmodel import select
+    from app.services.studies import build_day_discussions
+    try:
+        with Session(get_engine()) as session:
+            study = session.get(Study, study_id)
+            if study is None:
+                return
+            await build_day_discussions(study, day_number, session=session,
+                                        study_id=study_id)
+    except Exception as exc:           # noqa: BLE001 - discussions are best-effort
+        events.emit("warn", "study",
+                    f"discussions for study {study_id} day {day_number} failed: {exc}")
 
 
 @router.get("")
@@ -244,7 +266,28 @@ async def generate_day_endpoint(study_id: int, day_number: int,
                                          translation=s.primary_translation)
     except ValueError as exc:
         raise HTTPException(400, str(exc))
+    # Best-effort real, cited discussions for the freshly generated day.
+    asyncio.create_task(_build_discussions_safe(study_id, day_number))
     return {"day_number": day_number, "status": "ready", "draft": draft}
+
+
+@router.post("/{study_id}/days/{day_number}/discussions")
+async def regenerate_discussions(study_id: int, day_number: int,
+                                 session: Session = Depends(get_session)) -> dict:
+    """(Re)fetch real, cited discussion material for a day's verses.
+
+    Returns the stored discussions_json (with real, linked sources).
+    """
+    s = session.get(Study, study_id)
+    if s is None:
+        raise HTTPException(404, "study not found")
+    if day_number < 1 or day_number > s.total_days:
+        raise HTTPException(400, "day out of range")
+    result = await build_day_discussions(s, day_number, session=session,
+                                         study_id=study_id)
+    if result is None:
+        raise HTTPException(400, "day has no verses or topic to discuss")
+    return {"day_number": day_number, "discussions": result}
 
 
 class DayUpdate(BaseModel):

@@ -364,7 +364,7 @@ function StudyDetail({ id, onBack }: { id: number; onBack: () => void }) {
 
 function DayCard({ studyId, day, onGenerate }: { studyId: number; day: DayOut; onGenerate: () => void }) {
   const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState<DayDraft | null>(day.blocks_json)
+  const [draft, setDraft] = useState<DayDraft | null>(day.blocks_json ?? null)
   const [notes, setNotes] = useState<Record<string, string>>(day.notes ?? {})
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState<string | null>(null)
@@ -380,12 +380,12 @@ function DayCard({ studyId, day, onGenerate }: { studyId: number; day: DayOut; o
 
   // keep local draft in sync with the server ONLY when not actively editing,
   // so the 2s poll doesn't clobber in-progress edits
-  useEffect(() => { if (!editing) setDraft(day.blocks_json) }, [day.blocks_json, editing])
+  useEffect(() => { if (!editing) setDraft(day.blocks_json ?? null) }, [day.blocks_json, editing])
   // sync notes from server when not editing
   useEffect(() => { if (!editing) setNotes(day.notes ?? {}) }, [day.notes, editing])
 
-  const startEdit = () => { setDraft(day.blocks_json); setErr(null); setEditing(true) }
-  const cancel = () => { setDraft(day.blocks_json); setEditing(false) }
+  const startEdit = () => { setDraft(day.blocks_json ?? null); setErr(null); setEditing(true) }
+  const cancel = () => { setDraft(day.blocks_json ?? null); setEditing(false) }
 
   const save = async () => {
     const current = draftRef.current
@@ -393,7 +393,7 @@ function DayCard({ studyId, day, onGenerate }: { studyId: number; day: DayOut; o
     setSaving(true)
     try {
       const updated = await studyApi.updateDay(studyId, day.day_number, current, notesRef.current)
-      setDraft(updated.blocks_json)
+      setDraft(updated.blocks_json ?? null)
       setNotes(updated.notes ?? {})
       setEditing(false)
     } catch (e) {
@@ -423,7 +423,7 @@ function DayCard({ studyId, day, onGenerate }: { studyId: number; day: DayOut; o
           next = current.commentary.replace(selectedText, res.revised)
         }
         const updated = await studyApi.updateDay(studyId, day.day_number, { ...current, commentary: next })
-        setDraft(updated.blocks_json)
+        setDraft(updated.blocks_json ?? null)
       }
       setSelectedText('')
       setInstruction('')
@@ -509,6 +509,7 @@ function DayCard({ studyId, day, onGenerate }: { studyId: number; day: DayOut; o
           {day.status === 'generating' ? 'Working…' : 'Not generated yet.'}
         </p>
       )}
+      <Discussions studyId={studyId} day={day} />
     </article>
   )
 }
@@ -599,6 +600,67 @@ function Labeled({ label, children }: { label: string; children: React.ReactNode
     <div>
       <div className="mb-1 text-xs uppercase tracking-wide text-slate-500">{label}</div>
       {children}
+    </div>
+  )
+}
+
+/* ---------- Discussions: real, cited reading material about the verses ---------- */
+
+function Discussions({ studyId, day }: { studyId: number; day: DayOut }) {
+  const [data, setData] = useState<DayOut['discussions']>(day.discussions ?? null)
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+  const reload = async () => {
+    const dayNum = Number(day?.day_number)
+    if (!Number.isInteger(dayNum) || dayNum < 1) {
+      setErr("Cannot identify which day to fetch discussions for.")
+      return
+    }
+    setBusy(true); setErr(null)
+    try {
+      const res = await studyApi.refreshDiscussions(studyId, dayNum)
+      setData(res.discussions)
+    } catch (e) { setErr(e instanceof Error ? e.message : String(e)) }
+    finally { setBusy(false) }
+  }
+  const d = data
+  return (
+    <div className="mt-4 rounded-lg border border-slate-800 bg-slate-900/40 p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <h4 className="text-sm font-semibold text-slate-200">Voices on these verses</h4>
+        <button onClick={reload} disabled={busy}
+                className="rounded-md border border-slate-700 px-2 py-1 text-xs hover:bg-slate-800 disabled:opacity-50">
+          {busy ? 'Fetching…' : (d ? 'Refresh' : 'Find discussions')}
+        </button>
+      </div>
+      {!d && <p className="text-xs text-slate-500">Real discussion about these verses, with links back to the sources. Click “Find discussions”.</p>}
+      {d && d.status === 'empty' && (
+        <p className="text-xs text-slate-500">No external discussion could be fetched right now. Engage the Scripture directly.</p>
+      )}
+      {d && d.status === 'ok' && (
+        <>
+          <p className="mb-2 text-xs text-slate-500">
+            Curated from {d.sources.length} real sources (~{d.target_minutes} min of reading, about half this day).
+            Includes critical / non-Christian takes where they exist. Every claim links to its source.
+          </p>
+          <div className="prose-invert max-w-none whitespace-pre-wrap text-sm text-slate-300">{d.guide}</div>
+          <div className="mt-3 border-t border-slate-800 pt-2">
+            <div className="mb-1 text-xs uppercase tracking-wide text-slate-500">Sources</div>
+            <ul className="space-y-1 text-xs">
+              {d.sources.map((s, i) => (
+                <li key={i}>
+                  <a href={s.url} target="_blank" rel="noreferrer noopener"
+                     className="text-emerald-400 hover:text-emerald-300 hover:underline">
+                    {s.title}
+                  </a>{' '}
+                  <span className="text-slate-500">— {s.source}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </>
+      )}
+      {err && <p className="mt-2 text-xs text-rose-400">{err}</p>}
     </div>
   )
 }

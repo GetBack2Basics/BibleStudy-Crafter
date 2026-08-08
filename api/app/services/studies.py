@@ -12,6 +12,7 @@ from typing import Any
 from sqlmodel import Session, select
 
 from app.models import Study, StudyDay
+from app.services import events
 from app.services.planner import Passage, generate_day as _generate_day, _corpus_passages
 from app.services.prompts import build_system
 from app.services.planner import make_summary
@@ -39,6 +40,17 @@ async def generate_day(study: Study, day_number: int, *, session: Session,
     if not passages:
         query = (target.theme or study.title or study.topic)
         passages = _corpus_passages(query, translation)
+
+    # Ground the prayer in the previous day's actual scripture when it exists.
+    prev_scripture = None
+    if day_number > 1:
+        prev = next((d for d in days if d.day_number == day_number - 1), None)
+        if prev and prev.blocks_json and prev.blocks_json.get("scripture"):
+            prev_scripture = "\n".join(
+                f"{s.get('ref')} ({prev.translation or translation}): {s.get('text', '')}"
+                for s in prev.blocks_json["scripture"]
+            ) or None
+
     draft = await _generate_day(
         title=study.title or study.topic,
         focus=target.theme,
@@ -46,6 +58,7 @@ async def generate_day(study: Study, day_number: int, *, session: Session,
         minutes=study.minutes_per_day,
         day=day_number,
         prior_summary=prior_summary,
+        prev_scripture=prev_scripture,
         tradition=tradition,
         session=session,
         study_id=study.id,
@@ -67,6 +80,55 @@ async def generate_day(study: Study, day_number: int, *, session: Session,
     session.commit()
     session.refresh(target)
     return draft
+
+
+def day_verse_refs(day: "StudyDay") -> list[str]:
+    """The verse references attached to a day (from its passages)."""
+    refs: list[str] = []
+    if getattr(day, "id", None) is not None and hasattr(day, "passages"):
+        try:
+            for p in day.passages:           # type: ignore[attr-defined]
+                if getattr(p, "ref", None):
+                    refs.append(p.ref)
+        except Exception:                    # noqa: BLE001 - relationships may be unset
+            pass
+    if not refs and day.blocks_json:
+        refs = [s.get("ref") for s in day.blocks_json.get("scripture", [])
+                if s.get("ref")]
+    return refs
+
+
+async def build_day_discussions(study: Study, day_number: int, *, session: Session,
+                                study_id: int | None = None) -> dict[str, Any] | None:
+    """Fetch real, cited discussions for a day's verses and persist them.
+
+    Fire-and-forget after a day is ready; never raises into the caller.
+    """
+    from app.models import StudyDay
+    from app.services import discussions as disc
+    days = sorted(study.days, key=lambda d: d.day_number)
+    target = next((d for d in days if d.day_number == day_number), None)
+    if target is None or not getattr(target, "id", None):
+        return None
+    refs = day_verse_refs(target)
+    topic = (target.theme or study.title or study.topic or "")
+    if not refs and not topic:
+        return None
+    try:
+        result = await disc.build_discussions(
+            refs, topic, study.minutes_per_day,
+            session=session, study_id=study_id)
+    except Exception as exc:               # noqa: BLE001 - discussions are best-effort
+        events.emit("warn", "discussions", f"day {day_number} discussions failed: {exc}")
+        return None
+    target.discussions_json = result
+    session.add(target)
+    session.commit()
+    events.emit("info", "study",
+                f"Study {study_id} day {day_number}: gathered "
+                f"{len(result.get('sources', []))} cited discussions",
+                study_id=study_id)
+    return result
 
 
 # ------------------------------------------------------------------------- history

@@ -291,11 +291,39 @@ def test_verse_pool_split_across_days(client):
     assert sum(1 for v in by_day.values() if v) >= 2, by_day
 
 
-def test_prayer_prompt_quotes_verse(client):
-    """DAY_PROMPT must instruct both prayers to open by quoting the verse."""
+def test_prayer_prompt_grounded_in_scripture(client):
+    """DAY_PROMPT must instruct the model to ground prayers in the day's text."""
     from app.services.planner import DAY_PROMPT
-    assert "OPEN by quoting" in DAY_PROMPT, "prayer prompt must require a verse quote"
-    assert "closing_prayer" in DAY_PROMPT
+    assert "SCRIPTURE TEXT FOR TODAY" in DAY_PROMPT
+    assert "GROUND it in the day's scripture" in DAY_PROMPT
+    assert "do not import outside claims" in DAY_PROMPT
+
+
+def test_prev_day_scripture_supplied_to_prompt():
+    """generate_day passes today's + previous day's scripture into the prompt."""
+    from app.services.planner import generate_day, DAY_PROMPT
+    import app.services.planner as P
+
+    captured = {}
+
+    async def fake_complete(prompt, **kw):
+        captured["prompt"] = prompt
+        from app.services.llm import LLMResult
+        return LLMResult(text='{"heading":"h","opening_prayer":"p","commentary":"c",'
+                              '"questions":["q"],"closing_prayer":"cp"}',
+                          provider="x", model="m", data={})
+
+    prev = "John 3:16 (WEB): For God so loved the world…"
+    with patch.object(P, "complete", fake_complete):
+        import asyncio
+        asyncio.run(
+            generate_day("T", "focus", [P.Passage(ref="John 3:16", rational="r")],
+                         minutes=15, day=2, prev_scripture=prev,
+                         translation="WEB"))
+    p = captured["prompt"]
+    assert "John 3:16 (WEB): For God so loved the world" in p
+    assert "PREVIOUS DAY'S SCRIPTURE" in p
+    assert DAY_PROMPT  # sanity
 
 
 def test_passage_note_saved_in_highlights(client):

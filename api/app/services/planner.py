@@ -131,27 +131,38 @@ def _fallback_outline(topic: str, minutes: int, days: int) -> Outline:
 DAY_PROMPT = """Write day {day} of a Bible study titled "{title}".
 Today's focus: {focus}
 
-Passages to anchor the day (quote their references only - the app inserts the
-actual text from its own Bible database; do NOT write out any verse yourself):
+Passages to anchor the day (their text is provided below; DO NOT write out any
+verse yourself - speak from the text that is given):
 {passages}
+
+SCRIPTURE TEXT FOR TODAY (resolve every claim against this; the prayer must be
+drawn directly from these verses):
+{scripture_block}
+
+{prev_block}
 
 {snippet}
 
 Produce a JSON object with exactly these keys (no other text, no markdown):
 {{
   "heading": str,
-  "opening_prayer": str (1-2 sentences; OPEN by quoting the key verse for today,
-      e.g. "Lord, as <reference> says, '...', ..." then turn it into prayer),
-  "commentary": str (~{commentary_words} words, 2-4 short paragraphs),
+  "opening_prayer": str (1-2 sentences. GROUND it in the day's scripture: begin
+      by echoing a phrase or idea from the verses above and turn it into a
+      conversation with God - what the reader wants to say to Him about what
+      these verses reveal. Quote or clearly allude to the text. Stay inside what
+      the Scripture actually says; do not import outside claims.),
+  "commentary": str (~{commentary_words} words, 2-4 short paragraphs; explain
+      the passage plainly, honest about difficulty),
   "questions": [str, str, str] (exactly {questions} reflection questions),
-  "closing_prayer": str (1-2 sentences; OPEN by quoting the key verse again,
-      then close the day in prayer)
+  "closing_prayer": str (1-2 sentences; GROUND it in the day's scripture again -
+      a short prayer of response to what these specific verses say)
 }}"""
 
 
 async def generate_day(title: str, focus: str, passages: list[Passage],
                        minutes: int, day: int,
                        *, prior_summary: str | None = None,
+                       prev_scripture: str | None = None,
                        tradition: str = None, session=None,
                        study_id: int | None = None,
                        translation: str = "KJV") -> dict[str, Any]:
@@ -160,26 +171,15 @@ async def generate_day(title: str, focus: str, passages: list[Passage],
     The anti-hallucination guarantee: the LLM returns only references; we
     resolve each passage's text from the local DB and insert it into the
     scripture blocks. If a reference fails to parse, it is dropped.
+
+    Prayers are grounded in the day's own scripture (and, if supplied,
+    the previous day's scripture) so they stay inside the text.
     """
     from app.services.prompts import build_system
     b = budget(minutes)
     passage_block = "\n".join(f"- {p.ref}: {p.rational}" for p in passages) or "(none suggested)"
-    snippet = (f"CONTEXT FROM PRIOR DAY (use only as continuity, do not repeat "
-               f"its content):\n{prior_summary}") if prior_summary else ""
 
-    prompt = DAY_PROMPT.format(
-        day=day, title=title, focus=focus, passages=passage_block, snippet=snippet,
-        commentary_words=b["commentary_words"], questions=b["questions"])
-
-    try:
-        res = await complete(prompt, system=build_system(tradition=tradition),
-                             json_mode=True, session=session, study_id=study_id)
-        data = res.data
-    except NoProviderAvailable:
-        data = {"heading": focus, "opening_prayer": "", "commentary": "",
-                "questions": [], "closing_prayer": ""}
-
-    # Resolve scripture text locally - never trust the model's verse wording.
+    # Resolve scripture text locally so the model can ground the prayers in it.
     scripture_blocks = []
     for p in passages:
         ref = safe_parse_ref(p.ref)
@@ -192,6 +192,30 @@ async def generate_day(title: str, focus: str, passages: list[Passage],
             "text": verses,
             "rationale": p.rational,
         })
+    scripture_block = "\n".join(
+        f"{s['ref']} ({translation}): {s['text']}" for s in scripture_blocks
+    ) or "(no passages for this day)"
+
+    prev_block = ""
+    if prev_scripture and prev_scripture.strip():
+        prev_block = ("PREVIOUS DAY'S SCRIPTURE (draw on it only if today's passage "
+                      "needs its context; do not repeat it):\n" + prev_scripture.strip())
+
+    snippet = (f"CONTEXT FROM PRIOR DAY (use only as continuity, do not repeat "
+               f"its content):\n{prior_summary}") if prior_summary else ""
+
+    prompt = DAY_PROMPT.format(
+        day=day, title=title, focus=focus, passages=passage_block,
+        scripture_block=scripture_block, prev_block=prev_block, snippet=snippet,
+        commentary_words=b["commentary_words"], questions=b["questions"])
+
+    try:
+        res = await complete(prompt, system=build_system(tradition=tradition),
+                             json_mode=True, session=session, study_id=study_id)
+        data = res.data
+    except NoProviderAvailable:
+        data = {"heading": focus, "opening_prayer": "", "commentary": "",
+                "questions": [], "closing_prayer": ""}
 
     return {
         "heading": str(data.get("heading", focus)),

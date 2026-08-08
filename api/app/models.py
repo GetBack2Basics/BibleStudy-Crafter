@@ -111,6 +111,9 @@ class StudyDay(SQLModel, table=True):
     context_summary: str = Field(default="", max_length=1200)
     # User notes on the day's sections (commentary/prayers). JSON keys optional.
     notes: Optional[dict[str, Any]] = Field(default=None, sa_column=Column(JSON_TYPE))
+    # Real, externally-sourced discussion about the day's verses. Populated by
+    # the discussions service (live web fetch). Each item is a cited source.
+    discussions_json: Optional[Any] = Field(default=None, sa_column=Column(JSON_TYPE))
     created_at: datetime = Field(default_factory=utcnow)
 
     study: Optional["Study"] = Relationship(back_populates="days")

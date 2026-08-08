@@ -18,14 +18,23 @@ export type DayDraft = {
   closing_prayer: string
 }
 
-export type DayOut = {
+export interface DayOut {
   day_number: number
   title: string
   theme: string
-  status: StudyStatus
+  status: string
   context_summary: string
-  notes: Record<string, string> | null
-  blocks_json: DayDraft | null
+  notes?: Record<string, string> | null
+  discussions?: {
+    refs: string[]
+    topic: string
+    minutes: number
+    target_minutes: number
+    status: string
+    sources: { title: string; url: string; snippet: string; source: string }[]
+    guide: string
+  } | null
+  blocks_json?: DayDraft | null
 }
 
 export type StudyOut = {
@@ -177,6 +186,11 @@ export const studies = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ instruction, selection: selection ?? null }),
+    }).then(j),
+
+  refreshDiscussions: (id: number, day: number): Promise<{ day_number: number; discussions: DayOut['discussions'] }> =>
+    fetch(`${api.url}/api/studies/${id}/days/${day}/discussions`, {
+      method: 'POST',
     }).then(j),
 }
 

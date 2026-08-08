@@ -49,6 +49,7 @@ def ensure_schema() -> None:
         "ALTER TABLE study ADD COLUMN IF NOT EXISTS history_json jsonb",
         "ALTER TABLE study ADD COLUMN IF NOT EXISTS verse_pool jsonb",
         "ALTER TABLE study_day ADD COLUMN IF NOT EXISTS notes jsonb",
+        "ALTER TABLE study_day ADD COLUMN IF NOT EXISTS discussions_json jsonb",
     ]
     with engine.connect() as conn:
         for sql in stmts:
