@@ -6,11 +6,15 @@ import { studies as studyApi, bible, preferences, passages, TRADITIONS, type Stu
 type View = { kind: 'list' } | { kind: 'detail'; id: number }
 
 const STATUS_CLS: Record<string, string> = {
-  pending: 'text-slate-400',
-  generating: 'text-amber-400',
-  ready: 'text-emerald-400',
-  failed: 'text-rose-400',
+  pending: 'text-outline',
+  generating: 'text-tertiary',
+  ready: 'text-primary',
+  failed: 'text-error',
 }
+
+const I = ({ name, cls = 'text-[18px]' }: { name: string; cls?: string }) => (
+  <span className={`material-symbols-outlined ${cls}`}>{name}</span>
+)
 
 export default function App() {
   const [view, setView] = useState<View>({ kind: 'list' })
@@ -39,18 +43,18 @@ export default function App() {
   useEffect(() => { refreshList() }, [])
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <header className="flex items-center gap-4 border-b border-slate-800 px-6 py-4">
-        <button className="text-lg font-semibold tracking-tight hover:text-emerald-300"
+    <div className="min-h-screen bg-background text-on-background">
+      <header className="sticky top-0 z-30 flex items-center gap-4 border-b border-outline-variant/20 bg-surface-container-lowest/80 px-margin-desktop py-4 backdrop-blur">
+        <button className="font-headline-lg text-headline-lg text-primary tracking-tight hover:text-primary-container transition-colors"
                 onClick={() => setView({ kind: 'list' })}>
           BibleStudy-Crafter
         </button>
         {view.kind === 'detail' && (
-          <span className="text-sm text-slate-500">/ study #{view.id}</span>
+          <span className="text-ui-label-md text-on-surface-variant">/ study #{view.id}</span>
         )}
       </header>
 
-      <main className="mx-auto max-w-4xl p-6">
+      <main className="page-shell py-8">
         {view.kind === 'list' ? (
           <StudyList
             studies={studiesList}
@@ -147,111 +151,137 @@ function StudyList({ studies, loading, onRefresh, onCreate, onOpen, onDelete, on
 
   return (
     <div className="space-y-8">
-      <section className="rounded-xl border border-slate-800 bg-slate-900/50 p-5">
-        <h2 className="mb-4 text-base font-semibold">New study</h2>
-        <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
-          <label className="sm:col-span-2 block text-sm">
-            <span className="mb-1 block text-slate-400">Topic</span>
-            <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 outline-none focus:border-emerald-500"
-                   placeholder="e.g. Forgiveness" value={topic}
-                   onChange={(e) => setTopic(e.target.value)} />
-          </label>
-          <label className="block text-sm">
-            <span className="mb-1 block text-slate-400">Minutes / day</span>
-            <input type="number" min={5} max={120} className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 outline-none focus:border-emerald-500"
-                   value={minutes} onChange={(e) => setMinutes(Number(e.target.value))} />
-          </label>
-          <label className="block text-sm">
-            <span className="mb-1 block text-slate-400">Days</span>
-            <input type="number" min={1} max={90} className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 outline-none focus:border-emerald-500"
-                   value={days} onChange={(e) => setDays(Number(e.target.value))} />
-          </label>
-          <label className="block text-sm sm:col-span-2">
-            <span className="mb-1 block text-slate-400">Tradition lens</span>
-            <select className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 outline-none focus:border-emerald-500"
-                    value={tradition} onChange={(e) => setTradition(e.target.value)}>
-              {TRADITIONS.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
-          </label>
-          <label className="block text-sm sm:col-span-2">
-            <span className="mb-1 block text-slate-400">Preferred Bible version</span>
-            <select className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 outline-none focus:border-emerald-500"
-                    value={version} onChange={(e) => setVersion(e.target.value)}>
-              {allTranslations.length > 0
-                ? allTranslations.map((t) => <option key={t.code} value={t.code}>{t.name} ({t.code})</option>)
-                : <option value="KJV">KJV</option>}
-            </select>
-          </label>
+      {/* Step 1: Subject */}
+      <section className="bg-surface-container rounded-3xl p-8 shadow-ambient">
+        <div className="mb-6 flex items-center gap-4">
+          <div className="step-badge">1</div>
+          <h2 className="font-headline-md text-headline-md text-on-surface">Subject of Inquiry</h2>
+        </div>
+        <form onSubmit={submit} className="space-y-6">
+          <div className="bg-surface-container-lowest rounded-2xl p-4 shadow-sm focus-within:shadow-md transition-shadow">
+            <label className="mb-1 block font-ui-label-sm text-ui-label-sm uppercase tracking-wider text-on-surface-variant" htmlFor="study-topic">
+              Primary Topic, Book, or Theme
+            </label>
+            <input id="study-topic"
+              className="w-full bg-transparent border-0 outline-none font-body-reading text-body-reading text-on-surface placeholder:text-outline/50"
+              placeholder="e.g. The concept of Grace in Romans, or Isaiah 53"
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)} />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <span className="font-ui-label-sm text-on-surface-variant py-1">Suggestions:</span>
+            {['Sermon on the Mount', 'Pauline Justification', 'Wisdom Literature'].map((s) => (
+              <button key={s} type="button"
+                className="font-ui-label-sm text-primary bg-primary-container/30 hover:bg-primary-container px-3 py-1 rounded-full transition-colors text-on-primary-container"
+                onClick={() => setTopic(s)}>{s}</button>
+            ))}
+          </div>
 
-          <div className="sm:col-span-2 flex items-end gap-3">
+          <div className="grid gap-6 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-1 block font-ui-label-sm uppercase tracking-wider text-on-surface-variant">Minutes / day</span>
+              <input type="number" min={5} max={120}
+                className="field-underline"
+                value={minutes} onChange={(e) => setMinutes(Number(e.target.value))} />
+            </label>
+            <label className="block">
+              <span className="mb-1 block font-ui-label-sm uppercase tracking-wider text-on-surface-variant">Days</span>
+              <input type="number" min={1} max={90}
+                className="field-underline"
+                value={days} onChange={(e) => setDays(Number(e.target.value))} />
+            </label>
+            <label className="block">
+              <span className="mb-1 block font-ui-label-sm uppercase tracking-wider text-on-surface-variant">Theological Lens</span>
+              <select
+                className="field-underline"
+                value={tradition} onChange={(e) => setTradition(e.target.value)}>
+                {TRADITIONS.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </label>
+            <label className="block">
+              <span className="mb-1 block font-ui-label-sm uppercase tracking-wider text-on-surface-variant">Preferred Bible version</span>
+              <select
+                className="field-underline"
+                value={version} onChange={(e) => setVersion(e.target.value)}>
+                {allTranslations.length > 0
+                  ? allTranslations.map((t) => <option key={t.code} value={t.code}>{t.name} ({t.code})</option>)
+                  : <option value="KJV">KJV</option>}
+              </select>
+            </label>
+          </div>
+
+          <div className="flex items-end gap-3">
             <button type="button" onClick={runSearch} disabled={searching}
-                    className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:border-emerald-500 disabled:opacity-50">
-              {searching ? 'Searching…' : 'Find relevant verses'}
+              className="btn-outline disabled:opacity-50">
+              <I name="search" cls="text-[18px]" /> {searching ? 'Searching…' : 'Find relevant verses'}
             </button>
-            <span className="text-xs text-slate-500">Searches the Bible for your topic; tick the verses you want to build the study from.</span>
+            <span className="text-ui-label-sm text-on-surface-variant">Searches the Bible for your topic; tick the verses you want to build the study from.</span>
           </div>
 
           {hits.length > 0 ? (
-            <div className="sm:col-span-2 max-h-56 space-y-1 overflow-y-auto rounded-lg border border-slate-800 bg-slate-950 p-2">
-              <div className="flex items-center justify-between px-1 pb-1">
-                <p className="text-xs text-slate-500">Showing {hits.length} verses in {version}. Tick to include ({picked.size} selected).</p>
+            <div className="max-h-64 space-y-1 overflow-y-auto rounded-2xl border border-outline-variant/30 bg-surface-container-lowest p-3 shadow-sm">
+              <div className="flex items-center justify-between px-1 pb-2">
+                <p className="text-ui-label-sm text-on-surface-variant">Showing {hits.length} verses in {version}. Tick to include ({picked.size} selected).</p>
                 <button type="button" onClick={() => setPicked(picked.size === hits.length ? new Set() : new Set(hits.map((h) => h.ref)))}
-                        className="text-xs text-emerald-400 hover:text-emerald-300">
+                  className="text-ui-label-sm text-primary hover:text-primary-container">
                   {picked.size === hits.length ? 'Select none' : 'Select all verses'}
                 </button>
               </div>
               {hits.map((h) => (
-                <label key={h.ref + h.text} className="flex cursor-pointer items-start gap-2 rounded px-1 py-1 hover:bg-slate-900">
-                  <input type="checkbox" className="mt-1" checked={picked.has(h.ref)} onChange={() => toggle(h.ref)} />
-                  <span className="text-sm"><span className="font-medium text-emerald-300">{h.ref}</span> — {h.text}</span>
+                <label key={h.ref + h.text} className="flex cursor-pointer items-start gap-2 rounded px-1 py-1 hover:bg-surface-container-high">
+                  <input type="checkbox" className="mt-1 accent-primary" checked={picked.has(h.ref)} onChange={() => toggle(h.ref)} />
+                  <span className="text-body-reading"><span className="font-semibold text-primary">{h.ref}</span> — {h.text}</span>
                 </label>
               ))}
             </div>
           ) : searched ? (
-            <p className="sm:col-span-2 text-sm text-slate-500">No verses found for “{topic.trim()}” in {version}. Try a different word.</p>
+            <p className="text-ui-label-sm text-on-surface-variant">No verses found for “{topic.trim()}” in {version}. Try a different word.</p>
           ) : null}
 
-          {err && <p className="sm:col-span-2 text-sm text-rose-400">{err}</p>}
-          <button type="submit" disabled={busy}
-                  className="sm:col-span-2 rounded-lg bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-500 disabled:opacity-50">
-            {busy ? 'Creating…' : 'Create study'}
-          </button>
+          {err && <p className="text-ui-label-sm text-error">{err}</p>}
+          <div>
+            <button type="submit" disabled={busy}
+              className="btn-primary px-8 py-3 disabled:opacity-50">
+              {busy ? 'Creating…' : 'Create study'} <I name="arrow_forward" cls="text-[18px]" />
+            </button>
+          </div>
         </form>
       </section>
 
+      {/* Studies library */}
       <section>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-base font-semibold">Studies</h2>
+          <h2 className="font-headline-md text-headline-md text-on-surface">My Library</h2>
           <div className="flex items-center gap-3">
             {studies.length > 0 && (
-              <button onClick={onDeleteAll}
-                      className="text-sm text-rose-400 hover:text-rose-300">
+              <button onClick={onDeleteAll} className="text-ui-label-md text-error hover:text-error-container">
                 Delete all
               </button>
             )}
-            <button onClick={onRefresh} className="text-sm text-slate-400 hover:text-slate-200">
-              {loading ? 'Refreshing…' : 'Refresh'}
+            <button onClick={onRefresh} className="btn-ghost">
+              <I name="refresh" cls="text-[16px]" /> {loading ? 'Refreshing…' : 'Refresh'}
             </button>
           </div>
         </div>
         {studies.length === 0 ? (
-          <p className="text-sm text-slate-500">No studies yet — create one above.</p>
+          <p className="text-ui-label-sm text-on-surface-variant">No studies yet — create one above.</p>
         ) : (
-          <ul className="divide-y divide-slate-800 overflow-hidden rounded-xl border border-slate-800">
+          <ul className="overflow-hidden rounded-3xl border border-outline-variant/20 bg-surface-container-lowest shadow-ambient">
             {studies.map((s) => (
-              <li key={s.id} className="group flex items-center">
+              <li key={s.id} className="group flex items-center border-b border-outline-variant/10 last:border-0">
                 <button onClick={() => onOpen(s.id)}
-                        className="flex flex-1 items-center gap-3 px-4 py-3 text-left hover:bg-slate-900/60">
-                  <span className={`text-xs ${STATUS_CLS[s.status]}`}>●</span>
+                  className="flex flex-1 items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-surface-container-high">
+                  <span className={`text-[10px] ${STATUS_CLS[s.status]}`}>●</span>
                   <span className="flex-1">
-                    <span className="font-medium">{s.title || s.topic}</span>
-                    <span className="ml-2 text-xs text-slate-500">{s.total_days}d · {s.minutes_per_day}m/day · {s.tradition}</span>
+                    <span className="font-ui-label-lg text-on-surface">{s.title || s.topic}</span>
+                    <span className="ml-2 text-ui-label-sm text-on-surface-variant">{s.total_days}d · {s.minutes_per_day}m/day · {s.tradition}</span>
                   </span>
-                  <span className="text-xs text-slate-600">#{s.id}</span>
+                  <span className="text-ui-label-sm text-on-surface-variant">#{s.id}</span>
                 </button>
-                <button onClick={() => onDelete(s.id)}
-                        title="Delete study"
-                        className="px-3 py-3 text-slate-600 hover:text-rose-400">×</button>
+                <button onClick={() => onDelete(s.id)} title="Delete study"
+                  className="px-4 py-4 text-on-surface-variant hover:text-error transition-colors">
+                  <I name="delete" cls="text-[18px]" />
+                </button>
               </li>
             ))}
           </ul>
@@ -269,7 +299,7 @@ function StudyDetail({ id, onBack }: { id: number; onBack: () => void }) {
   const timer = useRef<ReturnType<typeof setInterval> | null>(null)
   // Live generation progress fed by the SSE event stream.
   const [progress, setProgress] = useState<number | null>(null)
-  const [progressMsg, setProgressMsg] = useState<string>("")
+  const [progressMsg, setProgressMsg] = useState<string>('')
   const esRef = useRef<EventSource | null>(null)
 
   const load = () => {
@@ -295,7 +325,7 @@ function StudyDetail({ id, onBack }: { id: number; onBack: () => void }) {
         const data = JSON.parse(ev.data)
         if (data?.study_id === id && typeof data.progress === 'number') {
           setProgress(data.progress)
-          setProgressMsg(data.message || "")
+          setProgressMsg(data.message || '')
           if (data.progress >= 100 || data.level === 'error') {
             es.close(); esRef.current = null
           }
@@ -320,38 +350,43 @@ function StudyDetail({ id, onBack }: { id: number; onBack: () => void }) {
     }
   }
 
-  if (err && !study) return <div className="text-rose-400">{err}</div>
-  if (!study) return <p className="text-slate-500">Loading…</p>
+  if (err && !study) return <div className="text-error">{err}</div>
+  if (!study) return <p className="text-on-surface-variant">Loading…</p>
 
   const readyDays = study.days.filter((d) => d.status === 'ready').length
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <button onClick={onBack} className="text-sm text-slate-400 hover:text-slate-200">← All studies</button>
-        <span className={`text-sm ${STATUS_CLS[study.status]}`}>
+        <button onClick={onBack} className="btn-ghost">
+          <I name="arrow_back" cls="text-[18px]" /> All studies
+        </button>
+        <span className={`text-ui-label-md ${STATUS_CLS[study.status]}`}>
           {study.status} · {readyDays}/{study.total_days} days ready
         </span>
       </div>
 
-      <h1 className="text-2xl font-semibold">{study.title || study.topic}</h1>
-      <p className="text-sm text-slate-500">{study.total_days} days · {study.minutes_per_day} min/day · {study.tradition} · {study.primary_translation}</p>
+      <div className="reading-column !px-0">
+        <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">{study.title || study.topic}</h1>
+        <p className="mt-1 text-ui-label-md text-on-surface-variant">
+          {study.total_days} days · {study.minutes_per_day} min/day · {study.tradition} · {study.primary_translation}
+        </p>
+      </div>
 
       {study.status === 'generating' && (
-        <div className="rounded-lg border border-slate-800 bg-slate-900/50 p-3">
-          <div className="mb-2 flex items-center justify-between text-sm">
-            <span className="text-amber-400">{progressMsg || 'Generating outline & day 1…'}</span>
-            <span className="text-slate-500">{progress != null ? `${progress}%` : 'working…'}</span>
+        <div className="reading-column !px-0 rounded-2xl border border-outline-variant/20 bg-surface-container-low p-4 shadow-ambient">
+          <div className="mb-2 flex items-center justify-between text-ui-label-md">
+            <span className="text-tertiary">{progressMsg || 'Generating outline & day 1…'}</span>
+            <span className="text-on-surface-variant">{progress != null ? `${progress}%` : 'working…'}</span>
           </div>
-          <div className="h-2 w-full overflow-hidden rounded bg-slate-800">
-            <div className="h-full rounded bg-emerald-500 transition-all duration-500"
+          <div className="h-2 w-full overflow-hidden rounded-full bg-outline-variant/30">
+            <div className="h-full rounded-full bg-primary transition-all duration-500"
                  style={{ width: `${progress != null ? progress : 8}%` }} />
           </div>
-          <p className="mt-1 text-xs text-slate-600">Auto-refreshing…</p>
         </div>
       )}
 
-      <div className="space-y-4">
+      <div className="space-y-6">
         {study.days.map((d) => (
           <DayCard key={d.day_number} studyId={id} day={d} onGenerate={() => genDay(d.day_number)} />
         ))}
@@ -435,30 +470,27 @@ function DayCard({ studyId, day, onGenerate }: { studyId: number; day: DayOut; o
   }
 
   return (
-    <article className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
-      <div className="mb-2 flex items-center justify-between">
-        <h3 className="font-semibold">
-          Day {day.day_number}{draft?.heading ? ` — ${draft.heading}` : (day.title ? ` — ${day.title}` : '')}
-          {day.theme && <span className="ml-2 text-xs font-normal text-slate-500">· {day.theme}</span>}
+    <article className="reading-column !px-0 passage-card">
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="font-headline-md text-headline-md text-on-surface">
+          <span className="text-primary">Day {day.day_number}</span>{draft?.heading ? ` — ${draft.heading}` : (day.title ? ` — ${day.title}` : '')}
+          {day.theme && <span className="ml-2 font-ui-label-sm font-normal text-on-surface-variant">· {day.theme}</span>}
         </h3>
-        <div className="flex items-center gap-3">
-          <span className={`text-xs ${STATUS_CLS[day.status]}`}>{day.status}</span>
+        <div className="flex items-center gap-2">
+          <span className={`text-ui-label-sm ${STATUS_CLS[day.status]}`}>{day.status}</span>
           {!editing && day.status !== 'generating' && (
             <>
-              <button onClick={startEdit}
-                      className="rounded-md border border-slate-700 px-2 py-1 text-xs hover:bg-slate-800">Edit</button>
-              <button onClick={onGenerate}
-                      className="rounded-md border border-slate-700 px-2 py-1 text-xs hover:bg-slate-800">
+              <button onClick={startEdit} className="btn-outline"><I name="edit" cls="text-[16px]" /> Edit</button>
+              <button onClick={onGenerate} className="btn-outline">
+                <I name={day.blocks_json ? 'autorenew' : 'add'} cls="text-[16px]" />
                 {day.blocks_json ? 'Regenerate' : 'Generate'}
               </button>
             </>
           )}
           {editing && (
             <>
-              <button onClick={cancel}
-                      className="rounded-md border border-slate-700 px-2 py-1 text-xs hover:bg-slate-800">Cancel</button>
-              <button onClick={save} disabled={saving}
-                      className="rounded-md bg-emerald-600 px-2 py-1 text-xs text-white hover:bg-emerald-500 disabled:opacity-50">
+              <button onClick={cancel} className="btn-ghost">Cancel</button>
+              <button onClick={save} disabled={saving} className="btn-primary px-3 py-1.5 disabled:opacity-50">
                 {saving ? 'Saving…' : 'Save'}
               </button>
             </>
@@ -466,36 +498,36 @@ function DayCard({ studyId, day, onGenerate }: { studyId: number; day: DayOut; o
         </div>
       </div>
 
-      {err && <p className="mb-2 text-xs text-rose-400">{err}</p>}
+      {err && <p className="mb-2 text-ui-label-sm text-error">{err}</p>}
 
       {/* Revise-with-AI panel (mirrors JobHunt_Crafter select-to-revise) */}
       {editing && (
-        <div className="mb-3 rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+        <div className="mb-3 rounded-2xl border border-outline-variant/30 bg-surface-container-low p-3">
           <div className="mb-2 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-emerald-400">
-              Revise with AI
+            <div className="flex items-center gap-2 text-ui-label-sm font-semibold uppercase tracking-wide text-primary">
+              <I name="auto_awesome" cls="text-[16px]" /> Revise with AI
               {selectedText && (
-                <span className="rounded-full border border-emerald-700/40 bg-emerald-900/30 px-2 py-0.5 text-emerald-300">
+                <span className="rounded-full border border-primary-container bg-primary-container/30 px-2 py-0.5 text-on-primary-container">
                   Focusing on selection
                 </span>
               )}
             </div>
             {selectedText && (
-              <button onClick={() => setSelectedText('')} className="text-xs text-slate-500 hover:text-rose-400">× clear</button>
+              <button onClick={() => setSelectedText('')} className="text-ui-label-sm text-on-surface-variant hover:text-error">× clear</button>
             )}
           </div>
           {selectedText && (
-            <p className="mb-2 text-xs italic text-slate-500">Selected: "{selectedText.slice(0, 80)}{selectedText.length > 80 ? '…' : ''}"</p>
+            <p className="mb-2 text-ui-label-sm italic text-on-surface-variant">Selected: "{selectedText.slice(0, 80)}{selectedText.length > 80 ? '…' : ''}"</p>
           )}
           <div className="flex gap-2">
             <input
-              className="flex-1 rounded border border-slate-700 bg-slate-950 px-2 py-1 text-xs outline-none focus:border-emerald-500"
+              className="field-underline flex-1"
               placeholder={selectedText ? 'Refining selected section…' : "Ask for changes (e.g. 'make it warmer', 'shorten this')"}
               value={instruction} onChange={(e) => setInstruction(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && instruction.trim()) doRevise() }}
             />
             <button onClick={doRevise} disabled={revBusy || !instruction.trim()}
-                    className="rounded bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-500 disabled:opacity-50">
+              className="btn-primary px-3 py-1.5 disabled:opacity-50">
               {revBusy ? 'Revising…' : 'Revise'}
             </button>
           </div>
@@ -505,7 +537,7 @@ function DayCard({ studyId, day, onGenerate }: { studyId: number; day: DayOut; o
       {draft ? (
         <DraftEditor draft={draft} studyId={studyId} day={day.day_number} editing={editing} onChange={setDraft} onSelect={handleSelection} notes={notes} onNotesChange={setNotes} />
       ) : (
-        <p className="text-sm text-slate-600">
+        <p className="text-ui-label-sm text-on-surface-variant">
           {day.status === 'generating' ? 'Working…' : 'Not generated yet.'}
         </p>
       )}
@@ -529,45 +561,45 @@ function DraftEditor({ draft, editing, onChange, onSelect, studyId, day, notes, 
   const setField = (patch: Partial<DayDraft>) => onChange({ ...draft, ...patch })
 
   return (
-    <div className="space-y-3 text-sm leading-relaxed">
+    <div className="space-y-4 text-body-reading text-on-surface">
       <PassageEditor studyId={studyId} day={day} onChanged={() => { /* passage changes are server-side; nothing to sync into draft */ }} />
 
       {draft.scripture && draft.scripture.length > 0 && (
-        <p className="text-xs text-slate-500">Note: the scripture above is now managed as reorderable, version-switchable passages. The quoted text below is a read-only snapshot from generation.</p>
+        <p className="text-ui-label-sm text-on-surface-variant">Note: the scripture above is now managed as reorderable, version-switchable passages. The quoted text below is a read-only snapshot from generation.</p>
       )}
 
       {editing ? (
         <>
           <Labeled label="Opening prayer">
-            <textarea className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1 outline-none focus:border-emerald-500"
+            <textarea className="field-underline"
               rows={2} value={draft.opening_prayer ?? ''}
               onChange={(e) => setField({ opening_prayer: e.target.value })} />
           </Labeled>
           <Labeled label="Your note on this opening prayer">
-            <textarea className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1 outline-none focus:border-emerald-500"
+            <textarea className="field-underline"
               rows={2} value={notes.opening_prayer ?? ''}
               placeholder="What stood out to you?"
               onChange={(e) => onNotesChange({ ...notes, opening_prayer: e.target.value })} />
           </Labeled>
           <Labeled label="Commentary (select text, then Revise with AI)">
-            <textarea className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1 outline-none focus:border-emerald-500"
+            <textarea className="field-underline"
               rows={6} value={draft.commentary ?? ''}
               onChange={(e) => setField({ commentary: e.target.value })}
-  onMouseUp={(e) => onSelect(e.currentTarget)} />
+              onMouseUp={(e) => onSelect(e.currentTarget)} />
           </Labeled>
           <Labeled label="Your note on the commentary">
-            <textarea className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1 outline-none focus:border-emerald-500"
+            <textarea className="field-underline"
               rows={2} value={notes.commentary ?? ''}
               placeholder="Your reflection / takeaway"
               onChange={(e) => onNotesChange({ ...notes, commentary: e.target.value })} />
           </Labeled>
           <Labeled label="Closing prayer">
-            <textarea className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1 outline-none focus:border-emerald-500"
+            <textarea className="field-underline"
               rows={2} value={draft.closing_prayer ?? ''}
               onChange={(e) => setField({ closing_prayer: e.target.value })} />
           </Labeled>
           <Labeled label="Your note on this closing prayer">
-            <textarea className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1 outline-none focus:border-emerald-500"
+            <textarea className="field-underline"
               rows={2} value={notes.closing_prayer ?? ''}
               placeholder="What stood out to you?"
               onChange={(e) => onNotesChange({ ...notes, closing_prayer: e.target.value })} />
@@ -578,17 +610,17 @@ function DraftEditor({ draft, editing, onChange, onSelect, studyId, day, notes, 
         </>
       ) : (
         <>
-          {draft.opening_prayer && <p><span className="text-slate-500">Prayer · </span>{draft.opening_prayer}</p>}
-          {notes.opening_prayer && <p className="rounded bg-slate-900/60 p-2 text-xs text-amber-200"><span className="text-slate-500">Your note · </span>{notes.opening_prayer}</p>}
-          {draft.commentary && <p className="text-slate-200">{draft.commentary}</p>}
-          {notes.commentary && <p className="rounded bg-slate-900/60 p-2 text-xs text-amber-200"><span className="text-slate-500">Your note · </span>{notes.commentary}</p>}
+          {draft.opening_prayer && <p><span className="text-ui-label-sm text-on-surface-variant">Prayer · </span>{draft.opening_prayer}</p>}
+          {notes.opening_prayer && <p className="rounded bg-surface-container-high p-2 text-ui-label-sm text-on-tertiary-container"><span className="text-on-surface-variant">Your note · </span>{notes.opening_prayer}</p>}
+          {draft.commentary && <p className="text-on-surface">{draft.commentary}</p>}
+          {notes.commentary && <p className="rounded bg-surface-container-high p-2 text-ui-label-sm text-on-tertiary-container"><span className="text-on-surface-variant">Your note · </span>{notes.commentary}</p>}
           {draft.questions && draft.questions.length > 0 && (
-            <ul className="list-disc space-y-1 pl-5 text-slate-300">
+            <ul className="list-disc space-y-1 pl-5 text-on-surface">
               {draft.questions.map((q, i) => <li key={i}>{q}</li>)}
             </ul>
           )}
-          {draft.closing_prayer && <p><span className="text-slate-500">Closing · </span>{draft.closing_prayer}</p>}
-          {notes.closing_prayer && <p className="rounded bg-slate-900/60 p-2 text-xs text-amber-200"><span className="text-slate-500">Your note · </span>{notes.closing_prayer}</p>}
+          {draft.closing_prayer && <p><span className="text-ui-label-sm text-on-surface-variant">Closing · </span>{draft.closing_prayer}</p>}
+          {notes.closing_prayer && <p className="rounded bg-surface-container-high p-2 text-ui-label-sm text-on-tertiary-container"><span className="text-on-surface-variant">Your note · </span>{notes.closing_prayer}</p>}
         </>
       )}
     </div>
@@ -598,7 +630,7 @@ function DraftEditor({ draft, editing, onChange, onSelect, studyId, day, notes, 
 function Labeled({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="mb-1 text-xs uppercase tracking-wide text-slate-500">{label}</div>
+      <div className="mb-1 font-ui-label-sm uppercase tracking-wide text-on-surface-variant">{label}</div>
       {children}
     </div>
   )
@@ -625,42 +657,47 @@ function Discussions({ studyId, day }: { studyId: number; day: DayOut }) {
   }
   const d = data
   return (
-    <div className="mt-4 rounded-lg border border-slate-800 bg-slate-900/40 p-3">
-      <div className="mb-2 flex items-center justify-between">
-        <h4 className="text-sm font-semibold text-slate-200">Voices on these verses</h4>
+    <div className="mt-6 rounded-2xl border border-outline-variant/20 bg-surface-container-low p-5 shadow-ambient">
+      <div className="mb-3 flex items-center justify-between">
+        <h4 className="font-ui-label-lg text-ui-label-lg text-on-surface flex items-center gap-2">
+          <I name="forum" cls="text-[20px]" /> Voices on these verses
+        </h4>
         <button onClick={reload} disabled={busy}
-                className="rounded-md border border-slate-700 px-2 py-1 text-xs hover:bg-slate-800 disabled:opacity-50">
+          className="btn-outline disabled:opacity-50">
           {busy ? 'Fetching…' : (d ? 'Refresh' : 'Find discussions')}
         </button>
       </div>
-      {!d && <p className="text-xs text-slate-500">Real discussion about these verses, with links back to the sources. Click “Find discussions”.</p>}
+      {!d && <p className="text-ui-label-sm text-on-surface-variant">Real discussion about these verses, with links back to the sources. Click “Find discussions”.</p>}
       {d && d.status === 'empty' && (
-        <p className="text-xs text-slate-500">No external discussion could be fetched right now. Engage the Scripture directly.</p>
+        <p className="text-ui-label-sm text-on-surface-variant">No external discussion could be fetched right now. Engage the Scripture directly.</p>
       )}
       {d && d.status === 'ok' && (
         <>
-          <p className="mb-2 text-xs text-slate-500">
+          <p className="mb-3 text-ui-label-sm text-on-surface-variant">
             Curated from {d.sources.length} real sources (~{d.target_minutes} min of reading, about half this day).
             Includes critical / non-Christian takes where they exist. Every claim links to its source.
           </p>
-          <div className="prose-invert max-w-none whitespace-pre-wrap text-sm text-slate-300">{d.guide}</div>
-          <div className="mt-3 border-t border-slate-800 pt-2">
-            <div className="mb-1 text-xs uppercase tracking-wide text-slate-500">Sources</div>
-            <ul className="space-y-1 text-xs">
+          <div className="mb-4 whitespace-pre-wrap font-body-reading text-on-surface">{d.guide}</div>
+          <div className="border-t border-outline-variant/20 pt-3">
+            <div className="mb-2 font-ui-label-sm uppercase tracking-wide text-on-surface-variant">Sources</div>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               {d.sources.map((s, i) => (
-                <li key={i}>
-                  <a href={s.url} target="_blank" rel="noreferrer noopener"
-                     className="text-emerald-400 hover:text-emerald-300 hover:underline">
-                    {s.title}
-                  </a>{' '}
-                  <span className="text-slate-500">— {s.source}</span>
-                </li>
+                <a key={i} href={s.url} target="_blank" rel="noreferrer noopener"
+                   className="voice-card hover:text-primary">
+                  <div className="mb-1 flex items-center gap-2">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary-container">
+                      <I name="menu_book" cls="text-[14px]" />
+                    </span>
+                    <span className="font-ui-label-sm uppercase tracking-wider text-on-surface-variant">{s.source}</span>
+                  </div>
+                  <div className="font-ui-label-md text-on-surface group-hover:text-primary">{s.title}</div>
+                </a>
               ))}
-            </ul>
+            </div>
           </div>
         </>
       )}
-      {err && <p className="mt-2 text-xs text-rose-400">{err}</p>}
+      {err && <p className="mt-2 text-ui-label-sm text-error">{err}</p>}
     </div>
   )
 }
@@ -711,29 +748,29 @@ function VerseExpander({ refText }: { refText: string }) {
     <div className="mb-2">
       <button
         onClick={toggle}
-        className="text-xs font-semibold uppercase tracking-wide text-emerald-400 hover:text-emerald-300"
+        className="font-ui-label-sm font-semibold uppercase tracking-wide text-primary hover:text-primary-container transition-colors"
       >
-        {refText} {open ? '▲' : '▼'}
+        {refText} <I name={open ? 'expand_less' : 'expand_more'} cls="text-[16px] align-middle" />
       </button>
       {open && (
-        <div className="mt-2 space-y-2 rounded-lg border border-slate-700 bg-slate-950/60 p-3">
-          {busy && <p className="text-xs text-slate-500">Loading versions…</p>}
+        <div className="mt-2 space-y-2 rounded-2xl border border-outline-variant/30 bg-surface-container-low p-3">
+          {busy && <p className="text-ui-label-sm text-on-surface-variant">Loading versions…</p>}
           {!busy && rows.length === 0 && (
-            <p className="text-xs text-slate-500">No text found for {refText}.</p>
+            <p className="text-ui-label-sm text-on-surface-variant">No text found for {refText}.</p>
           )}
           {rows.map((v, i) => (
-            <div key={i} className="text-sm">
-              <div className="text-xs font-medium text-emerald-300">
+            <div key={i} className="text-body-reading">
+              <div className="font-ui-label-sm font-medium text-primary">
                 {v.translation}
-                {v.words_of_jesus && <span className="ml-1 text-rose-400">✦</span>}
+                {v.words_of_jesus && <span className="ml-1 text-error">✦</span>}
               </div>
-              <div className="text-slate-200">{v.text}</div>
+              <div className="text-on-surface">{v.text}</div>
             </div>
           ))}
           <div className="flex flex-wrap items-center gap-2 pt-1">
-            <span className="text-xs text-slate-500">Switch version:</span>
+            <span className="text-ui-label-sm text-on-surface-variant">Switch version:</span>
             <select
-              className="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-xs outline-none focus:border-emerald-500"
+              className="field-underline inline-block w-auto"
               value=""
               onChange={(e) => { if (e.target.value) switchVersion(e.target.value) }}
             >
@@ -744,7 +781,7 @@ function VerseExpander({ refText }: { refText: string }) {
                 </option>
               ))}
             </select>
-            <span className="text-xs text-slate-600">
+            <span className="text-ui-label-sm text-on-surface-variant">
               showing your top {prefs.length}: {prefs.join(', ')}
             </span>
           </div>
@@ -763,13 +800,12 @@ function QuestionsEditor({ questions, onChange }: { questions: string[]; onChang
     <div className="space-y-1">
       {questions.map((q, i) => (
         <div key={i} className="flex items-start gap-2">
-          <input className="flex-1 rounded border border-slate-700 bg-slate-950 px-2 py-1 outline-none focus:border-emerald-500"
+          <input className="field-underline flex-1"
                  value={q} onChange={(e) => update(i, e.target.value)} />
-          <button onClick={() => remove(i)}
-                  className="rounded border border-slate-700 px-2 text-xs hover:bg-slate-800">×</button>
+          <button onClick={() => remove(i)} className="btn-ghost px-2">×</button>
         </div>
       ))}
-      <button onClick={add} className="text-xs text-emerald-400 hover:text-emerald-300">+ add question</button>
+      <button onClick={add} className="text-ui-label-sm text-primary hover:text-primary-container">+ add question</button>
     </div>
   )
 }
@@ -848,43 +884,45 @@ function PassageEditor({ studyId, day, onChanged }: {
 
   return (
     <div className="space-y-3">
-      {err && <p className="text-xs text-rose-400">{err}</p>}
-      {busy && <p className="text-xs text-slate-500">Loading passages…</p>}
+      <div className="flex items-center gap-2 font-ui-label-lg text-ui-label-lg text-on-surface">
+        <I name="auto_stories" cls="text-[20px] text-primary" /> Primary Texts
+      </div>
+      {err && <p className="text-ui-label-sm text-error">{err}</p>}
+      {busy && <p className="text-ui-label-sm text-on-surface-variant">Loading passages…</p>}
       {list.map((p, i) => (
-        <div key={p.id} className="rounded-lg border border-slate-700 bg-slate-950/50 p-3">
-          <div className="mb-1 flex flex-wrap items-center gap-2">
+        <div key={p.id} className="passage-card">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
             <VerseExpander refText={p.ref} />
             <select
-              className="rounded border border-slate-700 bg-slate-950 px-2 py-0.5 text-xs outline-none focus:border-emerald-500"
+              className="field-underline inline-block w-auto"
               value={p.translation}
               onChange={(e) => switchVersion(p.id, e.target.value)}
             >
               {all.map((t) => <option key={t.code} value={t.code}>{t.code} — {t.name}</option>)}
             </select>
-            <span className="text-xs text-slate-500">{p.translation}</span>
             <div className="ml-auto flex items-center gap-1">
               <button onClick={() => reorder(p.id, -1)} disabled={i === 0}
-                      className="rounded border border-slate-700 px-1.5 text-xs hover:bg-slate-800 disabled:opacity-30">↑</button>
+                className="btn-ghost px-1.5 disabled:opacity-30"><I name="arrow_upward" cls="text-[16px]" /></button>
               <button onClick={() => reorder(p.id, 1)} disabled={i === list.length - 1}
-                      className="rounded border border-slate-700 px-1.5 text-xs hover:bg-slate-800 disabled:opacity-30">↓</button>
+                className="btn-ghost px-1.5 disabled:opacity-30"><I name="arrow_downward" cls="text-[16px]" /></button>
               <button onClick={() => remove(p.id)}
-                      className="rounded border border-slate-700 px-1.5 text-xs text-rose-400 hover:bg-slate-800">×</button>
+                className="btn-ghost px-1.5 text-error"><I name="close" cls="text-[16px]" /></button>
             </div>
           </div>
           <textarea readOnly
-            className="w-full rounded border border-slate-800 bg-slate-900/60 px-2 py-1 text-sm text-slate-200 outline-none"
+            className="w-full rounded-xl border border-outline-variant/20 bg-surface-container-lowest px-3 py-2 font-body-reading text-on-surface outline-none"
             rows={Math.max(2, Math.ceil(p.text.length / 70))}
             value={p.text}
             onMouseUp={(e) => captureHighlight(p, e.currentTarget)}
           />
-          {p.rationale && <div className="mt-1 text-xs italic text-slate-500">Why: {p.rationale}</div>}
+          {p.rationale && <div className="mt-1 text-ui-label-sm italic text-on-surface-variant">Why: {p.rationale}</div>}
           {p.highlights && p.highlights.length > 0 && (
             <div className="mt-2 space-y-1">
-              <div className="text-xs uppercase tracking-wide text-amber-500">Personal reflection</div>
+              <div className="font-ui-label-sm uppercase tracking-wide text-tertiary">Personal reflection</div>
               {p.highlights.map((h, hi) => (
-                <div key={hi} className="rounded border border-amber-800/40 bg-amber-950/20 px-2 py-1 text-xs">
-                  <span className="text-amber-300">“{h.text}”</span>
-                  {h.note && <span className="text-slate-400"> — {h.note}</span>}
+                <div key={hi} className="rounded-lg border border-tertiary/30 bg-tertiary/5 px-2 py-1 text-ui-label-sm">
+                  <span className="text-on-tertiary-container">“{h.text}”</span>
+                  {h.note && <span className="text-on-surface-variant"> — {h.note}</span>}
                 </div>
               ))}
             </div>
@@ -894,26 +932,26 @@ function PassageEditor({ studyId, day, onChanged }: {
 
       <div className="flex items-center gap-2">
         <input
-          className="flex-1 rounded border border-slate-700 bg-slate-950 px-2 py-1 text-xs outline-none focus:border-emerald-500"
+          className="field-underline flex-1"
           placeholder="Add a scripture ref (e.g. John 3:16)"
           value={newRef} onChange={(e) => setNewRef(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') add() }}
         />
-        <button onClick={add} className="rounded bg-emerald-600 px-3 py-1 text-xs text-white hover:bg-emerald-500">Add</button>
+        <button onClick={add} className="btn-primary px-4 py-1.5">Add</button>
       </div>
 
       {hlText && (
-        <div className="rounded-lg border border-amber-700 bg-amber-950/20 p-3">
-          <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-amber-400">Highlight for reflection</div>
-          <p className="mb-2 text-xs italic text-amber-200">“{hlText.slice(0, 120)}{hlText.length > 120 ? '…' : ''}”</p>
+        <div className="rounded-2xl border border-tertiary/40 bg-tertiary/5 p-3">
+          <div className="mb-1 font-ui-label-sm font-semibold uppercase tracking-wide text-tertiary">Highlight for reflection</div>
+          <p className="mb-2 text-ui-label-sm italic text-on-tertiary-container">“{hlText.slice(0, 120)}{hlText.length > 120 ? '…' : ''}”</p>
           <input
-            className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1 text-xs outline-none focus:border-emerald-500"
+            className="field-underline w-full"
             placeholder="Optional note…"
             value={hlNote} onChange={(e) => setHlNote(e.target.value)}
           />
           <div className="mt-2 flex gap-2">
-            <button onClick={saveHighlight} className="rounded bg-amber-600 px-3 py-1 text-xs text-white hover:bg-amber-500">Save highlight</button>
-            <button onClick={() => { setHlText(null); setHlNote(''); setHlPid(null) }} className="text-xs text-slate-500 hover:text-rose-400">Cancel</button>
+            <button onClick={saveHighlight} className="btn-primary px-4 py-1.5">Save highlight</button>
+            <button onClick={() => { setHlText(null); setHlNote(''); setHlPid(null) }} className="btn-ghost">Cancel</button>
           </div>
         </div>
       )}

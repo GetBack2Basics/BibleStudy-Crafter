@@ -1,3 +1,141 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    overscroll-behavior: none;
+    background-color: theme('colors.background');
+    color: theme('colors.on-background');
+    font-family: theme('fontFamily.body-reading');
+    -webkit-font-smoothing: antialiased;
+  }
+  /* Minimal, serene scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: theme('colors.outline-variant');
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+@layer components {
+  /* The Reading Room: central column capped for long-form focus */
+  .reading-column {
+    width: 100%;
+    max-width: theme('maxWidth.reading-width');
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: theme('spacing.margin-mobile');
+    padding-right: theme('spacing.margin-mobile');
+  }
+  @media (min-width: 1024px) {
+    .reading-column {
+      padding-left: 0;
+      padding-right: 0;
+    }
+  }
+
+  .page-shell {
+    max-width: theme('maxWidth.container-max');
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: theme('spacing.margin-desktop');
+    padding-right: theme('spacing.margin-desktop');
+  }
+
+  /* Ambient texture + glow used behind study views */
+  .ambient-bg::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* Cards */
+  .passage-card {
+    @apply relative bg-surface-container-lowest rounded-xl p-6 shadow-[0_4px_20px_rgba(44,62,80,0.03)] transition-all duration-300 overflow-hidden;
+  }
+  .passage-card:hover {
+    @apply shadow-[0_8px_30px_rgba(44,62,80,0.06)];
+  }
+  .passage-card::before {
+    content: '';
+    @apply absolute left-0 top-0 bottom-0 w-1 bg-transparent transition-colors;
+  }
+  .passage-card:hover::before {
+    background-color: theme('colors.on-tertiary-container');
+  }
+
+  .voice-card {
+    @apply block bg-surface-container-lowest rounded-xl p-5 shadow-[0_2px_10px_rgba(44,62,80,0.03)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(44,62,80,0.06)];
+  }
+
+  /* The "Lens" chip — primary navigation for study perspectives */
+  .lens-btn {
+    @apply flex flex-col items-center justify-center p-6 rounded-2xl bg-surface-container-lowest text-on-surface shadow-sm transition-all active:scale-95;
+  }
+  .lens-btn[data-active='true'] {
+    @apply bg-primary text-on-primary shadow-md;
+  }
+
+  /* Underlined "notebook" input */
+  .field-underline {
+    @apply w-full bg-transparent border-0 border-b border-outline-variant py-4 text-body-reading text-on-surface placeholder:text-outline/50 focus:border-primary focus:outline-none transition-colors resize-y;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 bg-primary text-on-primary font-ui-label-lg rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all active:translate-y-0 disabled:opacity-50;
+  }
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 rounded-md border border-primary-container text-primary-container font-ui-label-md px-3 py-1.5 hover:bg-surface-container-high transition-colors;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors font-ui-label-md;
+  }
+
+  /* Step badge used in the create wizard */
+  .step-badge {
+    @apply w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary font-ui-label-lg shadow-sm;
+  }
+
+  .material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
+    font-weight: normal;
+    font-style: normal;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Scripture verse typography */
+  .scripture-text {
+    @apply font-display-scripture text-on-surface leading-snug;
+  }
+
+  .clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
