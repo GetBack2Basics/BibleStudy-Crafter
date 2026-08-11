@@ -6,8 +6,10 @@ Every provider key is optional; absence disables a feature, never boots-fails.
 from functools import lru_cache
 from datetime import datetime, timezone
 from pathlib import Path
+import secrets
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field
 
 
 class Settings(BaseSettings):
@@ -16,7 +18,11 @@ class Settings(BaseSettings):
     # Core
     database_url: str = "sqlite:///./bible.db"
     redis_url: str = "redis://localhost:6379/0"
-    secret_key: str = "dev-insecure-key"
+    # SECURITY: a real deployment MUST set SECRET_KEY in .env. The default is a
+    # fresh random value per process start (so it is never the predictable
+    # "dev-insecure-key"); on a shared/online server a fixed secret must be set
+    # or all issued tokens become invalid on restart.
+    secret_key: str = Field(default_factory=lambda: secrets.token_hex(32))
     media_root: str = "/media"
     bible_cache: str = "/bibles"
 
@@ -41,6 +47,15 @@ class Settings(BaseSettings):
     # Study defaults
     default_tradition: str = "non_denominational"
     default_imagery_policy: str = "symbolic"
+    # Optional: the email that should be promoted to admin on first registration.
+    # This is the ONLY path to admin (besides an existing admin using
+    # /api/auth/admin/promote). Ordinary registrations are never admin, so a
+    # user cannot escalate themselves to super admin.
+    bootstrap_admin_email: str = ""
+    # Comma-separated list of allowed CORS origins for the online deployment
+    # (e.g. "https://app.example.com,https://www.example.com"). When empty,
+    # only the local dev origin (http://localhost:<web_port>) is allowed.
+    cors_origins: str = ""
 
     @property
     def has_any_text_provider(self) -> bool:

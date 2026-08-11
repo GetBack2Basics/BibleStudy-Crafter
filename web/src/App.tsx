@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import StatusDock from './components/StatusDock'
+import AuthScreen from './components/AuthScreen'
 import { api } from './lib/api'
+import { auth } from './lib/auth'
 import { studies as studyApi, bible, preferences, passages, TRADITIONS, type StudyOut, type DayOut, type DayDraft, type TranslationInfo, type CompareVerse, type PassageOut, type SearchHit } from './lib/studies'
 
 type View = { kind: 'list' } | { kind: 'detail'; id: number }
@@ -17,6 +19,7 @@ const I = ({ name, cls = 'text-[18px]' }: { name: string; cls?: string }) => (
 )
 
 export default function App() {
+  const [authed, setAuthed] = useState<boolean>(() => auth.accessToken() !== null)
   const [view, setView] = useState<View>({ kind: 'list' })
   const [studiesList, setStudiesList] = useState<StudyOut[]>([])
   const [loadingList, setLoadingList] = useState(false)
@@ -25,6 +28,18 @@ export default function App() {
     setLoadingList(true)
     studyApi.list().then(setStudiesList).catch(() => setStudiesList([])).finally(() => setLoadingList(false))
   }
+
+  const handleLogout = async () => {
+    await auth.logout()
+    setAuthed(false)
+    setView({ kind: 'list' })
+    setStudiesList([])
+  }
+
+  // Any unrecoverable 401 (e.g. refresh expired) drops the user to the login screen.
+  useEffect(() => {
+    api.setUnauthorizedHandler(() => { setAuthed(false); setStudiesList([]) })
+  }, [])
 
   const handleDelete = async (id: number) => {
     if (!confirm('Delete this study? This cannot be undone.')) return
@@ -40,7 +55,11 @@ export default function App() {
     refreshList()
   }
 
-  useEffect(() => { refreshList() }, [])
+  useEffect(() => { if (authed) refreshList() }, [authed])
+
+  if (!authed) {
+    return <AuthScreen onAuthed={() => setAuthed(true)} />
+  }
 
   return (
     <div className="min-h-screen bg-background text-on-background">
@@ -49,9 +68,15 @@ export default function App() {
                 onClick={() => setView({ kind: 'list' })}>
           BibleStudy-Crafter
         </button>
-        {view.kind === 'detail' && (
-          <span className="text-ui-label-md text-on-surface-variant">/ study #{view.id}</span>
-        )}
+        <div className="ml-auto flex items-center gap-2">
+          {view.kind === 'detail' && (
+            <span className="text-ui-label-md text-on-surface-variant">/ study #{view.id}</span>
+          )}
+          <button onClick={handleLogout}
+                  className="text-ui-label-sm text-on-surface-variant hover:text-error transition-colors">
+            Sign out
+          </button>
+        </div>
       </header>
 
       <main className="page-shell py-8">
@@ -638,6 +663,39 @@ function Labeled({ label, children }: { label: string; children: React.ReactNode
 
 /* ---------- Discussions: real, cited reading material about the verses ---------- */
 
+type AnySource = {
+  title: string; url: string; snippet?: string; source: string
+  kind?: string; platform?: string | null; engagement?: number | null
+}
+
+function SourceGrid({ sources, empty }: { sources: AnySource[]; empty: string }) {
+  if (!sources.length) {
+    return <p className="text-ui-label-sm text-on-surface-variant/80">{empty}</p>
+  }
+  return (
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+      {sources.map((s, i) => (
+        <a key={i} href={s.url} target="_blank" rel="noreferrer noopener"
+           className="voice-card hover:text-primary">
+          <div className="mb-1 flex items-center gap-2">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary-container">
+              <I name={s.kind === 'social' ? 'forum' : 'menu_book'} cls="text-[14px]" />
+            </span>
+            <span className="font-ui-label-sm uppercase tracking-wider text-on-surface-variant">{s.source}</span>
+            {s.platform && (
+              <span className="rounded-full bg-tertiary-container px-2 py-0.5 font-ui-label-xs text-on-tertiary-container">{s.platform}</span>
+            )}
+            {typeof s.engagement === 'number' && (
+              <span className="font-ui-label-xs text-on-surface-variant/70">▲ {s.engagement}</span>
+            )}
+          </div>
+          <div className="font-ui-label-md text-on-surface group-hover:text-primary">{s.title}</div>
+        </a>
+      ))}
+    </div>
+  )
+}
+
 function Discussions({ studyId, day }: { studyId: number; day: DayOut }) {
   const [data, setData] = useState<DayOut['discussions']>(day.discussions ?? null)
   const [busy, setBusy] = useState(false)
@@ -674,26 +732,27 @@ function Discussions({ studyId, day }: { studyId: number; day: DayOut }) {
       {d && d.status === 'ok' && (
         <>
           <p className="mb-3 text-ui-label-sm text-on-surface-variant">
-            Curated from {d.sources.length} real sources (~{d.target_minutes} min of reading, about half this day).
+            Curated from {(d.official_sources?.length ?? 0) + (d.social_sources?.length ?? 0)} real sources
+            (~{d.official_min} min official, ~{d.social_min} min social — about half this day).
             Includes critical / non-Christian takes where they exist. Every claim links to its source.
           </p>
           <div className="mb-4 whitespace-pre-wrap font-body-reading text-on-surface">{d.guide}</div>
-          <div className="border-t border-outline-variant/20 pt-3">
-            <div className="mb-2 font-ui-label-sm uppercase tracking-wide text-on-surface-variant">Sources</div>
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              {d.sources.map((s, i) => (
-                <a key={i} href={s.url} target="_blank" rel="noreferrer noopener"
-                   className="voice-card hover:text-primary">
-                  <div className="mb-1 flex items-center gap-2">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary-container">
-                      <I name="menu_book" cls="text-[14px]" />
-                    </span>
-                    <span className="font-ui-label-sm uppercase tracking-wider text-on-surface-variant">{s.source}</span>
-                  </div>
-                  <div className="font-ui-label-md text-on-surface group-hover:text-primary">{s.title}</div>
-                </a>
-              ))}
+
+          {/* Official commentary sources */}
+          <div className="mb-4">
+            <div className="mb-2 flex items-center gap-2 font-ui-label-sm uppercase tracking-wide text-on-surface-variant">
+              <I name="menu_book" cls="text-[16px]" /> Official commentary
             </div>
+            <SourceGrid sources={d.official_sources ?? []} empty="No official commentary sources were fetched." />
+          </div>
+
+          {/* Social commentary sources */}
+          <div className="border-t border-outline-variant/20 pt-3">
+            <div className="mb-2 flex items-center gap-2 font-ui-label-sm uppercase tracking-wide text-on-surface-variant">
+              <I name="forum" cls="text-[16px]" /> Social commentary
+              <span className="font-ui-label-xs normal-case tracking-normal text-on-surface-variant/70">(Reddit · Quora · X · Facebook)</span>
+            </div>
+            <SourceGrid sources={d.social_sources ?? []} empty="No social-media discussion was fetched (Reddit/Quora/X/Facebook may be blocked from this network)." />
           </div>
         </>
       )}
@@ -882,6 +941,26 @@ function PassageEditor({ studyId, day, onChanged }: {
     reloadWhenDone(passages.update(studyId, day, hlPid, { highlights }))
   }
 
+  // Edit an existing personal reflection's note.
+  const [editHl, setEditHl] = useState<{ pid: number; idx: number; text: string; note: string } | null>(null)
+  const startEditHl = (pid: number, idx: number, text: string, note: string) =>
+    setEditHl({ pid, idx, text, note })
+  const saveEditHl = async () => {
+    if (!editHl) return
+    const p = list.find((x) => x.id === editHl.pid)
+    if (!p) return
+    const highlights = (p.highlights ?? []).map((h, i) =>
+      i === editHl.idx ? { text: editHl.text, note: editHl.note } : h)
+    setEditHl(null)
+    reloadWhenDone(passages.update(studyId, day, editHl.pid, { highlights }))
+  }
+  const deleteHl = (pid: number, idx: number) => {
+    const p = list.find((x) => x.id === pid)
+    if (!p) return
+    const highlights = (p.highlights ?? []).filter((_, i) => i !== idx)
+    reloadWhenDone(passages.update(studyId, day, pid, { highlights }))
+  }
+
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 font-ui-label-lg text-ui-label-lg text-on-surface">
@@ -920,10 +999,45 @@ function PassageEditor({ studyId, day, onChanged }: {
             <div className="mt-2 space-y-1">
               <div className="font-ui-label-sm uppercase tracking-wide text-tertiary">Personal reflection</div>
               {p.highlights.map((h, hi) => (
-                <div key={hi} className="rounded-lg border border-tertiary/30 bg-tertiary/5 px-2 py-1 text-ui-label-sm">
-                  <span className="text-on-tertiary-container">“{h.text}”</span>
-                  {h.note && <span className="text-on-surface-variant"> — {h.note}</span>}
-                </div>
+                editHl && editHl.pid === p.id && editHl.idx === hi ? (
+                  <div key={hi} className="rounded-lg border border-tertiary/40 bg-tertiary/5 p-2 space-y-2">
+                    <textarea
+                      className="field-underline w-full"
+                      rows={2}
+                      value={editHl.text}
+                      onChange={(e) => setEditHl({ ...editHl, text: e.target.value })}
+                    />
+                    <input
+                      className="field-underline w-full"
+                      placeholder="Your note…"
+                      value={editHl.note}
+                      onChange={(e) => setEditHl({ ...editHl, note: e.target.value })}
+                    />
+                    <div className="flex gap-2">
+                      <button onClick={saveEditHl} className="btn-primary px-3 py-1.5">Save</button>
+                      <button onClick={() => setEditHl(null)} className="btn-ghost">Cancel</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div key={hi} className="group rounded-lg border border-tertiary/30 bg-tertiary/5 px-2 py-1 text-ui-label-sm">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <span className="text-on-tertiary-container">“{h.text}”</span>
+                        {h.note && <span className="text-on-surface-variant"> — {h.note}</span>}
+                      </div>
+                      <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                        <button onClick={() => startEditHl(p.id, hi, h.text, h.note ?? '')}
+                          className="btn-ghost px-1.5" title="Edit reflection">
+                          <I name="edit" cls="text-[16px]" />
+                        </button>
+                        <button onClick={() => deleteHl(p.id, hi)}
+                          className="btn-ghost px-1.5 text-error" title="Delete reflection">
+                          <I name="delete" cls="text-[16px]" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )
               ))}
             </div>
           )}

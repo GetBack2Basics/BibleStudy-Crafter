@@ -72,8 +72,16 @@ For each day return:
 - focus (one sentence on what that day covers)
 - est_minutes (must be near {minutes})
 - suggested_passages: a list of 1-4 passages, each with "ref" (a valid
-  book chapter:verse reference, e.g. "John 3:16-18") and "rationale" (why it
-  fits the day). Prefer a coherent reading arc across the days.
+  book chapter:verse reference, e.g. "John 3:16-18") and "rationale".
+
+  RATIONALE RULE (important — do not skip):
+  * The rationale must be a SINGLE, SPECIFIC sentence explaining what THIS
+    particular verse reveals about the day's focus. Draw it from the content
+    of the verse itself, not the topic in general.
+  * It must be UNIQUE to this passage — never "relevant to the topic",
+    "fits the theme", or any phrase that repeats across passages or days.
+  * Two different verses must never receive the same rationale.
+  Prefer a coherent reading arc across the days.
 
 Return ONLY JSON matching this schema, no commentary:
 {{
@@ -291,7 +299,11 @@ def _corpus_passages(query: str, translation: str = "KJV", limit: int = 3) -> li
                 seen.add(key)
                 r = Reference(book=v.book_number, chapter=v.chapter,
                               verse_start=v.verse, verse_end=v.verse)
-                out.append(Passage(ref=r.ref, rational=f"relevant to {query!r}"))
+                # No LLM available: anchor the rationale to the actual verse
+                # reference (unique per passage) rather than repeating the
+                # topic string across every verse.
+                out.append(Passage(ref=r.ref,
+                                   rational=f"{r.ref} — read in the light of '{query}'."))
                 if len(out) >= limit:
                     break
             return out
@@ -308,3 +320,65 @@ def make_summary(draft: dict[str, Any], prior: str | None = None) -> str:
     if len(words) <= SUMMARY_WORD_CAP:
         return text
     return " ".join(words[:SUMMARY_WORD_CAP]) + " …"
+
+
+# ----------------------------------------------------------- passage planning
+
+PASSAGE_PROMPT = """You are selecting Bible passages for ONE day of a study.
+
+Study topic: "{topic}"
+This day's focus: {focus}
+Use the {translation} translation when suggesting references.
+Suggest {count} passages (1-4), each a valid "Book chapter:verse" or
+"Book chapter:verse-verse" reference that genuinely speaks to THIS day's focus.
+
+Return ONLY JSON (no prose, no markdown):
+{{
+  "passages": [
+    {{"ref": "Matthew 11:28-30",
+      "rationale": "Jesus invites the weary to take His yoke - the literal hinge of the day's theme."}}
+  ]
+}}
+
+RATIONALE RULE (critical):
+* Each rationale is ONE specific sentence explaining what THAT verse reveals
+  about the day's focus, drawn from the verse's own content.
+* Every rationale must be UNIQUE - never repeat a phrase across passages, and
+  never write "relevant to the topic" or "fits the theme".
+* Two different verses must never get the same rationale."""
+
+
+async def plan_passages(topic: str, focus: str, count: int = 3,
+                        translation: str = "KJV", *,
+                        session=None, study_id: int | None = None) -> list[Passage]:
+    """Focused, single-purpose passage pick the weak free-tier models can
+    reliably fulfil (the full outline prompt often drops the passages array).
+
+    Returns real refs with unique, verse-specific rationales. Falls back to the
+    corpus lexical miner if the model is unavailable or returns nothing.
+    """
+    from app.services.prompts import build_system
+    prompt = PASSAGE_PROMPT.format(
+        topic=topic, focus=focus, count=count, translation=translation)
+    try:
+        res = await complete(prompt, system=build_system(),
+                             json_mode=True, session=session, study_id=study_id)
+        data = res.data
+        out = [
+            Passage(ref=str(p.get("ref", "")).strip(),
+                    rational=str(p.get("rationale", "")).strip())
+            for p in data.get("passages", [])
+            if str(p.get("ref", "")).strip()
+        ]
+        # De-duplicate refs, keep first rationale per ref.
+        seen: dict[str, Passage] = {}
+        for p in out:
+            if p.ref not in seen:
+                seen[p.ref] = p
+        out = list(seen.values())
+        if out:
+            return out
+    except NoProviderAvailable:
+        pass
+    # Model gave nothing usable -> lexical corpus fallback (ref-specific rationale).
+    return _corpus_passages(focus or topic, translation, limit=count)

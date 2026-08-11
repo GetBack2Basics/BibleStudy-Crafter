@@ -10,8 +10,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
+from app.auth import get_current_user
 from app.db import get_session
-from app.models import DayPassage, Study, StudyDay, Translation
+from app.models import DayPassage, Study, StudyDay, Translation, User
 from app.services import bible_service as bs
 
 router = APIRouter(prefix="/api/studies", tags=["passages"])
@@ -41,9 +42,9 @@ class PassageOut(BaseModel):
     highlights: list[dict] | None
 
 
-def _study_day(session: Session, study_id: int, day_number: int):
+def _study_day(session: Session, study_id: int, day_number: int, user: User):
     s = session.get(Study, study_id)
-    if s is None:
+    if s is None or s.user_id != user.id:
         raise HTTPException(404, "study not found")
     d = next((x for x in s.days if x.day_number == day_number), None)
     if d is None:
@@ -61,8 +62,10 @@ def _resolve_text(session: Session, ref: str, translation: str) -> str:
 
 
 @router.get("/{study_id}/days/{day_number}/passages", response_model=list[PassageOut])
-def list_passages(study_id: int, day_number: int, session: Session = Depends(get_session)):
-    _, d = _study_day(session, study_id, day_number)
+def list_passages(study_id: int, day_number: int,
+                  user: User = Depends(get_current_user),
+                  session: Session = Depends(get_session)):
+    _, d = _study_day(session, study_id, day_number, user)
     rows = session.exec(
         select(DayPassage).where(DayPassage.study_day_id == d.id).order_by(DayPassage.order)
     ).all()
@@ -71,8 +74,9 @@ def list_passages(study_id: int, day_number: int, session: Session = Depends(get
 
 @router.post("/{study_id}/days/{day_number}/passages", response_model=PassageOut)
 def add_passage(study_id: int, day_number: int, body: PassageCreate,
+                user: User = Depends(get_current_user),
                 session: Session = Depends(get_session)):
-    s, d = _study_day(session, study_id, day_number)
+    s, d = _study_day(session, study_id, day_number, user)
     tr = body.translation or s.primary_translation
     # verify translation exists
     if not session.get(Translation, tr) and not session.exec(
@@ -91,8 +95,9 @@ def add_passage(study_id: int, day_number: int, body: PassageCreate,
 
 @router.put("/{study_id}/days/{day_number}/passages/{passage_id}", response_model=PassageOut)
 def update_passage(study_id: int, day_number: int, passage_id: int, body: PassageUpdate,
+                  user: User = Depends(get_current_user),
                   session: Session = Depends(get_session)):
-    _, d = _study_day(session, study_id, day_number)
+    _, d = _study_day(session, study_id, day_number, user)
     p = session.get(DayPassage, passage_id)
     if p is None or p.study_day_id != d.id:
         raise HTTPException(404, "passage not found")
@@ -118,8 +123,9 @@ def update_passage(study_id: int, day_number: int, passage_id: int, body: Passag
 
 @router.delete("/{study_id}/days/{day_number}/passages/{passage_id}")
 def delete_passage(study_id: int, day_number: int, passage_id: int,
+                   user: User = Depends(get_current_user),
                    session: Session = Depends(get_session)):
-    _, d = _study_day(session, study_id, day_number)
+    _, d = _study_day(session, study_id, day_number, user)
     p = session.get(DayPassage, passage_id)
     if p is None or p.study_day_id != d.id:
         raise HTTPException(404, "passage not found")

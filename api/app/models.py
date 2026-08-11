@@ -4,7 +4,7 @@ AUTH-FORWARD RULE (plan decision 1): Study, Asset, Setting and UsageLedger all
 carry a NULLABLE user_id from this first migration. Single-user local runs leave
 it NULL. Phase 7 adds a User table and backfills - purely additive, no rewrites.
 """
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, List, Optional
 
 from sqlalchemy import Column, Index, UniqueConstraint
@@ -19,6 +19,40 @@ JSON_TYPE = JSONB().with_variant(JSON(), "sqlite")
 
 def utcnow() -> datetime:
     return datetime.now(timezone.utc)
+
+
+# ---------------------------------------------------------------- Accounts
+
+class User(SQLModel, table=True):
+    """An authenticated account. Local single-user runs never create one;
+    on a shared/online deployment every request must belong to a User."""
+    __tablename__ = "user_account"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    email: str = Field(max_length=320, index=True, unique=True)
+    display_name: str = Field(max_length=120, default="")
+    # scrypt hash: "scrypt$N$r$p$<salt_hex>$<hash_hex>" (see app.auth)
+    password_hash: str = Field(default="")
+    is_admin: bool = Field(default=False)
+    is_active: bool = Field(default=True)
+    created_at: datetime = Field(default_factory=utcnow)
+
+    studies: List["Study"] = Relationship(
+        back_populates="owner", sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+    )
+
+
+class RefreshToken(SQLModel, table=True):
+    """Opaque refresh tokens (HMAC-signed, stored for revocation)."""
+    __tablename__ = "refresh_token"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user_account.id", index=True)
+    token_hash: str = Field(index=True, unique=True)   # HMAC of the opaque token
+    # Set explicitly on creation (auth.create_refresh_token); no model default so
+    # SQLModel maps the column cleanly.
+    expires_at: datetime = Field(default=None)
+    created_at: datetime = Field(default_factory=utcnow)
 
 
 # ---------------------------------------------------------------- Bible corpus
@@ -72,7 +106,7 @@ class Study(SQLModel, table=True):
     __tablename__ = "study"
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: Optional[int] = Field(default=None, index=True)   # Phase 7
+    user_id: Optional[int] = Field(default=None, index=True, foreign_key="user_account.id")   # Phase 7
     topic: str = Field(max_length=300)
     title: str = Field(default="", max_length=300)   # set from the generated outline
     minutes_per_day: int
@@ -93,6 +127,7 @@ class Study(SQLModel, table=True):
     days: List["StudyDay"] = Relationship(
         back_populates="study", sa_relationship_kwargs={"order_by": "StudyDay.day_number"}
     )
+    owner: Optional["User"] = Relationship(back_populates="studies")
 
 
 class StudyDay(SQLModel, table=True):

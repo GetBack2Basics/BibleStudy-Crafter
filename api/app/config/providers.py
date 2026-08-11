@@ -57,9 +57,12 @@ class Provider:
         if not self.env_key:
             return ""
         import os
-        direct = os.environ.get(self.env_key)
-        if direct:
-            return direct
+        # An environment variable that is explicitly set (even to empty) wins
+        # over the .env file fallback. This lets a deployment disable a provider
+        # by exporting an empty key, and makes "no keys" test simulations reliable
+        # regardless of what the .env file on disk happens to contain.
+        if self.env_key in os.environ:
+            return os.environ[self.env_key] or ""
         return getattr(get_settings(), self.env_key.lower(), "") or ""
 
     def resolved_base_url(self) -> str:

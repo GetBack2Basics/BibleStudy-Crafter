@@ -130,3 +130,28 @@ def test_summary_is_within_word_cap():
 def test_summary_excludes_prior_text_when_none():
     s = make_summary({"heading": "h", "commentary": "only today", "questions": []})
     assert "only today" in s
+
+
+# ----------------------------------------------------------- rationale uniqueness
+
+def test_corpus_fallback_rationale_is_ref_specific():
+    """No-provider fallback must not repeat a generic 'relevant to <topic>'
+    string across verses; each rationale is anchored to its own reference."""
+    passages = planner._corpus_passages("yoked", "KJV", limit=3)
+    assert passages, "expected at least one corpus-derived passage"
+    assert all(p.rational for p in passages), "every passage needs a rationale"
+    # The old generic template is gone.
+    assert not any("relevant to" in p.rational for p in passages)
+    # Each rationale names its own verse reference -> unique per passage.
+    for p in passages:
+        assert p.ref in p.rational
+
+
+def test_outline_prompt_requires_unique_rationale():
+    prompt = OUTLINE_PROMPT.format(
+        topic="Grace", total_days=7, minutes=15, reading_words=1950,
+        commentary_words=1287, questions=3)
+    # The strengthened rule must be present so the model emits per-verse insight.
+    assert "UNIQUE" in prompt
+    assert "relevant to the topic" in prompt  # the forbidden pattern is named
+

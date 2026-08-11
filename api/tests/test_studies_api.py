@@ -116,16 +116,25 @@ def test_revise_day_with_selection(client):
     # generation done with stub; day 1 now has commentary to revise
     assert client.get(f"/api/studies/{sid}").json()["days"][0]["blocks_json"]["commentary"]
 
+    # The revise endpoint calls the live LLM; stub it so the test is
+    # deterministic regardless of provider availability (no keys in CI).
+    async def _revise_stub(*a, **k):
+        from app.services.llm import LLMResult
+        return LLMResult(text="Revised commentary text.", provider="ollama",
+                         model="m", tokens_in=1, tokens_out=1, data={})
+
     # revise the whole commentary
-    r = client.post(f"/api/studies/{sid}/days/1/revise",
-                    json={"instruction": "Make it warmer", "selection": None})
+    with patch("app.services.llm.complete", _revise_stub):
+        r = client.post(f"/api/studies/{sid}/days/1/revise",
+                        json={"instruction": "Make it warmer", "selection": None})
     assert r.status_code == 200
     assert "revised" in r.json()
     assert len(r.json()["revised"]) > 0
 
     # revise only a selected passage
-    r2 = client.post(f"/api/studies/{sid}/days/1/revise",
-                     json={"instruction": "shorten", "selection": "the Lord's authority"})
+    with patch("app.services.llm.complete", _revise_stub):
+        r2 = client.post(f"/api/studies/{sid}/days/1/revise",
+                         json={"instruction": "shorten", "selection": "the Lord's authority"})
     assert r2.status_code == 200
     assert r2.json()["selection"] == "the Lord's authority"
 

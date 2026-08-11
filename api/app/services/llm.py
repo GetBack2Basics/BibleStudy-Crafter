@@ -6,6 +6,7 @@ logged to the StatusDock; every success writes a UsageLedger row.
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import re
 from dataclasses import dataclass
@@ -19,6 +20,10 @@ from app.services import events
 # Status codes that mean "this provider can't serve us, try the next one"
 FAILOVER_STATUS = {402, 408, 429, 500, 502, 503, 504}
 DEFAULT_TIMEOUT = 120.0
+# Retry a provider this many times on transient failures (rate limits, 502s
+# from the free tier) before failing over to the next provider in the chain.
+MAX_ATTEMPTS = 3
+RETRY_BACKOFF = 2.0  # seconds between retries
 
 
 class NoProviderAvailable(RuntimeError):
@@ -210,22 +215,41 @@ async def complete(
             if transport is None:
                 continue
             model = provider.default_model()
-            try:
-                text, tin, tout = await transport(
-                    client, provider, model, system, prompt, json_mode, temperature
-                )
-            except httpx.HTTPStatusError as exc:
-                code = exc.response.status_code
-                errors.append(f"{provider.name}: HTTP {code}")
-                events.emit("warn", "llm", f"{provider.label} returned {code}, failing over")
-                if code in FAILOVER_STATUS:
-                    continue
-                continue
-            except (httpx.TimeoutException, httpx.TransportError) as exc:
-                errors.append(f"{provider.name}: {type(exc).__name__}")
-                events.emit("warn", "llm",
-                            f"{provider.label} unreachable ({type(exc).__name__}), failing over")
-                continue
+            ok = False
+            for attempt in range(1, MAX_ATTEMPTS + 1):
+                try:
+                    text, tin, tout = await transport(
+                        client, provider, model, system, prompt, json_mode, temperature
+                    )
+                    ok = True
+                    break  # success - leave the retry loop
+                except httpx.HTTPStatusError as exc:
+                    code = exc.response.status_code
+                    errors.append(f"{provider.name}: HTTP {code}")
+                    if code in FAILOVER_STATUS and attempt < MAX_ATTEMPTS:
+                        events.emit("warn", "llm",
+                                    f"{provider.label} returned {code}, retry "
+                                    f"{attempt}/{MAX_ATTEMPTS}")
+                        await asyncio.sleep(RETRY_BACKOFF * attempt)
+                        continue
+                    events.emit("warn", "llm",
+                                f"{provider.label} returned {code}, failing over")
+                    errors.append(f"{provider.name}: HTTP {code} (exhausted)")
+                    break  # exhausted this provider -> next provider
+                except (httpx.TimeoutException, httpx.TransportError) as exc:
+                    errors.append(f"{provider.name}: {type(exc).__name__}")
+                    if attempt < MAX_ATTEMPTS:
+                        events.emit("warn", "llm",
+                                    f"{provider.label} unreachable "
+                                    f"({type(exc).__name__}), retry {attempt}/{MAX_ATTEMPTS}")
+                        await asyncio.sleep(RETRY_BACKOFF * attempt)
+                        continue
+                    events.emit("warn", "llm",
+                                f"{provider.label} unreachable ({type(exc).__name__}), "
+                                f"failing over")
+                    break  # exhausted this provider -> next provider
+            if not ok:
+                continue  # try the next provider in the chain
 
             cost = _cost(provider, tin, tout)
             result = LLMResult(text=text, provider=provider.name, model=model.id,

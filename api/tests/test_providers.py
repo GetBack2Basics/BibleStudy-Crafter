@@ -27,6 +27,7 @@ def test_ollama_available_without_any_key(monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEY", "")
     from app.config import settings as s
     s.get_settings.cache_clear()
+    get_registry.cache_clear()
 
     reg = load_registry()
     ollama = reg.get("text", "ollama")
@@ -41,6 +42,7 @@ def test_no_keys_leaves_only_keyless_providers(monkeypatch):
     monkeypatch.setenv("REPLICATE_API_TOKEN", "")
     from app.config import settings as s
     s.get_settings.cache_clear()
+    get_registry.cache_clear()
 
     reg = load_registry()
     text = [p.name for p in reg.available_chain("text")]

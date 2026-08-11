@@ -7,13 +7,15 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session
 
 from app import db as db_mod
+from app.auth import hash_password
 from app.main import app
 
 
 @pytest.fixture
 def client():
-    from app.models import Translation, Verse
-    from sqlmodel import SQLModel, create_engine
+    from app.auth import get_current_user
+    from app.models import Translation, User, Verse
+    from sqlmodel import SQLModel, create_engine, select
     from sqlalchemy.pool import StaticPool
     engine = create_engine("sqlite://", connect_args={"check_same_thread": False},
                            poolclass=StaticPool)
@@ -25,13 +27,22 @@ def client():
                     text="For if you forgive others their trespasses"))
         s.add(Verse(translation_id=tr.id, book_number=41, chapter=4, verse=39,
                     text="Peace, be still"))
-        s.commit()
+        # seed an authenticated user (auth is now required on study routes)
+        user = User(email="tester@example.com", password_hash=hash_password("password123"),
+                    is_admin=False)
+        s.add(user); s.commit(); s.refresh(user)
+        user_id = user.id
     db_mod._engine = engine
 
     def _get_session():
         return Session(engine)
 
+    def _fake_user():
+        with Session(engine) as s:
+            return s.get(User, user_id)
+
     app.dependency_overrides[db_mod.get_session] = _get_session
+    app.dependency_overrides[get_current_user] = _fake_user
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()

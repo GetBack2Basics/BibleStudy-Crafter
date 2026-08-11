@@ -15,11 +15,12 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
-from sqlmodel import Session
+from sqlmodel import Session, select
 
+from app.auth import get_current_user
 from app.config import get_settings
 from app.db import get_engine, get_session
-from app.models import Study, StudyDay, DayPassage, Asset
+from app.models import Study, StudyDay, DayPassage, Asset, User
 from app.services import events
 from app.services.studies import generate_day as study_generate_day
 from app.services.studies import build_day_discussions
@@ -82,7 +83,9 @@ def _to_out(s: Study) -> StudyOut:
 
 
 @router.post("", status_code=202)
-async def create_study(body: StudyCreate) -> dict[str, Any]:
+async def create_study(body: StudyCreate,
+                       user: User = Depends(get_current_user),
+                       session: Session = Depends(get_session)) -> dict[str, Any]:
     settings = get_settings()
     s = Study(
         topic=body.topic, minutes_per_day=body.minutes_per_day,
@@ -92,25 +95,26 @@ async def create_study(body: StudyCreate) -> dict[str, Any]:
         primary_translation=body.primary_translation,
         verse_pool=body.selected_refs,
         status="generating",
+        user_id=user.id,
     )
+    session.add(s)
     s.days = [StudyDay(day_number=n, status="pending")
               for n in range(1, body.total_days + 1)]
-
-    with Session(get_engine()) as session:
-        session.add(s)
-        session.commit()
-        session.refresh(s)
-        study_id = s.id
+    session.commit()
+    session.refresh(s)
+    study_id = s.id
 
     events.emit("info", "study", f"Study {study_id} created: {body.topic}", study_id=study_id, progress=5)
-    asyncio.create_task(_build_outline_and_day1(study_id, body))
+    asyncio.create_task(_build_outline_and_day1(study_id, body, user_id=user.id))
     return {"study_id": study_id, "status": "generating"}
 
 
-async def _build_outline_and_day1(study_id: int, body: StudyCreate) -> None:
+async def _build_outline_and_day1(study_id: int, body: StudyCreate, user_id: int) -> None:
     with Session(get_engine()) as session:
         study = session.get(Study, study_id)
         if study is None:
+            return
+        if study.user_id != user_id:       # ownership guard
             return
         try:
             from app.services.planner import generate_outline
@@ -196,16 +200,19 @@ async def _build_discussions_safe(study_id: int, day_number: int) -> None:
 
 
 @router.get("")
-def list_studies(session: Session = Depends(get_session)) -> list[StudyOut]:
-    from sqlmodel import select
-    rows = session.exec(select(Study).order_by(Study.id.desc())).all()
+def list_studies(user: User = Depends(get_current_user),
+                session: Session = Depends(get_session)) -> list[StudyOut]:
+    rows = session.exec(
+        select(Study).where(Study.user_id == user.id).order_by(Study.id.desc())
+    ).all()
     return [_to_out(s) for s in rows]
 
 
 @router.get("/{study_id}")
-def get_study(study_id: int, session: Session = Depends(get_session)) -> StudyOut:
+def get_study(study_id: int, user: User = Depends(get_current_user),
+             session: Session = Depends(get_session)) -> StudyOut:
     s = session.get(Study, study_id)
-    if s is None:
+    if s is None or s.user_id != user.id:
         raise HTTPException(404, "study not found")
     return _to_out(s)
 
@@ -226,26 +233,27 @@ def _delete_study_data(session: Session, study: Study) -> None:
 
 
 @router.delete("/_all")
-def delete_all_studies(session: Session = Depends(get_session)) -> dict:
-    """Delete ALL studies (days, passages, assets) but keep the Bible translations/verses.
-
-    Use this instead of wiping the DB when you only want to clear your study work.
-    Registered before /{study_id} so '_all' is not parsed as a study id.
+def delete_all_studies(user: User = Depends(get_current_user),
+                       session: Session = Depends(get_session)) -> dict:
+    """Delete ALL of *this user's* studies (days, passages, assets) but keep the
+    Bible corpus. Registered before /{study_id} so '_all' is not parsed as an id.
     """
-    from sqlmodel import select
-    studies = session.exec(select(Study)).all()
+    studies = session.exec(
+        select(Study).where(Study.user_id == user.id)
+    ).all()
     count = len(studies)
     for s in studies:
         _delete_study_data(session, s)
-    events.emit("success", "study", f"All {count} studies deleted")
+    events.emit("success", "study", f"All {count} of your studies deleted")
     return {"deleted": count}
 
 
 @router.delete("/{study_id}")
-def delete_study(study_id: int, session: Session = Depends(get_session)) -> dict:
+def delete_study(study_id: int, user: User = Depends(get_current_user),
+                session: Session = Depends(get_session)) -> dict:
     """Delete a single study (its days, passages, assets). Bible corpus is preserved."""
     s = session.get(Study, study_id)
-    if s is None:
+    if s is None or s.user_id != user.id:
         raise HTTPException(404, "study not found")
     _delete_study_data(session, s)
     events.emit("success", "study", f"Study {study_id} deleted")
@@ -254,9 +262,10 @@ def delete_study(study_id: int, session: Session = Depends(get_session)) -> dict
 
 @router.post("/{study_id}/days/{day_number}")
 async def generate_day_endpoint(study_id: int, day_number: int,
+                                user: User = Depends(get_current_user),
                                 session: Session = Depends(get_session)) -> dict:
     s = session.get(Study, study_id)
-    if s is None:
+    if s is None or s.user_id != user.id:
         raise HTTPException(404, "study not found")
     if day_number < 1 or day_number > s.total_days:
         raise HTTPException(400, "day out of range")
@@ -273,13 +282,11 @@ async def generate_day_endpoint(study_id: int, day_number: int,
 
 @router.post("/{study_id}/days/{day_number}/discussions")
 async def regenerate_discussions(study_id: int, day_number: int,
+                                 user: User = Depends(get_current_user),
                                  session: Session = Depends(get_session)) -> dict:
-    """(Re)fetch real, cited discussion material for a day's verses.
-
-    Returns the stored discussions_json (with real, linked sources).
-    """
+    """(Re)fetch real, cited discussion material for a day's verses."""
     s = session.get(Study, study_id)
-    if s is None:
+    if s is None or s.user_id != user.id:
         raise HTTPException(404, "study not found")
     if day_number < 1 or day_number > s.total_days:
         raise HTTPException(400, "day out of range")

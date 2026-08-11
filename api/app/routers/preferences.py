@@ -1,8 +1,8 @@
-"""Per-user (single-user local) preferences: most-used Bible versions.
+"""Per-user preferences: most-used Bible versions.
 
 The verse expander shows a passage in the reader's 3 most-used translations and
 lets them switch to any loaded version via a dropdown. We persist an ordered list
-of preferred translation codes in the `setting` table (user_id NULL = local user).
+of preferred translation codes in the `setting` table per user.
 """
 from __future__ import annotations
 
@@ -10,8 +10,9 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
+from app.auth import get_current_user
 from app.db import get_session
-from app.models import Setting, Translation
+from app.models import Setting, Translation, User
 
 router = APIRouter(prefix="/api/preferences", tags=["preferences"])
 
@@ -27,9 +28,9 @@ def _loaded_codes(session: Session) -> list[str]:
     return [t.code for t in session.exec(select(Translation).order_by(Translation.code)).all()]
 
 
-def _resolve_preferred(session: Session) -> list[str]:
+def _resolve_preferred(session: Session, user_id: int | None) -> list[str]:
     row = session.exec(
-        select(Setting).where(Setting.key == PREF_KEY)
+        select(Setting).where(Setting.key == PREF_KEY, Setting.user_id == user_id)
     ).first()
     if row and isinstance(row.value_json, dict) and row.value_json.get("translations"):
         wanted = [c.upper() for c in row.value_json["translations"]]
@@ -49,21 +50,26 @@ def _resolve_preferred(session: Session) -> list[str]:
 
 
 @router.get("/translations", response_model=PreferredTranslations)
-def get_preferred_translations(session: Session = Depends(get_session)) -> PreferredTranslations:
-    return PreferredTranslations(translations=_resolve_preferred(session))
+def get_preferred_translations(user: User = Depends(get_current_user),
+                                session: Session = Depends(get_session)) -> PreferredTranslations:
+    return PreferredTranslations(translations=_resolve_preferred(session, user.id))
 
 
 @router.post("/translations", response_model=PreferredTranslations)
 def set_preferred_translations(
-    body: PreferredTranslations, session: Session = Depends(get_session)
+    body: PreferredTranslations,
+    user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
 ) -> PreferredTranslations:
     loaded = set(_loaded_codes(session))
     wanted = [c.upper() for c in body.translations if c.upper() in loaded][:3]
     if not wanted:  # never store an empty preference
-        wanted = _resolve_preferred(session)
-    row = session.exec(select(Setting).where(Setting.key == PREF_KEY)).first()
+        wanted = _resolve_preferred(session, user.id)
+    row = session.exec(
+        select(Setting).where(Setting.key == PREF_KEY, Setting.user_id == user.id)
+    ).first()
     if row is None:
-        row = Setting(key=PREF_KEY, value_json={"translations": wanted})
+        row = Setting(key=PREF_KEY, user_id=user.id, value_json={"translations": wanted})
         session.add(row)
     else:
         row.value_json = {"translations": wanted}
@@ -72,14 +78,14 @@ def set_preferred_translations(
     return PreferredTranslations(translations=wanted)
 
 
-def bump_preferred(session: Session, code: str) -> None:
+def bump_preferred(session: Session, code: str, user_id: int | None = None) -> None:
     """Move `code` to the front of the preference list (called when a reader
     switches to a version)."""
     code = code.upper()
     loaded = set(_loaded_codes(session))
     if code not in loaded:
         return
-    current = _resolve_preferred(session)
+    current = _resolve_preferred(session, user_id)
     reordered = [code] + [c for c in current if c != code]
     set_preferred_translations(PreferredTranslations(translations=reordered[:3]),
-                               session=session)
+                               user_id=user_id, session=session)

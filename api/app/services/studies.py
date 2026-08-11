@@ -13,7 +13,7 @@ from sqlmodel import Session, select
 
 from app.models import Study, StudyDay
 from app.services import events
-from app.services.planner import Passage, generate_day as _generate_day, _corpus_passages
+from app.services.planner import Passage, generate_day as _generate_day, _corpus_passages, plan_passages
 from app.services.prompts import build_system
 from app.services.planner import make_summary
 
@@ -35,11 +35,21 @@ async def generate_day(study: Study, day_number: int, *, session: Session,
     prior_summary = get_compressed_history(getattr(study, "history_json", None)) or None
 
     passages = _passages_for(study, day_number)
-    # Fallback: if the outline/model suggested no passages, mine the local
-    # corpus by topic so every day still gets real scripture (never blank).
+    # Fallback ladder (never leave a day without real scripture):
+    #   1. outline suggested passages (from generate_outline)
+    #   2. a focused LLM passage-plan call (reliable on weak free-tier models
+    #      that drop the passages array inside the full outline prompt)
+    #   3. lexical corpus mining as the final safety net
     if not passages:
         query = (target.theme or study.title or study.topic)
-        passages = _corpus_passages(query, translation)
+        try:
+            passages = await plan_passages(
+                topic=study.topic, focus=query, count=3,
+                translation=translation, study_id=study.id)
+        except Exception:           # noqa: BLE001 - must not block generation
+            passages = []
+        if not passages:
+            passages = _corpus_passages(query, translation)
 
     # Ground the prayer in the previous day's actual scripture when it exists.
     prev_scripture = None
@@ -47,7 +57,7 @@ async def generate_day(study: Study, day_number: int, *, session: Session,
         prev = next((d for d in days if d.day_number == day_number - 1), None)
         if prev and prev.blocks_json and prev.blocks_json.get("scripture"):
             prev_scripture = "\n".join(
-                f"{s.get('ref')} ({prev.translation or translation}): {s.get('text', '')}"
+                f"{s.get('ref')} ({s.get('translation') or translation}): {s.get('text', '')}"
                 for s in prev.blocks_json["scripture"]
             ) or None
 
