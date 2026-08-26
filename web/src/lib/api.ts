@@ -18,6 +18,7 @@ export type Meta = {
   version: string
   providers: { text: boolean; ollama: boolean; image: boolean }
   budget_cap_usd: number
+  auth: { google_enabled: boolean; google_client_id: string | null }
 }
 
 // Centralised fetch: attaches the bearer token, retries once on 401 with a

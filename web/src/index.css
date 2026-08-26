@@ -14,6 +14,8 @@
     color: theme('colors.on-background');
     font-family: theme('fontFamily.body-reading');
     -webkit-font-smoothing: antialiased;
+    /* Safety net: never allow horizontal scroll / overflow on any screen */
+    overflow-x: clip;
   }
   /* Minimal, serene scrollbar */
   ::-webkit-scrollbar {
@@ -50,8 +52,14 @@
     max-width: theme('maxWidth.container-max');
     margin-left: auto;
     margin-right: auto;
-    padding-left: theme('spacing.margin-desktop');
-    padding-right: theme('spacing.margin-desktop');
+    padding-left: theme('spacing.margin-mobile');
+    padding-right: theme('spacing.margin-mobile');
+  }
+  @media (min-width: 1024px) {
+    .page-shell {
+      padding-left: theme('spacing.margin-desktop');
+      padding-right: theme('spacing.margin-desktop');
+    }
   }
 
   /* Ambient texture + glow used behind study views */

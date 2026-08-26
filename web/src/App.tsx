@@ -18,6 +18,38 @@ const I = ({ name, cls = 'text-[18px]' }: { name: string; cls?: string }) => (
   <span className={`material-symbols-outlined ${cls}`}>{name}</span>
 )
 
+/* Reusable collapsible block. Header is a div so the optional `right` slot
+   (e.g. a Refresh button) is a sibling, NOT a nested <button> (invalid HTML).
+   Clicking the title or the chevron toggles; `right` is independent. */
+function CollapsibleSection({ title, icon, defaultOpen = true, children, right, className = '' }: {
+  title: React.ReactNode
+  icon?: string
+  defaultOpen?: boolean
+  children: React.ReactNode
+  right?: React.ReactNode
+  className?: string
+}) {
+  const [open, setOpen] = useState(defaultOpen)
+  const toggle = () => setOpen((o) => !o)
+  return (
+    <section className={`rounded-2xl border border-outline-variant/20 bg-surface-container-low shadow-ambient ${className}`}>
+      <div className="flex items-center gap-2 rounded-2xl px-4 py-3 transition-colors hover:bg-surface-container-high">
+        <button type="button" onClick={toggle} aria-expanded={open}
+                className="flex min-w-0 flex-1 items-center gap-2 text-left">
+          {icon && <I name={icon} cls="text-[18px] text-primary shrink-0" />}
+          <span className="min-w-0 flex-1 truncate font-ui-label-md text-ui-label-md text-on-surface">{title}</span>
+        </button>
+        {right}
+        <button type="button" onClick={toggle} aria-expanded={open} aria-label={open ? 'Collapse' : 'Expand'}
+                className="shrink-0 text-on-surface-variant transition-transform">
+          <I name={open ? 'expand_less' : 'expand_more'} cls="text-[22px]" />
+        </button>
+      </div>
+      {open && <div className="px-4 pb-4">{children}</div>}
+    </section>
+  )
+}
+
 export default function App() {
   const [authed, setAuthed] = useState<boolean>(() => auth.accessToken() !== null)
   const [view, setView] = useState<View>({ kind: 'list' })
@@ -63,12 +95,12 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-background text-on-background">
-      <header className="sticky top-0 z-30 flex items-center gap-4 border-b border-outline-variant/20 bg-surface-container-lowest/80 px-margin-desktop py-4 backdrop-blur">
+      <header className="sticky top-0 z-30 flex flex-wrap items-center gap-4 border-b border-outline-variant/20 bg-surface-container-lowest/80 px-margin-mobile py-4 backdrop-blur lg:px-margin-desktop">
         <button className="font-headline-lg text-headline-lg text-primary tracking-tight hover:text-primary-container transition-colors"
                 onClick={() => setView({ kind: 'list' })}>
           BibleStudy-Crafter
         </button>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center gap-2">
           {view.kind === 'detail' && (
             <span className="text-ui-label-md text-on-surface-variant">/ study #{view.id}</span>
           )}
@@ -438,6 +470,9 @@ function DayCard({ studyId, day, onGenerate }: { studyId: number; day: DayOut; o
   const [instruction, setInstruction] = useState('')
   const [revBusy, setRevBusy] = useState(false)
 
+  // day-level collapse (default collapsed so long studies stay scannable)
+  const [dayOpen, setDayOpen] = useState(false)
+
   // keep local draft in sync with the server ONLY when not actively editing,
   // so the 2s poll doesn't clobber in-progress edits
   useEffect(() => { if (!editing) setDraft(day.blocks_json ?? null) }, [day.blocks_json, editing])
@@ -496,12 +531,17 @@ function DayCard({ studyId, day, onGenerate }: { studyId: number; day: DayOut; o
 
   return (
     <article className="reading-column !px-0 passage-card">
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="font-headline-md text-headline-md text-on-surface">
+      <div className="mb-3 flex items-center gap-3">
+        <button type="button" onClick={() => setDayOpen((o) => !o)} aria-expanded={dayOpen}
+                aria-label={dayOpen ? `Collapse Day ${day.day_number}` : `Expand Day ${day.day_number}`}
+                className="shrink-0 rounded-full p-1 text-on-surface-variant transition-colors hover:bg-surface-container-high">
+          <I name={dayOpen ? 'expand_less' : 'expand_more'} cls="text-[24px]" />
+        </button>
+        <h3 className="min-w-0 flex-1 font-headline-md text-headline-md text-on-surface truncate">
           <span className="text-primary">Day {day.day_number}</span>{draft?.heading ? ` — ${draft.heading}` : (day.title ? ` — ${day.title}` : '')}
           {day.theme && <span className="ml-2 font-ui-label-sm font-normal text-on-surface-variant">· {day.theme}</span>}
         </h3>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
           <span className={`text-ui-label-sm ${STATUS_CLS[day.status]}`}>{day.status}</span>
           {!editing && day.status !== 'generating' && (
             <>
@@ -523,50 +563,54 @@ function DayCard({ studyId, day, onGenerate }: { studyId: number; day: DayOut; o
         </div>
       </div>
 
-      {err && <p className="mb-2 text-ui-label-sm text-error">{err}</p>}
+      {dayOpen && (
+        <div className="space-y-4">
+          {err && <p className="mb-2 text-ui-label-sm text-error">{err}</p>}
 
-      {/* Revise-with-AI panel (mirrors JobHunt_Crafter select-to-revise) */}
-      {editing && (
-        <div className="mb-3 rounded-2xl border border-outline-variant/30 bg-surface-container-low p-3">
-          <div className="mb-2 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-ui-label-sm font-semibold uppercase tracking-wide text-primary">
-              <I name="auto_awesome" cls="text-[16px]" /> Revise with AI
+          {/* Revise-with-AI panel (mirrors JobHunt_Crafter select-to-revise) */}
+          {editing && (
+            <div className="mb-3 rounded-2xl border border-outline-variant/30 bg-surface-container-low p-3">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-2 text-ui-label-sm font-semibold uppercase tracking-wide text-primary">
+                  <I name="auto_awesome" cls="text-[16px]" /> Revise with AI
+                  {selectedText && (
+                    <span className="rounded-full border border-primary-container bg-primary-container/30 px-2 py-0.5 text-on-primary-container">
+                      Focusing on selection
+                    </span>
+                  )}
+                </div>
+                {selectedText && (
+                  <button onClick={() => setSelectedText('')} className="text-ui-label-sm text-on-surface-variant hover:text-error">× clear</button>
+                )}
+              </div>
               {selectedText && (
-                <span className="rounded-full border border-primary-container bg-primary-container/30 px-2 py-0.5 text-on-primary-container">
-                  Focusing on selection
-                </span>
+                <p className="mb-2 text-ui-label-sm italic text-on-surface-variant">Selected: "{selectedText.slice(0, 80)}{selectedText.length > 80 ? '…' : ''}"</p>
               )}
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  className="field-underline min-w-0 flex-1"
+                  placeholder={selectedText ? 'Refining selected section…' : "Ask for changes (e.g. 'make it warmer', 'shorten this')"}
+                  value={instruction} onChange={(e) => setInstruction(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && instruction.trim()) doRevise() }}
+                />
+                <button onClick={doRevise} disabled={revBusy || !instruction.trim()}
+                  className="btn-primary px-3 py-1.5 disabled:opacity-50">
+                  {revBusy ? 'Revising…' : 'Revise'}
+                </button>
+              </div>
             </div>
-            {selectedText && (
-              <button onClick={() => setSelectedText('')} className="text-ui-label-sm text-on-surface-variant hover:text-error">× clear</button>
-            )}
-          </div>
-          {selectedText && (
-            <p className="mb-2 text-ui-label-sm italic text-on-surface-variant">Selected: "{selectedText.slice(0, 80)}{selectedText.length > 80 ? '…' : ''}"</p>
           )}
-          <div className="flex gap-2">
-            <input
-              className="field-underline flex-1"
-              placeholder={selectedText ? 'Refining selected section…' : "Ask for changes (e.g. 'make it warmer', 'shorten this')"}
-              value={instruction} onChange={(e) => setInstruction(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter' && instruction.trim()) doRevise() }}
-            />
-            <button onClick={doRevise} disabled={revBusy || !instruction.trim()}
-              className="btn-primary px-3 py-1.5 disabled:opacity-50">
-              {revBusy ? 'Revising…' : 'Revise'}
-            </button>
-          </div>
+
+          {draft ? (
+            <DraftEditor draft={draft} studyId={studyId} day={day.day_number} editing={editing} onChange={setDraft} onSelect={handleSelection} notes={notes} onNotesChange={setNotes} />
+          ) : (
+            <p className="text-ui-label-sm text-on-surface-variant">
+              {day.status === 'generating' ? 'Working…' : 'Not generated yet.'}
+            </p>
+          )}
+          <Discussions studyId={studyId} day={day} />
         </div>
       )}
-
-      {draft ? (
-        <DraftEditor draft={draft} studyId={studyId} day={day.day_number} editing={editing} onChange={setDraft} onSelect={handleSelection} notes={notes} onNotesChange={setNotes} />
-      ) : (
-        <p className="text-ui-label-sm text-on-surface-variant">
-          {day.status === 'generating' ? 'Working…' : 'Not generated yet.'}
-        </p>
-      )}
-      <Discussions studyId={studyId} day={day} />
     </article>
   )
 }
@@ -587,66 +631,96 @@ function DraftEditor({ draft, editing, onChange, onSelect, studyId, day, notes, 
 
   return (
     <div className="space-y-4 text-body-reading text-on-surface">
-      <PassageEditor studyId={studyId} day={day} onChanged={() => { /* passage changes are server-side; nothing to sync into draft */ }} />
+      <CollapsibleSection title="Primary Texts" icon="auto_stories" defaultOpen>
+        <PassageEditor studyId={studyId} day={day} onChanged={() => { /* passage changes are server-side; nothing to sync into draft */ }} />
+      </CollapsibleSection>
 
       {draft.scripture && draft.scripture.length > 0 && (
         <p className="text-ui-label-sm text-on-surface-variant">Note: the scripture above is now managed as reorderable, version-switchable passages. The quoted text below is a read-only snapshot from generation.</p>
       )}
 
       {editing ? (
-        <>
-          <Labeled label="Opening prayer">
-            <textarea className="field-underline"
-              rows={2} value={draft.opening_prayer ?? ''}
-              onChange={(e) => setField({ opening_prayer: e.target.value })} />
-          </Labeled>
-          <Labeled label="Your note on this opening prayer">
-            <textarea className="field-underline"
-              rows={2} value={notes.opening_prayer ?? ''}
-              placeholder="What stood out to you?"
-              onChange={(e) => onNotesChange({ ...notes, opening_prayer: e.target.value })} />
-          </Labeled>
-          <Labeled label="Commentary (select text, then Revise with AI)">
-            <textarea className="field-underline"
-              rows={6} value={draft.commentary ?? ''}
-              onChange={(e) => setField({ commentary: e.target.value })}
-              onMouseUp={(e) => onSelect(e.currentTarget)} />
-          </Labeled>
-          <Labeled label="Your note on the commentary">
-            <textarea className="field-underline"
-              rows={2} value={notes.commentary ?? ''}
-              placeholder="Your reflection / takeaway"
-              onChange={(e) => onNotesChange({ ...notes, commentary: e.target.value })} />
-          </Labeled>
-          <Labeled label="Closing prayer">
-            <textarea className="field-underline"
-              rows={2} value={draft.closing_prayer ?? ''}
-              onChange={(e) => setField({ closing_prayer: e.target.value })} />
-          </Labeled>
-          <Labeled label="Your note on this closing prayer">
-            <textarea className="field-underline"
-              rows={2} value={notes.closing_prayer ?? ''}
-              placeholder="What stood out to you?"
-              onChange={(e) => onNotesChange({ ...notes, closing_prayer: e.target.value })} />
-          </Labeled>
-          <Labeled label="Reflection questions">
-            <QuestionsEditor questions={draft.questions ?? []} onChange={(q) => setField({ questions: q })} />
-          </Labeled>
-        </>
+        <CollapsibleSection title="Edit content" icon="edit" defaultOpen>
+          <div className="space-y-4">
+            <Labeled label="Opening prayer">
+              <textarea className="field-underline"
+                rows={2} value={draft.opening_prayer ?? ''}
+                onChange={(e) => setField({ opening_prayer: e.target.value })} />
+            </Labeled>
+            <Labeled label="Your note on this opening prayer">
+              <textarea className="field-underline"
+                rows={2} value={notes.opening_prayer ?? ''}
+                placeholder="What stood out to you?"
+                onChange={(e) => onNotesChange({ ...notes, opening_prayer: e.target.value })} />
+            </Labeled>
+            <Labeled label="Commentary (select text, then Revise with AI)">
+              <textarea className="field-underline"
+                rows={6} value={draft.commentary ?? ''}
+                onChange={(e) => setField({ commentary: e.target.value })}
+                onMouseUp={(e) => onSelect(e.currentTarget)} />
+            </Labeled>
+            <Labeled label="Your note on the commentary">
+              <textarea className="field-underline"
+                rows={2} value={notes.commentary ?? ''}
+                placeholder="Your reflection / takeaway"
+                onChange={(e) => onNotesChange({ ...notes, commentary: e.target.value })} />
+            </Labeled>
+            <Labeled label="Closing prayer">
+              <textarea className="field-underline"
+                rows={2} value={draft.closing_prayer ?? ''}
+                onChange={(e) => setField({ closing_prayer: e.target.value })} />
+            </Labeled>
+            <Labeled label="Your note on this closing prayer">
+              <textarea className="field-underline"
+                rows={2} value={notes.closing_prayer ?? ''}
+                placeholder="What stood out to you?"
+                onChange={(e) => onNotesChange({ ...notes, closing_prayer: e.target.value })} />
+            </Labeled>
+            <Labeled label="Reflection questions">
+              <QuestionsEditor questions={draft.questions ?? []} onChange={(q) => setField({ questions: q })} />
+            </Labeled>
+          </div>
+        </CollapsibleSection>
       ) : (
-        <>
-          {draft.opening_prayer && <p><span className="text-ui-label-sm text-on-surface-variant">Prayer · </span>{draft.opening_prayer}</p>}
-          {notes.opening_prayer && <p className="rounded bg-surface-container-high p-2 text-ui-label-sm text-on-tertiary-container"><span className="text-on-surface-variant">Your note · </span>{notes.opening_prayer}</p>}
-          {draft.commentary && <p className="text-on-surface">{draft.commentary}</p>}
-          {notes.commentary && <p className="rounded bg-surface-container-high p-2 text-ui-label-sm text-on-tertiary-container"><span className="text-on-surface-variant">Your note · </span>{notes.commentary}</p>}
-          {draft.questions && draft.questions.length > 0 && (
-            <ul className="list-disc space-y-1 pl-5 text-on-surface">
-              {draft.questions.map((q, i) => <li key={i}>{q}</li>)}
-            </ul>
+        <div className="space-y-4">
+          {draft.opening_prayer && (
+            <CollapsibleSection title="Opening prayer" icon="volunteer_activism" defaultOpen>
+              <p className="text-on-surface">{draft.opening_prayer}</p>
+            </CollapsibleSection>
           )}
-          {draft.closing_prayer && <p><span className="text-ui-label-sm text-on-surface-variant">Closing · </span>{draft.closing_prayer}</p>}
-          {notes.closing_prayer && <p className="rounded bg-surface-container-high p-2 text-ui-label-sm text-on-tertiary-container"><span className="text-on-surface-variant">Your note · </span>{notes.closing_prayer}</p>}
-        </>
+          {notes.opening_prayer && (
+            <CollapsibleSection title="Your note · opening prayer" icon="lightbulb" defaultOpen>
+              <p className="rounded bg-surface-container-high p-2 text-ui-label-sm text-on-tertiary-container">{notes.opening_prayer}</p>
+            </CollapsibleSection>
+          )}
+          {draft.commentary && (
+            <CollapsibleSection title="Commentary" icon="menu_book" defaultOpen>
+              <p className="text-on-surface">{draft.commentary}</p>
+            </CollapsibleSection>
+          )}
+          {notes.commentary && (
+            <CollapsibleSection title="Your note · commentary" icon="lightbulb" defaultOpen>
+              <p className="rounded bg-surface-container-high p-2 text-ui-label-sm text-on-tertiary-container">{notes.commentary}</p>
+            </CollapsibleSection>
+          )}
+          {draft.questions && draft.questions.length > 0 && (
+            <CollapsibleSection title="Reflection questions" icon="help" defaultOpen>
+              <ul className="list-disc space-y-1 pl-5 text-on-surface">
+                {draft.questions.map((q, i) => <li key={i}>{q}</li>)}
+              </ul>
+            </CollapsibleSection>
+          )}
+          {draft.closing_prayer && (
+            <CollapsibleSection title="Closing prayer" icon="volunteer_activism" defaultOpen>
+              <p className="text-on-surface">{draft.closing_prayer}</p>
+            </CollapsibleSection>
+          )}
+          {notes.closing_prayer && (
+            <CollapsibleSection title="Your note · closing prayer" icon="lightbulb" defaultOpen>
+              <p className="rounded bg-surface-container-high p-2 text-ui-label-sm text-on-tertiary-container">{notes.closing_prayer}</p>
+            </CollapsibleSection>
+          )}
+        </div>
       )}
     </div>
   )
@@ -715,17 +789,19 @@ function Discussions({ studyId, day }: { studyId: number; day: DayOut }) {
   }
   const d = data
   return (
-    <div className="mt-6 rounded-2xl border border-outline-variant/20 bg-surface-container-low p-5 shadow-ambient">
-      <div className="mb-3 flex items-center justify-between">
-        <h4 className="font-ui-label-lg text-ui-label-lg text-on-surface flex items-center gap-2">
-          <I name="forum" cls="text-[20px]" /> Voices on these verses
-        </h4>
+    <CollapsibleSection
+      title="Voices on these verses"
+      icon="forum"
+      defaultOpen={false}
+      right={
         <button onClick={reload} disabled={busy}
-          className="btn-outline disabled:opacity-50">
+          className="btn-outline disabled:opacity-50 shrink-0">
           {busy ? 'Fetching…' : (d ? 'Refresh' : 'Find discussions')}
         </button>
-      </div>
-      {!d && <p className="text-ui-label-sm text-on-surface-variant">Real discussion about these verses, with links back to the sources. Click “Find discussions”.</p>}
+      }
+      className="mt-6"
+    >
+      {!d && <p className="text-ui-label-sm text-on-surface-variant">Real discussion about these verses, with links back to the sources. Click "Find discussions".</p>}
       {d && d.status === 'empty' && (
         <p className="text-ui-label-sm text-on-surface-variant">No external discussion could be fetched right now. Engage the Scripture directly.</p>
       )}
@@ -752,12 +828,12 @@ function Discussions({ studyId, day }: { studyId: number; day: DayOut }) {
               <I name="forum" cls="text-[16px]" /> Social commentary
               <span className="font-ui-label-xs normal-case tracking-normal text-on-surface-variant/70">(Reddit · Quora · X · Facebook)</span>
             </div>
-            <SourceGrid sources={d.social_sources ?? []} empty="No social-media discussion was fetched (Reddit/Quora/X/Facebook may be blocked from this network)." />
+            <SourceGrid sources={d.social_sources ?? []} empty="No social-media discussion was fetched (Reddit · Quora · X · Facebook)." />
           </div>
         </>
       )}
       {err && <p className="mt-2 text-ui-label-sm text-error">{err}</p>}
-    </div>
+    </CollapsibleSection>
   )
 }
 
@@ -973,7 +1049,7 @@ function PassageEditor({ studyId, day, onChanged }: {
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <VerseExpander refText={p.ref} />
             <select
-              className="field-underline inline-block w-auto"
+              className="field-underline inline-block w-auto min-w-0"
               value={p.translation}
               onChange={(e) => switchVersion(p.id, e.target.value)}
             >

@@ -50,6 +50,18 @@ export const auth = {
     return { access_token: t.access_token, refresh_token: t.refresh_token }
   },
 
+  async googleLogin(idToken: string): Promise<Tokens> {
+    const r = await fetch(`${apiUrl()}/api/auth/google`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id_token: idToken }),
+    })
+    if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || 'Google sign-in failed')
+    const t = (await r.json()) as Tokens & { user: AuthUser }
+    this.setTokens({ access_token: t.access_token, refresh_token: t.refresh_token })
+    return { access_token: t.access_token, refresh_token: t.refresh_token }
+  },
+
   async logout() {
     const t = this.tokens()
     if (t) {

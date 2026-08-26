@@ -1,5 +1,9 @@
 import { useState } from 'react'
 import { auth } from '../lib/auth'
+import { api } from '../lib/api'
+
+// Injected at build time (empty when Google sign-in is disabled).
+declare const __GOOGLE_CLIENT_ID__: string
 
 type Mode = 'login' | 'register'
 
@@ -10,6 +14,48 @@ export default function AuthScreen({ onAuthed }: { onAuthed: () => void }) {
   const [displayName, setDisplayName] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [googleBusy, setGoogleBusy] = useState(false)
+  // The client id is baked in; the button shows only if it is non-empty AND the
+  // backend reports Google enabled (cheatsheet: option is conditional).
+  const googleClientId = __GOOGLE_CLIENT_ID__ || ''
+  const [googleEnabled, setGoogleEnabled] = useState<boolean | null>(googleClientId ? null : false)
+
+  // Ask the backend whether Google sign-in is actually configured server-side.
+  useState(() => {
+    if (!googleClientId) { setGoogleEnabled(false); return }
+    api.meta()
+      .then((m) => setGoogleEnabled(Boolean(m.auth?.google_enabled)))
+      .catch(() => setGoogleEnabled(false))
+  })
+
+  const handleGoogle = async (credential: string) => {
+    setError(null)
+    setGoogleBusy(true)
+    try {
+      await auth.googleLogin(credential)
+      onAuthed()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Google sign-in failed')
+    } finally {
+      setGoogleBusy(false)
+    }
+  }
+
+  // Google Identity Services: render the One Tap button into a div and wire its
+  // callback to our backend exchange. Done imperatively so we only load GIS once
+  // the button is actually shown.
+  const googleDivRef = (el: HTMLDivElement | null) => {
+    if (!el || !googleEnabled || !(window as any).google?.accounts?.id) return
+    ;(window as any).google.accounts.id.initialize({
+      client_id: googleClientId,
+      callback: (resp: { credential: string }) => handleGoogle(resp.credential),
+    })
+    ;(window as any).google.accounts.id.renderButton(el, {
+      theme: 'outline',
+      size: 'large',
+      width: el.clientWidth || 280,
+    })
+  }
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -33,6 +79,20 @@ export default function AuthScreen({ onAuthed }: { onAuthed: () => void }) {
         <p className="text-ui-body-md text-on-surface-variant">
           {mode === 'login' ? 'Sign in to your studies' : 'Create your account'}
         </p>
+
+        {googleEnabled && (
+          <div className="space-y-3">
+            <div ref={googleDivRef} className="flex justify-center" />
+            <div className="flex items-center gap-2 text-ui-label-sm text-on-surface-variant">
+              <span className="h-px flex-1 bg-outline-variant/30" />
+              or
+              <span className="h-px flex-1 bg-outline-variant/30" />
+            </div>
+          </div>
+        )}
+        {googleEnabled === false && (
+          <p className="text-ui-label-sm text-on-surface-variant">Google sign-in is not configured on this server.</p>
+        )}
 
         {mode === 'register' && (
           <input
@@ -60,7 +120,7 @@ export default function AuthScreen({ onAuthed }: { onAuthed: () => void }) {
         {error && <p className="text-ui-label-sm text-error">{error}</p>}
 
         <button
-          type="submit" disabled={busy}
+          type="submit" disabled={busy || googleBusy}
           className="w-full rounded-lg bg-primary px-4 py-2 text-ui-label-lg text-on-primary font-medium disabled:opacity-50"
         >
           {busy ? 'Please wait…' : mode === 'login' ? 'Sign in' : 'Create account'}

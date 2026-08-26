@@ -5,6 +5,7 @@ export default defineConfig({
   plugins: [react()],
   define: {
     __BUILD_STAMP__: JSON.stringify(process.env.BUILD_STAMP || 'dev'),
+    __GOOGLE_CLIENT_ID__: JSON.stringify(process.env.VITE_GOOGLE_CLIENT_ID || ''),
   },
   server: { host: '0.0.0.0', port: 5173, watch: { usePolling: true } },
 })
