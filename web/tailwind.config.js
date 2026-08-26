@@ -71,6 +71,7 @@ export default {
         'ui-label-lg': ['16px', { lineHeight: '24px', letterSpacing: '0.02em', fontWeight: '600' }],
         'ui-label-md': ['14px', { lineHeight: '20px', fontWeight: '500' }],
         'ui-label-sm': ['12px', { lineHeight: '16px', fontWeight: '500' }],
+        'ui-label-xs': ['11px', { lineHeight: '16px', letterSpacing: '0.02em', fontWeight: '500' }],
       },
       borderRadius: {
         sm: '0.125rem',

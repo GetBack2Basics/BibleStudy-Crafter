@@ -37,7 +37,7 @@ function CollapsibleSection({ title, icon, defaultOpen = true, children, right, 
         <button type="button" onClick={toggle} aria-expanded={open}
                 className="flex min-w-0 flex-1 items-center gap-2 text-left">
           {icon && <I name={icon} cls="text-[18px] text-primary shrink-0" />}
-          <span className="min-w-0 flex-1 truncate font-ui-label-md text-ui-label-md text-on-surface">{title}</span>
+          <span className="min-w-0 flex-1 truncate text-ui-label-md text-on-surface">{title}</span>
         </button>
         {right}
         <button type="button" onClick={toggle} aria-expanded={open} aria-label={open ? 'Collapse' : 'Expand'}
@@ -423,7 +423,7 @@ function StudyDetail({ id, onBack }: { id: number; onBack: () => void }) {
         </span>
       </div>
 
-      <div className="reading-column !px-0">
+      <div>
         <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">{study.title || study.topic}</h1>
         <p className="mt-1 text-ui-label-md text-on-surface-variant">
           {study.total_days} days · {study.minutes_per_day} min/day · {study.tradition} · {study.primary_translation}
@@ -431,7 +431,7 @@ function StudyDetail({ id, onBack }: { id: number; onBack: () => void }) {
       </div>
 
       {study.status === 'generating' && (
-        <div className="reading-column !px-0 rounded-2xl border border-outline-variant/20 bg-surface-container-low p-4 shadow-ambient">
+        <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-4 shadow-ambient">
           <div className="mb-2 flex items-center justify-between text-ui-label-md">
             <span className="text-tertiary">{progressMsg || 'Generating outline & day 1…'}</span>
             <span className="text-on-surface-variant">{progress != null ? `${progress}%` : 'working…'}</span>
@@ -530,7 +530,7 @@ function DayCard({ studyId, day, onGenerate }: { studyId: number; day: DayOut; o
   }
 
   return (
-    <article className="reading-column !px-0 passage-card">
+    <article className="passage-card">
       <div className="mb-3 flex items-center gap-3">
         <button type="button" onClick={() => setDayOpen((o) => !o)} aria-expanded={dayOpen}
                 aria-label={dayOpen ? `Collapse Day ${day.day_number}` : `Expand Day ${day.day_number}`}
