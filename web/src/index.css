@@ -48,10 +48,10 @@
     }
   }
 
+  /* Full-bleed: match the sticky header's horizontal extent (no max-width cap),
+     so the study content fills the same width as the top bar. The header and
+     page-shell share the same margin tokens, so their left/right edges align. */
   .page-shell {
-    max-width: theme('maxWidth.container-max');
-    margin-left: auto;
-    margin-right: auto;
     padding-left: theme('spacing.margin-mobile');
     padding-right: theme('spacing.margin-mobile');
   }
