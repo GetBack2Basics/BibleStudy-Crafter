@@ -11,6 +11,7 @@ from typing import Any
 
 from sqlmodel import Session, select
 
+from app.db import get_engine
 from app.models import Study, StudyDay
 from app.services import events
 from app.services.planner import Passage, generate_day as _generate_day, _corpus_passages, plan_passages
@@ -234,10 +235,32 @@ def _sync_passages(session: Session, day: "StudyDay", scripture: list[dict], tra
 
 
 def _passages_for(study: Study, day_number: int) -> list[Passage]:
-    """Suggested passages for a day come from the outline JSON."""
+    """Suggested passages for a day.
+
+    Prefer the outline JSON, but fall back to the day's first-class
+    DayPassage rows (the authoritative, version-switchable scripture the user
+    actually curated). When the outline lists no suggested_passages - which is
+    the normal state for studies whose days were generated from DayPassages -
+    we must still feed the planner real verses, otherwise it returns empty and
+    the backend substitutes the hardcoded fallback prayers.
+    """
+    from app.models import DayPassage
     outline = study.outline_json or {}
     for d in outline.get("days", []):
         if d.get("day_number") == day_number:
-            return [Passage(ref=p["ref"], rational=p.get("rationale", ""))
-                    for p in d.get("suggested_passages", [])]
+            suggested = d.get("suggested_passages") or []
+            if suggested:
+                return [Passage(ref=p["ref"], rational=p.get("rationale", ""))
+                        for p in suggested]
+    # Fallback: read the day's persisted passages directly.
+    target = next((dd for dd in study.days if dd.day_number == day_number), None)
+    if target is not None and getattr(target, "id", None) is not None:
+        with Session(get_engine()) as s:
+            rows = s.exec(
+                select(DayPassage)
+                .where(DayPassage.study_day_id == target.id)
+                .order_by(DayPassage.order)
+            ).all()
+            if rows:
+                return [Passage(ref=r.ref, rational=r.rationale) for r in rows]
     return []

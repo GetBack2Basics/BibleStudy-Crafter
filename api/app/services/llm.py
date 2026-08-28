@@ -19,7 +19,7 @@ from app.services import events
 
 # Status codes that mean "this provider can't serve us, try the next one"
 FAILOVER_STATUS = {402, 408, 429, 500, 502, 503, 504}
-DEFAULT_TIMEOUT = 120.0
+DEFAULT_TIMEOUT = 300.0
 # Retry a provider this many times on transient failures (rate limits, 502s
 # from the free tier) before failing over to the next provider in the chain.
 MAX_ATTEMPTS = 3
