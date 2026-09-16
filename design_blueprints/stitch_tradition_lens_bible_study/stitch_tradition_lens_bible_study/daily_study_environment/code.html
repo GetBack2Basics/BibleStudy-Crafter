@@ -1,0 +1,284 @@
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={theme:{extend:{"colors":{"background":"#f8f9ff","primary-container":"#2c3e50","inverse-surface":"#213145","on-tertiary-container":"#c7a15a","tertiary-fixed-dim":"#e9c176","outline-variant":"#c4c6cd","tertiary-fixed":"#ffdea5","on-secondary":"#ffffff","tertiary":"#342400","on-error":"#ffffff","on-surface-variant":"#43474c","surface-dim":"#cbdbf5","on-tertiary-fixed-variant":"#5d4201","on-tertiary-fixed":"#261900","error":"#ba1a1a","surface-container-high":"#dce9ff","secondary-fixed":"#e4e3d7","on-secondary-fixed":"#1b1c15","on-primary":"#ffffff","surface-tint":"#4e6073","surface-variant":"#d3e4fe","primary-fixed-dim":"#b5c8df","surface-container-highest":"#d3e4fe","on-tertiary":"#ffffff","on-surface":"#0b1c30","surface-bright":"#f8f9ff","on-error-container":"#93000a","tertiary-container":"#503800","surface-container-low":"#eff4ff","secondary-container":"#e4e3d7","on-secondary-container":"#64655c","on-primary-fixed":"#091d2e","secondary":"#5e5f56","inverse-on-surface":"#eaf1ff","on-primary-container":"#96a9be","primary-fixed":"#d1e4fb","surface":"#f8f9ff","on-primary-fixed-variant":"#36485b","surface-container-lowest":"#ffffff","secondary-fixed-dim":"#c7c7bc","on-background":"#0b1c30","primary":"#162839","error-container":"#ffdad6","on-secondary-fixed-variant":"#46473f","surface-container":"#e5eeff","inverse-primary":"#b5c8df","outline":"#74777d"},"borderRadius":{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},"spacing":{"container-max":"1200px","reading-width":"720px","gutter":"24px","margin-desktop":"40px","margin-mobile":"16px","unit":"8px"},"fontFamily":{"headline-md":["EB Garamond"],"display-scripture":["EB Garamond"],"ui-label-md":["Inter"],"body-reading":["EB Garamond"],"headline-lg":["EB Garamond"],"display-scripture-mobile":["EB Garamond"],"ui-label-sm":["Inter"],"ui-label-lg":["Inter"]},"fontSize":{"headline-md":["22px",{"lineHeight":"28px","fontWeight":"600"}],"display-scripture":["34px",{"lineHeight":"48px","letterSpacing":"-0.01em","fontWeight":"500"}],"ui-label-md":["14px",{"lineHeight":"20px","fontWeight":"500"}],"body-reading":["20px",{"lineHeight":"32px","fontWeight":"400"}],"headline-lg":["28px",{"lineHeight":"36px","fontWeight":"600"}],"display-scripture-mobile":["26px",{"lineHeight":"36px","fontWeight":"500"}],"ui-label-sm":["12px",{"lineHeight":"16px","fontWeight":"500"}],"ui-label-lg":["16px",{"lineHeight":"24px","letterSpacing":"0.02em","fontWeight":"600"}]}}}}</script></head><body class="bg-background font-body-reading text-on-surface antialiased"><header class="fixed top-0 w-full z-50 bg-surface/90 backdrop-blur-md shadow-[0_1px_8px_rgba(44,62,80,0.04)]"><div class="h-16 max-w-container-max mx-auto px-margin-mobile lg:px-margin-desktop flex items-center justify-between gap-gutter"><div class="flex items-center gap-4 flex-1"><span class="font-headline-md text-headline-md text-primary shrink-0">BibleStudy Crafter</span><div class="hidden md:flex relative w-full max-w-md"><span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span><input class="w-full bg-surface-container-low border-b border-outline-variant py-1.5 pl-10 pr-4 text-ui-label-md font-ui-label-md focus:border-primary focus:outline-none transition-colors" placeholder="Search scriptures or commentaries..." type="text"/></div></div><nav class="flex items-center gap-6" data-active-classes="text-primary font-bold"><a class="hidden lg:block text-ui-label-md font-ui-label-md text-on-surface-variant hover:text-primary transition-colors" data-path="dashboard" href="#">Dashboard</a><a class="hidden lg:block text-ui-label-md font-ui-label-md text-on-surface-variant hover:text-primary transition-colors" data-path="my-library" href="#">My Library</a><div class="group relative"><button class="w-8 h-8 rounded-full bg-primary flex items-center justify-center hover:shadow-md transition-shadow"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></button><div class="absolute right-0 top-full mt-2 w-48 bg-surface shadow-xl rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all py-2 border border-outline-variant/30"><a class="block px-4 py-2 text-ui-label-sm font-ui-label-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface" data-path="dashboard" href="#">Dashboard</a><a class="block px-4 py-2 text-ui-label-sm font-ui-label-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface" data-path="my-library" href="#">My Library</a><a class="block px-4 py-2 text-ui-label-sm font-ui-label-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface" data-path="settings" href="#">Settings</a><div class="h-[1px] bg-outline-variant/30 my-1"></div><a class="block px-4 py-2 text-ui-label-sm font-ui-label-sm text-error" href="#">Sign Out</a></div></div></nav></div></header><main class="w-full pt-16 min-h-screen bg-background"><div class="max-w-container-max mx-auto px-margin-mobile lg:px-margin-desktop py-gutter"><div class="flex flex-col w-full relative min-h-[calc(100vh-64px)] overflow-hidden bg-background">
+<!-- Ambient Background Texture -->
+<div class="absolute inset-0 pointer-events-none opacity-[0.03]" style="background-image: url('data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' viewBox=\'0 0 100 100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.8\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100\' height=\'100\' filter=\'url(%23noise)\'/%3E%3C/svg%3E');"></div>
+<div class="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary-fixed/20 blur-[120px] pointer-events-none"></div>
+<div class="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-tertiary-fixed/20 blur-[120px] pointer-events-none"></div>
+<div class="w-full max-w-reading-width mx-auto px-margin-mobile lg:px-0 py-12 relative z-10 flex flex-col gap-12">
+<!-- Header Section -->
+<div class="flex flex-col gap-4 relative">
+<div class="flex items-center gap-3">
+<span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-surface-container-high text-on-surface-variant text-ui-label-sm font-ui-label-sm shadow-[0_2px_8px_rgba(44,62,80,0.08)]">01</span>
+<span class="text-ui-label-md font-ui-label-md text-on-surface-variant uppercase tracking-wider">Daily Study</span>
+</div>
+<h1 class="text-[42px] leading-[52px] font-headline-md text-on-surface tracking-tight">Reflections on What does being equally / unequally yoked mean</h1>
+<div class="flex items-center gap-6 mt-2 text-ui-label-md font-ui-label-md text-on-surface-variant">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">calendar_today</span>
+<span>Day 1 of 5</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">schedule</span>
+<span>25 min study</span>
+</div>
+</div>
+<div class="absolute -left-12 top-0 h-full w-[2px] bg-gradient-to-b from-primary/40 via-primary/10 to-transparent hidden lg:block"></div>
+</div>
+<!-- Scripture Section -->
+<div class="flex flex-col gap-6" id="scripture-container">
+<div class="flex items-center justify-between">
+<h2 class="text-headline-lg font-headline-lg text-on-surface flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">auto_stories</span>
+                    Primary Texts
+                </h2>
+<button class="text-ui-label-md font-ui-label-md text-primary hover:text-primary-container transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px]">swap_vert</span>
+                    Reorder
+                </button>
+</div>
+<!-- Passage Card 1 -->
+<div class="group relative bg-surface-container-lowest rounded-xl p-6 shadow-[0_4px_20px_rgba(44,62,80,0.03)] hover:shadow-[0_8px_30px_rgba(44,62,80,0.06)] transition-all duration-300 flex flex-col gap-4 overflow-hidden" draggable="true">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-transparent group-hover:bg-on-tertiary-container transition-colors"></div>
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity">drag_indicator</span>
+<h3 class="text-headline-md font-headline-md text-primary">Genesis 18:12</h3>
+</div>
+<div class="relative inline-block text-left">
+<button class="inline-flex items-center justify-center gap-1 rounded-md bg-surface-container py-1.5 px-3 text-ui-label-sm font-ui-label-sm text-on-surface hover:bg-surface-container-high transition-colors">
+                            WEB
+                            <span class="material-symbols-outlined text-[16px]">expand_more</span>
+</button>
+</div>
+</div>
+<div class="pl-9">
+<p class="text-display-scripture font-display-scripture text-on-surface leading-snug">
+                        Sarah laughed within herself, saying, "After I have grown old will I have pleasure, my lord being old also?"
+                    </p>
+<div class="mt-4 pt-4 border-t border-outline-variant/30 flex items-start gap-2 text-ui-label-md font-ui-label-md text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px] text-tertiary mt-0.5">info</span>
+<span><strong class="text-on-surface font-semibold">Context:</strong> Exploring themes of faith, doubt, and alignment with God's promises in earthly partnerships.</span>
+</div>
+</div>
+</div>
+<!-- Passage Card 2 -->
+<div class="group relative bg-surface-container-lowest rounded-xl p-6 shadow-[0_4px_20px_rgba(44,62,80,0.03)] hover:shadow-[0_8px_30px_rgba(44,62,80,0.06)] transition-all duration-300 flex flex-col gap-4 overflow-hidden" draggable="true">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-transparent group-hover:bg-on-tertiary-container transition-colors"></div>
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity">drag_indicator</span>
+<h3 class="text-headline-md font-headline-md text-primary">Genesis 19:16</h3>
+</div>
+<div class="relative inline-block text-left">
+<button class="inline-flex items-center justify-center gap-1 rounded-md bg-surface-container py-1.5 px-3 text-ui-label-sm font-ui-label-sm text-on-surface hover:bg-surface-container-high transition-colors">
+                            WEB
+                            <span class="material-symbols-outlined text-[16px]">expand_more</span>
+</button>
+</div>
+</div>
+<div class="pl-9">
+<p class="text-display-scripture font-display-scripture text-on-surface leading-snug">
+                        But he lingered; and the men grabbed his hand, his wife's hand, and his two daughters' hands, Yahweh being merciful to him; and they took him out, and set him outside of the city.
+                    </p>
+<div class="mt-4 pt-4 border-t border-outline-variant/30 flex items-start gap-2 text-ui-label-md font-ui-label-md text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px] text-tertiary mt-0.5">info</span>
+<span><strong class="text-on-surface font-semibold">Context:</strong> The consequences of hesitation and the grace extended when a household's spiritual direction is divided or delayed.</span>
+</div>
+</div>
+</div>
+<!-- Passage Card 3 -->
+<div class="group relative bg-surface-container-lowest rounded-xl p-6 shadow-[0_4px_20px_rgba(44,62,80,0.03)] hover:shadow-[0_8px_30px_rgba(44,62,80,0.06)] transition-all duration-300 flex flex-col gap-4 overflow-hidden" draggable="true">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-transparent group-hover:bg-on-tertiary-container transition-colors"></div>
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity">drag_indicator</span>
+<h3 class="text-headline-md font-headline-md text-primary">Genesis 37:2</h3>
+</div>
+<div class="relative inline-block text-left">
+<button class="inline-flex items-center justify-center gap-1 rounded-md bg-surface-container py-1.5 px-3 text-ui-label-sm font-ui-label-sm text-on-surface hover:bg-surface-container-high transition-colors">
+                            WEB
+                            <span class="material-symbols-outlined text-[16px]">expand_more</span>
+</button>
+</div>
+</div>
+<div class="pl-9">
+<p class="text-display-scripture font-display-scripture text-on-surface leading-snug">
+                        This is the history of the generations of Jacob. Joseph, being seventeen years old, was feeding the flock with his brothers. He was a boy with the sons of Bilhah and Zilpah, his father's wives. Joseph brought an evil report of them to their father.
+                    </p>
+<div class="mt-4 pt-4 border-t border-outline-variant/30 flex items-start gap-2 text-ui-label-md font-ui-label-md text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px] text-tertiary mt-0.5">info</span>
+<span><strong class="text-on-surface font-semibold">Context:</strong> Family dynamics and the burden of differing moral compasses within a shared household or endeavor.</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Reflection Section -->
+<div class="flex flex-col gap-6 mt-8 relative">
+<div class="absolute -left-6 top-0 bottom-0 w-[4px] bg-tertiary-fixed-dim rounded-full hidden md:block"></div>
+<h2 class="text-headline-lg font-headline-lg text-on-surface flex items-center gap-3">
+<span class="material-symbols-outlined text-on-tertiary-container">psychology</span>
+                Reflection
+            </h2>
+<div class="text-body-reading font-body-reading text-on-surface-variant space-y-6 columns-1 md:columns-1 max-w-none">
+<p class="first-letter:text-6xl first-letter:font-bold first-letter:text-primary first-letter:float-left first-letter:mr-4 first-letter:mt-2">
+                    The concept of the "yoke" is profoundly agricultural, yet deeply relational. When two animals are yoked together to pull a plow, their strength, pace, and direction must be in harmony. If an ox is yoked with a donkey, as Deuteronomy 22:10 forbids, the differing sizes, gaits, and instincts create not just inefficiency, but suffering for both animals and a crooked furrow for the farmer.
+                </p>
+<p>
+                    When we examine the Genesis narratives, we see the precursors to this Pauline instruction. Sarah's laughter (Gen 18:12) reveals a moment of internal dissonance—a temporary unequally yoked faith—where her understanding of her physical reality conflicted with the divine promise given to her husband. Lot's hesitation (Gen 19:16) shows a family physically together but spiritually fragmented, needing angels to literally drag them to safety. Joseph (Gen 37:2) finds himself functionally yoked to brothers whose moral compass points entirely elsewhere, leading to deep betrayal.
+                </p>
+<div class="bg-surface-container-low rounded-xl p-8 my-8 shadow-sm relative overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 bg-tertiary/5 rounded-bl-full pointer-events-none"></div>
+<span class="material-symbols-outlined text-4xl text-on-tertiary-container mb-4 block">format_quote</span>
+<p class="text-[24px] leading-9 font-headline-md text-on-surface italic">
+                        To be unequally yoked is not merely about differing labels, but differing trajectories. It is attempting to plow the field of life while pulling in opposite directions.
+                    </p>
+</div>
+<p>
+                    The modern application extends far beyond marriage, touching every significant partnership—business, deep friendship, and collaborative ministry. The question isn't just "do we believe the same things?" but "are we moving at the same pace toward the same Master's goal?"
+                </p>
+</div>
+<div class="mt-6 bg-surface-container-high rounded-xl p-6 shadow-sm">
+<h3 class="text-ui-label-lg font-ui-label-lg text-primary uppercase tracking-widest mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]">prayer_times</span>
+                    Contemplative Prayer
+                </h3>
+<p class="text-body-reading font-body-reading text-on-surface italic">
+                    "Lord, open our hearts to examine the yokes we have taken upon ourselves. Reveal where we are bound in partnerships that hinder the straight furrow You intend for our lives. Give us the wisdom to seek harmony in our closest bonds, and the courage to release those connections that pull us away from Your promises. Amen."
+                </p>
+</div>
+<!-- Note Input -->
+<div class="mt-4">
+<div class="relative w-full">
+<textarea class="w-full bg-surface border-b border-outline-variant py-4 text-body-reading font-body-reading focus:border-primary focus:outline-none transition-colors min-h-[120px] resize-y" placeholder="Record your personal reflections here..." spellcheck="false"></textarea>
+<div class="absolute right-0 bottom-4 flex gap-2">
+<button class="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">format_bold</span>
+</button>
+<button class="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">format_italic</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Voices / Commentary Section -->
+<div class="flex flex-col gap-6 mt-8">
+<h2 class="text-headline-lg font-headline-lg text-on-surface flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary">forum</span>
+                Voices on these Verses
+            </h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Voice Card 1 -->
+<a class="group block bg-surface-container-lowest rounded-xl p-5 shadow-[0_2px_10px_rgba(44,62,80,0.03)] hover:shadow-[0_8px_20px_rgba(44,62,80,0.06)] hover:-translate-y-1 transition-all duration-300" href="#">
+<div class="flex items-center gap-2 mb-3">
+<div class="w-6 h-6 rounded-full bg-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[14px] text-on-secondary-container">menu_book</span>
+</div>
+<span class="text-ui-label-sm font-ui-label-sm text-on-surface-variant uppercase tracking-wider">Bible Repository</span>
+</div>
+<h4 class="text-ui-label-lg font-ui-label-lg text-on-surface mb-2 group-hover:text-primary transition-colors">The Burden of the Yoke</h4>
+<p class="text-ui-label-md font-ui-label-md text-on-surface-variant line-clamp-3">
+                        "The agricultural metaphor was unmistakable to the original audience. The physical distress caused by an unequal yoke represents the deep spiritual tearing that occurs when two fundamentally different worldviews attempt a unified life..."
+                    </p>
+<div class="mt-4 flex items-center text-primary text-ui-label-sm font-ui-label-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-[-10px] group-hover:translate-x-0">
+                        Read full commentary <span class="material-symbols-outlined text-[16px] ml-1">arrow_forward</span>
+</div>
+</a>
+<!-- Voice Card 2 -->
+<a class="group block bg-surface-container-lowest rounded-xl p-5 shadow-[0_2px_10px_rgba(44,62,80,0.03)] hover:shadow-[0_8px_20px_rgba(44,62,80,0.06)] hover:-translate-y-1 transition-all duration-300" href="#">
+<div class="flex items-center gap-2 mb-3">
+<div class="w-6 h-6 rounded-full bg-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[14px] text-on-secondary-container">menu_book</span>
+</div>
+<span class="text-ui-label-sm font-ui-label-sm text-on-surface-variant uppercase tracking-wider">StudyLight</span>
+</div>
+<h4 class="text-ui-label-lg font-ui-label-lg text-on-surface mb-2 group-hover:text-primary transition-colors">Lot's Lingering</h4>
+<p class="text-ui-label-md font-ui-label-md text-on-surface-variant line-clamp-3">
+                        "In Gen 19, we see the practical outworking of compromised alliances. Lot's reluctance to leave Sodom reflects a heart partially tied to the city, demonstrating how one's environment can yoke the soul if not carefully guarded."
+                    </p>
+<div class="mt-4 flex items-center text-primary text-ui-label-sm font-ui-label-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-[-10px] group-hover:translate-x-0">
+                        Read full commentary <span class="material-symbols-outlined text-[16px] ml-1">arrow_forward</span>
+</div>
+</a>
+<!-- Voice Card 3 -->
+<a class="group block bg-surface-container-lowest rounded-xl p-5 shadow-[0_2px_10px_rgba(44,62,80,0.03)] hover:shadow-[0_8px_20px_rgba(44,62,80,0.06)] hover:-translate-y-1 transition-all duration-300 md:col-span-2" href="#">
+<div class="flex items-center gap-2 mb-3">
+<div class="w-6 h-6 rounded-full bg-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[14px] text-on-secondary-container">menu_book</span>
+</div>
+<span class="text-ui-label-sm font-ui-label-sm text-on-surface-variant uppercase tracking-wider">Bible Hub Scholars</span>
+</div>
+<h4 class="text-ui-label-lg font-ui-label-lg text-on-surface mb-2 group-hover:text-primary transition-colors">The Direction of the Furrow</h4>
+<p class="text-ui-label-md font-ui-label-md text-on-surface-variant">
+                        "It is not merely a matter of belief, but of direction. If one is moving toward righteousness and the other toward self-interest, the resulting tension will eventually break the yoke or force one to change direction. The application extends to business, close friendships, and marriage."
+                    </p>
+<div class="mt-4 flex items-center text-primary text-ui-label-sm font-ui-label-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-[-10px] group-hover:translate-x-0">
+                        Read full commentary <span class="material-symbols-outlined text-[16px] ml-1">arrow_forward</span>
+</div>
+</a>
+</div>
+</div>
+<!-- Bottom Actions -->
+<div class="flex justify-between items-center pt-8 mt-4 border-t border-outline-variant/20">
+<button class="text-ui-label-md font-ui-label-md text-on-surface-variant hover:text-on-surface transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]">bookmark_border</span>
+                Save Study
+            </button>
+<button class="bg-primary text-on-primary px-6 py-2.5 rounded-full text-ui-label-md font-ui-label-md shadow-[0_2px_10px_rgba(22,40,57,0.2)] hover:shadow-[0_4px_15px_rgba(22,40,57,0.3)] hover:-translate-y-0.5 transition-all flex items-center gap-2">
+                Complete Day 1
+                <span class="material-symbols-outlined text-[18px]">check_circle</span>
+</button>
+</div>
+</div>
+</div>
+<script>
+    // Simple drag and drop functionality for visual effect
+    const container = document.getElementById('scripture-container');
+    let draggedItem = null;
+
+    container.addEventListener('dragstart', (e) => {
+        if(e.target.draggable) {
+            draggedItem = e.target;
+            setTimeout(() => {
+                e.target.style.opacity = '0.5';
+            }, 0);
+        }
+    });
+
+    container.addEventListener('dragend', (e) => {
+        if(e.target.draggable) {
+            setTimeout(() => {
+                e.target.style.opacity = '1';
+                draggedItem = null;
+            }, 0);
+        }
+    });
+
+    container.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        const afterElement = getDragAfterElement(container, e.clientY);
+        const draggableElements = [...container.querySelectorAll('[draggable="true"]')];
+        
+        if (draggedItem) {
+             if (afterElement == null) {
+                container.appendChild(draggedItem);
+            } else {
+                container.insertBefore(draggedItem, afterElement);
+            }
+        }
+    });
+
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('[draggable="true"]:not([style*="opacity: 0.5"])')];
+
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+</script></div></main><footer class="w-full bg-surface-container-lowest border-t border-outline-variant/10 py-8"><div class="max-w-container-max mx-auto px-margin-mobile lg:px-margin-desktop flex flex-col md:flex-row justify-between items-center gap-4 text-ui-label-sm font-ui-label-sm text-on-surface-variant opacity-70"><span>© ® A project of GetBack2Basics</span><span>Build: 202405201200</span></div></footer></body></html>

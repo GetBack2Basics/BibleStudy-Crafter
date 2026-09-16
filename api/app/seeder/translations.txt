@@ -9,3 +9,7 @@ BSB     = BSB        # Berean Standard Bible | free, berean.bible
 DARBY   = eng_dby    # Darby Translation | public domain
 BBE     = eng_bbe    # Bible in Basic English | public domain
 GNV     = eng_gnv    # Geneva Bible 1599 | public domain
+ENG_BRE = eng_bre    # Brenton Septuagint Translation | public domain
+ENG_BOY = eng_boy    # Updated Brenton English Septuagint | public domain
+PEV     = eng_pev    # Plain English Version | public domain
+F35     = eng_f35    # New Testament with Commentary | public domain

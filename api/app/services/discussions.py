@@ -23,11 +23,13 @@ fabricated one.
 from __future__ import annotations
 
 import asyncio
+import base64
 import html
 import ipaddress
 import json
 import re
 import socket
+import time
 import urllib.parse
 from dataclasses import dataclass, asdict
 from typing import Any
@@ -38,7 +40,9 @@ from app.services import events
 from app.services.llm import NoProviderAvailable, complete
 
 DDG_HTML = "https://html.duckduckgo.com/html/"
+DDG_LITE = "https://lite.duckduckgo.com/lite/"
 BING_SEARCH = "https://www.bing.com/search"
+MOJEEK_SEARCH = "https://www.mojeek.com/search"
 REDDIT_SEARCH = "https://www.reddit.com/search.json"
 _HEADERS = {
     "User-Agent": (
@@ -56,6 +60,24 @@ _REDDIT_HEADERS = {
 _TIMEOUT = 12.0
 _PER_QUERY = 6          # results kept per web-search query
 _MAX_SOURCES = 18       # hard cap per track fed to / returned from the LLM
+
+# Engine politeness. Mojeek (the only engine that reliably honours `site:` and
+# does not rewrite the query) answers 403 to concurrent bursts: 12 parallel
+# queries all fail, the same 12 serialized ~2s apart all succeed. So every
+# outbound search request takes a global lock and waits its turn.
+_SEARCH_GAP = 2.0
+_search_lock = asyncio.Lock()
+_last_search_at = 0.0
+
+
+async def _throttle() -> None:
+    """Serialize outbound search requests, >=_SEARCH_GAP apart."""
+    global _last_search_at
+    async with _search_lock:
+        wait = _SEARCH_GAP - (time.monotonic() - _last_search_at)
+        if wait > 0:
+            await asyncio.sleep(wait)
+        _last_search_at = time.monotonic()
 
 
 # ------------------------------------------------------------------- SSRF guard
@@ -150,23 +172,68 @@ def _clean(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
+def _unwrap_bing(url: str) -> str:
+    """Bing wraps every result in a /ck/a? redirect whose real target is
+    base64url in the `u=a1...` parameter. Without decoding it, the host is
+    always bing.com, so social results can never be recognised.
+    """
+    url = html.unescape(url or "")
+    m = re.search(r"[?&]u=a1([A-Za-z0-9_\-]+)", url)
+    if not m:
+        return url
+    raw = m.group(1)
+    raw += "=" * (-len(raw) % 4)
+    try:
+        decoded = base64.urlsafe_b64decode(raw).decode("utf-8", "replace")
+    except Exception:                # noqa: BLE001 - keep the wrapper on failure
+        return url
+    return decoded if decoded.startswith("http") else url
+
+
 def _parse_bing(html_text: str) -> list[Source]:
     """Pull result cards out of Bing's /search HTML (li.b_algo blocks)."""
     out: list[Source] = []
     blocks = re.findall(r'<li class="b_algo".*?</li>', html_text, re.DOTALL)
     for block in blocks[:_PER_QUERY]:
-        m = re.search(r'<h2>\s*<a[^>]*href="([^"]+)"', block)
+        # The h2 anchor carries no fixed class and may have attributes before
+        # href, so match loosely rather than requiring `<h2>\s*<a href=`.
+        m = re.search(r'<h2[^>]*>\s*<a[^>]*?href="([^"]+)"', block, re.DOTALL)
         if not m:
             continue
-        url = m.group(1)
+        url = _unwrap_bing(m.group(1))
         if not url.startswith("http"):
             continue
-        t = re.search(r'<h2>\s*<a[^>]*>(.*?)</a>', block, re.DOTALL)
+        t = re.search(r'<h2[^>]*>\s*<a[^>]*>(.*?)</a>', block, re.DOTALL)
         title = _clean(t.group(1)) if t else ""
-        s = re.search(r'<p[^>]*>(.*?)</p>', block, re.DOTALL)
+        # Snippet <p> usually carries a class in current markup.
+        s = re.search(r'<p class="[^"]*"[^>]*>(.*?)</p>', block, re.DOTALL) \
+            or re.search(r'<p[^>]*>(.*?)</p>', block, re.DOTALL)
         snippet = _clean(s.group(1)) if s else ""
         if not title:
             continue
+        out.append(_classify(Source(title=title, url=url, snippet=snippet,
+                                    source=_host_label(url))))
+    return out
+
+
+def _parse_mojeek(html_text: str) -> list[Source]:
+    """Mojeek returns plain, unwrapped result URLs and honours `site:` scoping,
+    which makes it the reliable path for per-platform social searches when the
+    big engines soft-block or rewrite the query.
+    """
+    out: list[Source] = []
+    blocks = re.findall(r'<li class="r\d+">.*?</li>', html_text, re.DOTALL)
+    for block in blocks[:_PER_QUERY]:
+        m = re.search(r'<h2><a class="title"[^>]*?href="([^"]+)"[^>]*>(.*?)</a>',
+                      block, re.DOTALL)
+        if not m:
+            continue
+        url = html.unescape(m.group(1))
+        title = _clean(m.group(2))
+        if not title or not url.startswith("http"):
+            continue
+        s = re.search(r'<p class="s">(.*?)</p>', block, re.DOTALL)
+        snippet = _clean(s.group(1)) if s else ""
         out.append(_classify(Source(title=title, url=url, snippet=snippet,
                                     source=_host_label(url))))
     return out
@@ -193,11 +260,74 @@ def _parse_ddg(html_text: str) -> list[Source]:
     return out
 
 
+# ------------------------------------------------------------------ Brave API
+# The engine ladder below (Mojeek/Bing/DDG) is IP-blocked from the runtime
+# (Mojeek 403, DDG JS-challenge 202, Bing returns 200 but yields no usable
+# `site:`-scoped social links). When a Brave Search API key is configured we
+# route through Brave instead - a keyed, authenticated request that returns
+# clean JSON and honours `site:` scoping (incl. site:reddit.com). This is the
+# same class of "hosted search" that works where direct scraping does not.
+BRAVE_SEARCH = "https://api.search.brave.com/res/v1/web/search"
+_BRAVE_HEADERS = {
+    "Accept": "application/json",
+    "Accept-Language": "en-US,en;q=0.9",
+}
+
+
+def _brave_key() -> str:
+    from app.config import get_settings
+    return get_settings().brave_search_api_key
+
+
+def _parse_brave(json_blob: dict) -> list[Source]:
+    """Brave's web/search result set -> sources. Honours `site:` scoping that
+    the caller already put in the query, so social-host classification still
+    works."""
+    out: list[Source] = []
+    results = (json_blob.get("web", {}) or {}).get("results", []) or []
+    for r in results[:_PER_QUERY]:
+        url = r.get("url")
+        if not url or not url.startswith("http"):
+            continue
+        title = _clean(r.get("title", ""))
+        snippet = _clean(r.get("description", "")) or _clean(
+            r.get("page_age", ""))
+        if not title:
+            continue
+        out.append(_classify(Source(
+            title=title, url=url, snippet=snippet,
+            source=_host_label(url))))
+    return out
+
+
+async def _brave_search(query: str) -> list[Source]:
+    """One Brave Search API call. Fails soft -> []. Returns real, cited
+    results (Brave serves the true destination URL, not a wrapped one)."""
+    key = _brave_key()
+    if not key:
+        return []
+    try:
+        async with httpx.AsyncClient(timeout=_TIMEOUT,
+                                     headers={**_BRAVE_HEADERS,
+                                              "X-Subscription-Token": key},
+                                     follow_redirects=True) as client:
+            resp = await client.get(BRAVE_SEARCH, params={
+                "q": query, "count": _PER_QUERY, "freshness": "all"})
+            resp.raise_for_status()
+            data = resp.json()
+    except Exception as exc:        # noqa: BLE001 - never crash a generation job
+        events.emit("warn", "discussions",
+                    f"brave search failed for {query!r}: {exc}")
+        return []
+    return _parse_brave(data)
+
+
 async def _search_one(url: str, query: str, parser) -> list[Source]:
+    await _throttle()               # engines 403 on concurrent bursts
     try:
         async with httpx.AsyncClient(timeout=_TIMEOUT, headers=_HEADERS,
                                      follow_redirects=True) as client:
-            if url == DDG_HTML:
+            if url in (DDG_HTML, DDG_LITE):
                 resp = await client.post(url, data={"q": query, "kl": "us-en"})
             else:
                 resp = await client.get(url, params={"q": query})
@@ -208,20 +338,62 @@ async def _search_one(url: str, query: str, parser) -> list[Source]:
         return []
 
 
-async def search(query: str, *, per_query: int = _PER_QUERY) -> list[Source]:
-    """One live web search across providers; returns real sources or [].
+# Engine ladder. Mojeek is tried alongside Bing because it does not rewrite the
+# query and honours `site:` scoping, which is what makes social searches work;
+# Bing contributes breadth for the official track.
+_ENGINES = (
+    (MOJEEK_SEARCH, _parse_mojeek),
+    (BING_SEARCH, _parse_bing),
+    (DDG_HTML, _parse_ddg),
+    (DDG_LITE, _parse_ddg),
+)
 
-    Bing is primary (reachable from the deployment network); DuckDuckGo HTML is
-    a fallback. Each provider is tried until one yields results.
+
+async def search(query: str, *, per_query: int = _PER_QUERY,
+                 want_hosts: tuple[str, ...] = ()) -> list[Source]:
+    """One live web search; returns real sources or [].
+
+    If a hosted search API (Brave) is configured it is tried first - it is the
+    reliable path from IP-blocked runtimes and returns real destination URLs.
+    Otherwise (no key) we fall through to the engine ladder (Mojeek/Bing/DDG),
+    which still works from unblocked networks.
+
+    When `want_hosts` is given (social searches) a result set only counts as
+    success if it actually contains one of those hosts - otherwise we fall
+    through, because a soft-blocked engine happily returns ten irrelevant
+    results rather than an error.
     """
-    for url, parser in ((BING_SEARCH, _parse_bing), (DDG_HTML, _parse_ddg)):
+    # 1) Hosted search API (Brave) when configured.
+    if _brave_key():
         try:
-            results = await _search_one(url, query, parser)
-        except Exception:
+            results = await _brave_search(query)
+        except Exception:           # noqa: BLE001
             results = []
         if results:
-            return results[:per_query]
-    return []
+            if not want_hosts or any(_social_host_ok(s.url) for s in results):
+                return results[:per_query]
+        # Brave returned nothing usable for this (e.g. social) query; fall
+        # through to the engine ladder before giving up.
+
+    # 2) Engine ladder fallback (Mojeek -> Bing -> DDG_HTML -> DDG_LITE).
+    merged: list[Source] = []
+    seen: set[str] = set()
+    for url, parser in _ENGINES:
+        try:
+            results = await _search_one(url, query, parser)
+        except Exception:           # noqa: BLE001
+            results = []
+        for src in results:
+            if src.url not in seen:
+                seen.add(src.url)
+                merged.append(src)
+        if not want_hosts:
+            if merged:
+                return merged[:per_query]
+            continue
+        if any(_social_host_ok(s.url) for s in merged):
+            return merged[:per_query]
+    return merged[:per_query]
 
 
 def _strip_tags_to_text(html_text: str) -> str:
@@ -278,6 +450,55 @@ def _read_reddit_json(html_text: str) -> tuple[str, int]:
     return (" | ".join(parts))[:1400], engagement
 
 
+async def _fetch_reddit_thread(url: str) -> tuple[str, int]:
+    """Read a real Reddit thread: body + top comments + engagement.
+
+    www.reddit.com HTML is a JS shell (no visible text), and its `.json` view
+    answers 403 from datacentre IPs. old.reddit.com's `.json` is the path that
+    actually returns content. Falls back to old.reddit HTML, then to ''.
+    """
+    if not _is_safe_url(url):
+        return "", 0
+    path = urllib.parse.urlparse(url).path
+    for candidate in (f"https://old.reddit.com{path.rstrip('/')}.json",
+                      f"https://www.reddit.com{path.rstrip('/')}.json"):
+        try:
+            async with httpx.AsyncClient(timeout=_TIMEOUT,
+                                         headers=_REDDIT_HEADERS,
+                                         follow_redirects=True) as client:
+                resp = await client.get(candidate, params={"raw_json": 1})
+                if resp.status_code != 200:
+                    continue
+                data = resp.json()
+        except Exception:            # noqa: BLE001 - try the next candidate
+            continue
+        try:
+            post = data[0]["data"]["children"][0]["data"]
+            comments = data[1]["data"]["children"]
+        except Exception:            # noqa: BLE001
+            continue
+        parts: list[str] = []
+        body = _clean(post.get("selftext") or "")
+        if body:
+            parts.append(body)
+        for c in comments[:6]:
+            if not isinstance(c, dict):
+                continue
+            cd = c.get("data") or {}
+            txt = _clean(cd.get("body") or "")
+            if txt:
+                parts.append("Comment: " + txt)
+        engagement = (int(post.get("score", 0) or 0)
+                      + int(post.get("num_comments", 0) or 0))
+        text = (" | ".join(parts))[:1400]
+        if text:
+            return text, engagement
+    # Last resort: old.reddit HTML (server-rendered, unlike www).
+    text = await _fetch_page_text(
+        f"https://old.reddit.com{path}", max_chars=1600)
+    return text, 0
+
+
 async def _fetch_reddit(query: str, limit: int = 6) -> list[Source]:
     """Reddit's public, keyless JSON search - returns real threads with
     engagement. Each thread is then *visited* to read its real body + top
@@ -311,8 +532,7 @@ async def _fetch_reddit(query: str, limit: int = 6) -> list[Source]:
         title = _clean(d.get("title", "")) or "(reddit thread)"
         ncomments = int(d.get("num_comments", 0) or 0)
         # Visit the thread for the real body + top comments.
-        page = await _fetch_page_text(url, max_chars=1600)
-        body, engagement = _read_reddit_json(page) if page else ("", 0)
+        body, engagement = await _fetch_reddit_thread(url)
         if not body:
             body = _clean(d.get("selftext", ""))[:400] or f"Reddit discussion with {ncomments} comments."
         out.append(Source(
@@ -338,42 +558,63 @@ _WEB_SOCIAL = [
 def _official_queries(refs: list[str], topic: str) -> list[str]:
     q: list[str] = []
     for r in refs[:3]:
-        q.append(f'{r} Bible commentary - what does this verse mean')
+        # Hyphenated ranges act as a NOT operator in search engines.
+        q.append(f'{_search_safe_ref(r)} Bible commentary meaning')
     if topic:
         q.append(f"{topic} Bible study commentary")
     return q[:4]
 
 
-def _social_queries(refs: list[str], topic: str) -> list[str]:
-    """Plain, human-style search queries - one per social platform.
+_SOCIAL_SITES = (
+    ("reddit.com", "reddit"),
+    ("quora.com", "quora"),
+    ("x.com", "x"),
+    ("facebook.com", "facebook"),
+)
 
-    These mirror what a person types into Google, e.g.
-    "Yoked with Christ reddit" / "Yoked with Christ facebook" - which DO
-    return real threads. We deliberately avoid `site:` scoping (engines often
-    drop those) and instead filter results to the right host afterwards.
+
+def _search_safe_ref(ref: str) -> str:
+    """Make a verse reference safe for a search box.
+
+    "Matthew 11:28-30" contains a hyphen, which every major engine reads as the
+    NOT operator (`-30` = exclude documents containing "30"). That silently
+    guts the result set. We keep the opening verse and drop the range.
     """
-    q: list[str] = []
-    seeds = list(refs[:2])
+    ref = (ref or "").strip()
+    if not ref:
+        return ""
+    return re.sub(r"\s*[-–]\s*\d+\s*$", "", ref)
+
+
+def _social_queries(refs: list[str], topic: str) -> list[tuple[str, str]]:
+    """`site:`-scoped queries, one per platform per seed.
+
+    Returns (query, platform) pairs. Two lessons are baked in here:
+      * hyphenated verse ranges must be stripped (see _search_safe_ref), and
+      * `site:` scoping is what actually pins a query to a platform - the older
+        "<seed> reddit" phrasing returned generic Bible pages with no social
+        host in them at all.
+    """
+    seeds = [_search_safe_ref(r) for r in refs[:2]]
     if topic:
-        seeds.append(topic)
+        seeds.append(topic.strip())
+    seeds = [s for s in seeds if s]
+    out: list[tuple[str, str]] = []
+    seen: set[str] = set()
     for seed in seeds:
-        for _, plat in _WEB_SOCIAL:
-            q.append(f"{seed} {plat}")
-    # De-duplicate queries (e.g. x.com + twitter.com both yield "... x").
-    seen_q: set[str] = set()
-    uniq: list[str] = []
-    for item in q:
-        if item not in seen_q:
-            seen_q.add(item)
-            uniq.append(item)
-    return uniq[:10]
+        for host, plat in _SOCIAL_SITES:
+            q = f"{seed} site:{host}"
+            if q not in seen:
+                seen.add(q)
+                out.append((q, plat))
+    return out[:12]
 
 
 async def fetch_official(refs: list[str], topic: str) -> list[Source]:
     queries = _official_queries(refs, topic)
     try:
         results = await asyncio.wait_for(
-            asyncio.gather(*(search(q) for q in queries)), timeout=20.0)
+            asyncio.gather(*(search(q) for q in queries)), timeout=90.0)
     except asyncio.TimeoutError:
         results = []
     seen: set[str] = set()
@@ -410,19 +651,20 @@ async def _rank_social(results: list[Source]) -> list[Source]:
 
 
 async def fetch_social(refs: list[str], topic: str) -> list[Source]:
-    """Mirror a manual social search: plain per-platform queries, then visit
-    each result page for its real content.
+    """Mirror a manual social search: `site:`-scoped per-platform queries, then
+    visit each result page for its real content.
 
-    - Reddit: fetched via its JSON API (real engagement) and each thread's
-      page is read for body + top comments.
-    - Quora / X / Facebook: plain web search, results filtered to the right
-      host, then each page is fetched for its visible text.
+    - Reddit: its JSON API is tried first (real engagement), but it answers 403
+      to datacentre IPs, so the `site:reddit.com` web path is the reliable one
+      and each thread is read via old.reddit.com (the www HTML is a JS shell).
+    - Quora / X / Facebook: `site:`-scoped search, results filtered to the right
+      host, then each page fetched for its visible text.
     Highest-engagement social examples surface first; no duplicate URLs.
     """
     queries = _social_queries(refs, topic)
 
-    # 1) Reddit via JSON API (engagement-ranked, with real page content).
-    reddit_tasks = [_fetch_reddit(f"{r} Bible") for r in refs[:2]]
+    # 1) Reddit via JSON API (engagement-ranked). Best effort: commonly blocked.
+    reddit_tasks = [_fetch_reddit(f"{_search_safe_ref(r)} Bible") for r in refs[:2]]
     if topic:
         reddit_tasks.append(_fetch_reddit(topic))
     try:
@@ -438,11 +680,12 @@ async def fetch_social(refs: list[str], topic: str) -> list[Source]:
         reddit_seen.add(src.url)
         reddit.append(src)
 
-    # 2) Quora / X / Facebook via plain web search; keep only social hosts,
-    #    then fetch each page for real content.
+    # 2) All four platforms via `site:`-scoped web search; keep only real social
+    #    hosts, then fetch each page for real content.
     try:
         web_groups = await asyncio.wait_for(
-            asyncio.gather(*(search(q) for q in queries)), timeout=25.0)
+            asyncio.gather(*(search(q, want_hosts=(plat,))
+                             for q, plat in queries)), timeout=180.0)
     except asyncio.TimeoutError:
         web_groups = []
     web_candidates: list[Source] = []
@@ -458,19 +701,24 @@ async def fetch_social(refs: list[str], topic: str) -> list[Source]:
 
     # Fetch real page content for the web candidates (bounded concurrency).
     async def _enrich(src: Source) -> Source:
-        text = await _fetch_page_text(src.url, max_chars=1600)
-        if text and src.platform == "reddit":
-            body, engagement = _read_reddit_json(text)
+        if src.platform == "reddit":
+            body, engagement = await _fetch_reddit_thread(src.url)
             if body:
                 src.snippet = body
                 if engagement:
                     src.engagement = engagement
-        elif text:
+            return src
+        text = await _fetch_page_text(src.url, max_chars=1600)
+        if not text:
+            # Try once more with a wider window for short pages (e.g. single-verse
+            # devotional pages that return little visible text the first pass).
+            text = await _fetch_page_text(src.url, max_chars=6000)
+        if text:
             src.snippet = text
         return src
     try:
         web_candidates = list(await asyncio.wait_for(
-            asyncio.gather(*(_enrich(s) for s in web_candidates)), timeout=25.0))
+            asyncio.gather(*(_enrich(s) for s in web_candidates)), timeout=40.0))
     except asyncio.TimeoutError:
         pass
 

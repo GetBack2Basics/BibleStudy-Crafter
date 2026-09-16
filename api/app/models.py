@@ -168,6 +168,10 @@ class DayPassage(SQLModel, table=True):
     order: int = Field(default=0)
     rationale: str = Field(default="", max_length=800)
     highlights: Any = Field(default=None, sa_column=Column(JSON_TYPE))  # [{text, note}]
+    source_reflections: Any = Field(default=None, sa_column=Column(JSON_TYPE))
+    # [{text, note, source_url, source_title}] — highlights captured from an external source reader
+    verse_notes: Any = Field(default=None, sa_column=Column(JSON_TYPE))
+    # [{verse: int, id: str, content: str}] — per-verse personal notes (markdown-light)
     is_primary: bool = Field(default=True)
 
 

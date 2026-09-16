@@ -41,6 +41,8 @@ services:
       MEDIA_ROOT: /media
       WEB_PORT: "${WEB_PORT:-8420}"
       BUILD_STAMP: "${BUILD_STAMP:-}"
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      SUPER_ADMIN_EMAIL: ${SUPER_ADMIN_EMAIL:-}
     volumes:
       - ./data/media:/media
       - ./api:/app
@@ -72,7 +74,9 @@ services:
   web:
     build:
       context: ./web
-      args: *build-stamp
+      args:
+        <<: *build-stamp
+        VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
     environment:
       VITE_API_URL: http://localhost:${API_PORT:-8421}
     volumes:

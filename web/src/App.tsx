@@ -1,11 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, createContext, useContext } from 'react'
+import { Link, Routes, Route, useNavigate, useParams } from 'react-router-dom'
 import StatusDock from './components/StatusDock'
 import AuthScreen from './components/AuthScreen'
 import { api } from './lib/api'
 import { auth } from './lib/auth'
 import { studies as studyApi, bible, preferences, passages, TRADITIONS, type StudyOut, type DayOut, type DayDraft, type TranslationInfo, type CompareVerse, type PassageOut, type SearchHit } from './lib/studies'
-
-type View = { kind: 'list' } | { kind: 'detail'; id: number }
 
 const STATUS_CLS: Record<string, string> = {
   pending: 'text-outline',
@@ -13,6 +12,9 @@ const STATUS_CLS: Record<string, string> = {
   ready: 'text-primary',
   failed: 'text-error',
 }
+
+const StudyTitleCtx = createContext<{ title: string | null; dayNum?: number } | null>(null)
+const SetStudyTitleCtx = createContext<((v: { title: string; dayNum?: number } | null) => void) | null>(null)
 
 const I = ({ name, cls = 'text-[18px]' }: { name: string; cls?: string }) => (
   <span className={`material-symbols-outlined ${cls}`}>{name}</span>
@@ -52,9 +54,9 @@ function CollapsibleSection({ title, icon, defaultOpen = true, children, right, 
 
 export default function App() {
   const [authed, setAuthed] = useState<boolean>(() => auth.accessToken() !== null)
-  const [view, setView] = useState<View>({ kind: 'list' })
   const [studiesList, setStudiesList] = useState<StudyOut[]>([])
   const [loadingList, setLoadingList] = useState(false)
+  const [studyTitle, setStudyTitle] = useState<{ title: string; dayNum?: number } | null>(null)
 
   const refreshList = () => {
     setLoadingList(true)
@@ -64,8 +66,8 @@ export default function App() {
   const handleLogout = async () => {
     await auth.logout()
     setAuthed(false)
-    setView({ kind: 'list' })
     setStudiesList([])
+    window.history.back()
   }
 
   // Any unrecoverable 401 (e.g. refresh expired) drops the user to the login screen.
@@ -76,14 +78,13 @@ export default function App() {
   const handleDelete = async (id: number) => {
     if (!confirm('Delete this study? This cannot be undone.')) return
     await studyApi.remove(id)
-    if (view.kind === 'detail' && view.id === id) setView({ kind: 'list' })
     refreshList()
   }
 
   const handleDeleteAll = async () => {
     if (!confirm('Delete ALL studies? The Bible translations and verses are kept.')) return
     await studyApi.removeAll()
-    setView({ kind: 'list' })
+    window.history.back()
     refreshList()
   }
 
@@ -94,16 +95,14 @@ export default function App() {
   }
 
   return (
+    <SetStudyTitleCtx.Provider value={setStudyTitle}>
+    <StudyTitleCtx.Provider value={studyTitle}>
     <div className="min-h-screen bg-background text-on-background">
       <header className="sticky top-0 z-30 flex flex-wrap items-center gap-4 border-b border-outline-variant/20 bg-surface-container-lowest/80 px-margin-mobile py-4 backdrop-blur lg:px-margin-desktop">
-        <button className="font-headline-lg text-headline-lg text-primary tracking-tight hover:text-primary-container transition-colors"
-                onClick={() => setView({ kind: 'list' })}>
-          BibleStudy-Crafter
-        </button>
+        <Link to="/" className="font-headline-lg text-headline-lg text-primary tracking-tight hover:text-primary-container transition-colors">
+          {studyTitle?.title ?? 'BibleStudy-Crafter'}{studyTitle && studyTitle.dayNum ? ` · Day ${studyTitle.dayNum}` : ''}
+        </Link>
         <div className="ml-auto flex flex-wrap items-center gap-2">
-          {view.kind === 'detail' && (
-            <span className="text-ui-label-md text-on-surface-variant">/ study #{view.id}</span>
-          )}
           <button onClick={handleLogout}
                   className="text-ui-label-sm text-on-surface-variant hover:text-error transition-colors">
             Sign out
@@ -112,40 +111,30 @@ export default function App() {
       </header>
 
       <main className="page-shell py-8">
-        {view.kind === 'list' ? (
-          <StudyList
-            studies={studiesList}
-            loading={loadingList}
-            onRefresh={refreshList}
-            onCreate={() => setView({ kind: 'list' })}
-            onOpen={(id) => setView({ kind: 'detail', id })}
-            onDelete={handleDelete}
-            onDeleteAll={handleDeleteAll}
-          />
-        ) : (
-          <StudyDetail
-            id={view.id}
-            onBack={() => { refreshList(); setView({ kind: 'list' }) }}
-          />
-        )}
+        <Routes>
+          <Route path="/" element={<StudyList studies={studiesList} loading={loadingList} onRefresh={refreshList} onDelete={handleDelete} onDeleteAll={handleDeleteAll} />} />
+          <Route path="/study/:id" element={<StudyDetail />} />
+          <Route path="/study/:id/day/:day" element={<DayDetail />} />
+        </Routes>
       </main>
 
       <StatusDock />
     </div>
+    </StudyTitleCtx.Provider>
+    </SetStudyTitleCtx.Provider>
   )
 }
 
 /* ---------- Create form + list ---------- */
 
-function StudyList({ studies, loading, onRefresh, onCreate, onOpen, onDelete, onDeleteAll }: {
+function StudyList({ studies, loading, onRefresh, onDelete, onDeleteAll }: {
   studies: StudyOut[]
   loading: boolean
   onRefresh: () => void
-  onCreate: () => void
-  onOpen: (id: number) => void
   onDelete: (id: number) => void
   onDeleteAll: () => void
 }) {
+  const navigate = useNavigate()
   const [topic, setTopic] = useState('')
   const [minutes, setMinutes] = useState(15)
   const [days, setDays] = useState(7)
@@ -196,8 +185,7 @@ function StudyList({ studies, loading, onRefresh, onCreate, onOpen, onDelete, on
         tradition, primary_translation: version,
         selected_refs: picked.size > 0 ? [...picked] : undefined,
       })
-      onCreate()
-      onOpen(res.study_id)
+      navigate(`/study/${res.study_id}`)
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       setErr(msg)
@@ -292,7 +280,7 @@ function StudyList({ studies, loading, onRefresh, onCreate, onOpen, onDelete, on
               ))}
             </div>
           ) : searched ? (
-            <p className="text-ui-label-sm text-on-surface-variant">No verses found for “{topic.trim()}” in {version}. Try a different word.</p>
+            <p className="text-ui-label-sm text-on-surface-variant">No verses found for "{topic.trim()}" in {version}. Try a different word.</p>
           ) : null}
 
           {err && <p className="text-ui-label-sm text-error">{err}</p>}
@@ -326,7 +314,7 @@ function StudyList({ studies, loading, onRefresh, onCreate, onOpen, onDelete, on
           <ul className="overflow-hidden rounded-3xl border border-outline-variant/20 bg-surface-container-lowest shadow-ambient">
             {studies.map((s) => (
               <li key={s.id} className="group flex items-center border-b border-outline-variant/10 last:border-0">
-                <button onClick={() => onOpen(s.id)}
+                <Link to={`/study/${s.id}`}
                   className="flex flex-1 items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-surface-container-high">
                   <span className={`text-[10px] ${STATUS_CLS[s.status]}`}>●</span>
                   <span className="flex-1">
@@ -334,7 +322,7 @@ function StudyList({ studies, loading, onRefresh, onCreate, onOpen, onDelete, on
                     <span className="ml-2 text-ui-label-sm text-on-surface-variant">{s.total_days}d · {s.minutes_per_day}m/day · {s.tradition}</span>
                   </span>
                   <span className="text-ui-label-sm text-on-surface-variant">#{s.id}</span>
-                </button>
+                </Link>
                 <button onClick={() => onDelete(s.id)} title="Delete study"
                   className="px-4 py-4 text-on-surface-variant hover:text-error transition-colors">
                   <I name="delete" cls="text-[18px]" />
@@ -350,7 +338,10 @@ function StudyList({ studies, loading, onRefresh, onCreate, onOpen, onDelete, on
 
 /* ---------- Study detail (poll + render days) ---------- */
 
-function StudyDetail({ id, onBack }: { id: number; onBack: () => void }) {
+function StudyDetail() {
+  const navigate = useNavigate()
+  const params = useParams<{ id: string }>()
+  const studyId = Number(params.id)
   const [study, setStudy] = useState<StudyOut | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const timer = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -358,15 +349,20 @@ function StudyDetail({ id, onBack }: { id: number; onBack: () => void }) {
   const [progress, setProgress] = useState<number | null>(null)
   const [progressMsg, setProgressMsg] = useState<string>('')
   const esRef = useRef<EventSource | null>(null)
+  const setTitle = useContext(SetStudyTitleCtx)
 
   const load = () => {
-    studyApi.get(id).then(setStudy).catch((e) => setErr(e instanceof Error ? e.message : String(e)))
+    studyApi.get(studyId).then(setStudy).catch((e) => setErr(e instanceof Error ? e.message : String(e)))
   }
 
   useEffect(() => {
+    if (!Number.isInteger(studyId) || studyId < 1) {
+      setErr('Invalid study.')
+      return
+    }
     load()
     timer.current = setInterval(() => {
-      studyApi.get(id).then((s) => {
+      studyApi.get(studyId).then((s) => {
         setStudy(s)
         if (s.status === 'ready' || s.status === 'failed') {
           if (timer.current) clearInterval(timer.current)
@@ -380,7 +376,7 @@ function StudyDetail({ id, onBack }: { id: number; onBack: () => void }) {
     es.onmessage = (ev) => {
       try {
         const data = JSON.parse(ev.data)
-        if (data?.study_id === id && typeof data.progress === 'number') {
+        if (data?.study_id === studyId && typeof data.progress === 'number') {
           setProgress(data.progress)
           setProgressMsg(data.message || '')
           if (data.progress >= 100 || data.level === 'error') {
@@ -395,12 +391,17 @@ function StudyDetail({ id, onBack }: { id: number; onBack: () => void }) {
       if (esRef.current) esRef.current.close()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id])
+  }, [studyId])
+
+  useEffect(() => {
+    if (study) setTitle?.({ title: study.title || study.topic })
+    return () => setTitle?.(null)
+  }, [study, setTitle])
 
   const genDay = async (day: number) => {
     setStudy((s) => s ? ({ ...s, days: s.days.map((d) => d.day_number === day ? { ...d, status: 'generating' } : d) }) : s)
     try {
-      const res = await studyApi.generateDay(id, day)
+      const res = await studyApi.generateDay(studyId, day)
       setStudy((s) => s ? ({ ...s, days: s.days.map((d) => d.day_number === day ? { ...d, status: 'ready', blocks_json: res.draft } : d) }) : s)
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e))
@@ -415,7 +416,7 @@ function StudyDetail({ id, onBack }: { id: number; onBack: () => void }) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <button onClick={onBack} className="btn-ghost">
+        <button onClick={() => navigate('/')} className="btn-ghost">
           <I name="arrow_back" cls="text-[18px]" /> All studies
         </button>
         <span className={`text-ui-label-md ${STATUS_CLS[study.status]}`}>
@@ -445,7 +446,7 @@ function StudyDetail({ id, onBack }: { id: number; onBack: () => void }) {
 
       <div className="space-y-6">
         {study.days.map((d) => (
-          <DayCard key={d.day_number} studyId={id} day={d} onGenerate={() => genDay(d.day_number)} />
+          <DayCard key={d.day_number} studyId={studyId} day={d} onGenerate={() => genDay(d.day_number)} />
         ))}
       </div>
     </div>
@@ -455,6 +456,7 @@ function StudyDetail({ id, onBack }: { id: number; onBack: () => void }) {
 /* ---------- Day card with inline editing + select-to-revise ---------- */
 
 function DayCard({ studyId, day, onGenerate }: { studyId: number; day: DayOut; onGenerate: () => void }) {
+  const dayLink = `/study/${studyId}/day/${day.day_number}`
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState<DayDraft | null>(day.blocks_json ?? null)
   const [notes, setNotes] = useState<Record<string, string>>(day.notes ?? {})
@@ -537,10 +539,12 @@ function DayCard({ studyId, day, onGenerate }: { studyId: number; day: DayOut; o
                 className="shrink-0 rounded-full p-1 text-on-surface-variant transition-colors hover:bg-surface-container-high">
           <I name={dayOpen ? 'expand_less' : 'expand_more'} cls="text-[24px]" />
         </button>
-        <h3 className="min-w-0 flex-1 font-headline-md text-headline-md text-on-surface truncate">
-          <span className="text-primary">Day {day.day_number}</span>{draft?.heading ? ` — ${draft.heading}` : (day.title ? ` — ${day.title}` : '')}
-          {day.theme && <span className="ml-2 font-ui-label-sm font-normal text-on-surface-variant">· {day.theme}</span>}
-        </h3>
+        <Link to={dayLink} className="min-w-0 flex-1">
+          <h3 className="font-headline-md text-headline-md text-on-surface truncate">
+            <span className="text-primary">Day {day.day_number}</span>{draft?.heading ? ` — ${draft.heading}` : (day.title ? ` — ${day.title}` : '')}
+            {day.theme && <span className="ml-2 font-ui-label-sm font-normal text-on-surface-variant">· {day.theme}</span>}
+          </h3>
+        </Link>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
           <span className={`text-ui-label-sm ${STATUS_CLS[day.status]}`}>{day.status}</span>
           {!editing && day.status !== 'generating' && (
@@ -731,6 +735,114 @@ function Labeled({ label, children }: { label: string; children: React.ReactNode
     <div>
       <div className="mb-1 font-ui-label-sm uppercase tracking-wide text-on-surface-variant">{label}</div>
       {children}
+    </div>
+  )
+}
+
+/* ---------- Day detail view for /study/:id/day/:day ---------- */
+
+function DayDetail() {
+  const navigate = useNavigate()
+  const params = useParams<{ id: string; day: string }>()
+  const studyId = Number(params.id)
+  const dayNum = Number(params.day)
+
+  const [study, setStudy] = useState<StudyOut | null>(null)
+  const [err, setErr] = useState<string | null>(null)
+  const timer = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [progress, setProgress] = useState<number | null>(null)
+  const [progressMsg, setProgressMsg] = useState<string>('')
+  const esRef = useRef<EventSource | null>(null)
+  const setTitle = useContext(SetStudyTitleCtx)
+
+  const load = () => {
+    if (!Number.isInteger(studyId) || studyId < 1) return
+    studyApi.get(studyId).then(setStudy).catch((e) => setErr(e instanceof Error ? e.message : String(e)))
+  }
+
+  useEffect(() => {
+    if (!Number.isInteger(studyId) || studyId < 1) {
+      setErr('Invalid study.')
+      return
+    }
+    load()
+    timer.current = setInterval(() => {
+      studyApi.get(studyId).then((s) => {
+        setStudy(s)
+        if (s.status === 'ready' || s.status === 'failed') {
+          if (timer.current) clearInterval(timer.current)
+        }
+      }).catch(() => {})
+    }, 2000)
+
+    const es = new EventSource(`${api.url}/api/events`)
+    esRef.current = es
+    es.onmessage = (ev) => {
+      try {
+        const data = JSON.parse(ev.data)
+        if (data?.study_id === studyId && typeof data.progress === 'number') {
+          setProgress(data.progress)
+          setProgressMsg(data.message || '')
+          if (data.progress >= 100 || data.level === 'error') {
+            es.close(); esRef.current = null
+          }
+        }
+      } catch { /* ignore malformed */ }
+    }
+
+    return () => {
+      if (timer.current) clearInterval(timer.current)
+      if (esRef.current) esRef.current.close()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [studyId])
+
+  useEffect(() => {
+    if (study) setTitle?.({ title: study.title || study.topic, dayNum })
+    return () => setTitle?.(null)
+  }, [study, setTitle, dayNum])
+
+  const day = study?.days.find((d) => d.day_number === dayNum)
+
+  if (err && !study) return <div className="text-error">{err}</div>
+  if (!study) return <p className="text-on-surface-variant">Loading…</p>
+  if (!day) return <div className="text-error">Day {dayNum} not found in this study.</div>
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <button onClick={() => navigate(`/study/${studyId}`)} className="btn-ghost">
+          <I name="arrow_back" cls="text-[18px]" /> Back to study
+        </button>
+      </div>
+
+      <div>
+        <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">
+          {study.title || study.topic} — Day {dayNum}
+        </h1>
+      </div>
+
+      {study.status === 'generating' && (
+        <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-4 shadow-ambient">
+          <div className="mb-2 flex items-center justify-between text-ui-label-md">
+            <span className="text-tertiary">{progressMsg || 'Generating…'}</span>
+            <span className="text-on-surface-variant">{progress != null ? `${progress}%` : 'working…'}</span>
+          </div>
+          <div className="h-2 w-full overflow-hidden rounded-full bg-outline-variant/30">
+            <div className="h-full rounded-full bg-primary transition-all duration-500"
+                 style={{ width: `${progress != null ? progress : 8}%` }} />
+          </div>
+        </div>
+      )}
+
+      <DayCard studyId={studyId} day={day} onGenerate={async () => {
+        await studyApi.generateDay(studyId, dayNum)
+        navigate(`/study/${studyId}/day/${dayNum}`)
+      }} />
+
+      <div className="text-ui-label-md text-on-surface-variant">
+        {study.status} · {study.days.filter((d) => d.status === 'ready').length}/{study.total_days} days ready
+      </div>
     </div>
   )
 }
@@ -1098,7 +1210,7 @@ function PassageEditor({ studyId, day, onChanged }: {
                   <div key={hi} className="group rounded-lg border border-tertiary/30 bg-tertiary/5 px-2 py-1 text-ui-label-sm">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <span className="text-on-tertiary-container">“{h.text}”</span>
+                        <span className="text-on-tertiary-container">"{h.text}"</span>
                         {h.note && <span className="text-on-surface-variant"> — {h.note}</span>}
                       </div>
                       <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
@@ -1133,7 +1245,7 @@ function PassageEditor({ studyId, day, onChanged }: {
       {hlText && (
         <div className="rounded-2xl border border-tertiary/40 bg-tertiary/5 p-3">
           <div className="mb-1 font-ui-label-sm font-semibold uppercase tracking-wide text-tertiary">Highlight for reflection</div>
-          <p className="mb-2 text-ui-label-sm italic text-on-tertiary-container">“{hlText.slice(0, 120)}{hlText.length > 120 ? '…' : ''}”</p>
+          <p className="mb-2 text-ui-label-sm italic text-on-tertiary-container">"{hlText.slice(0, 120)}{hlText.length > 120 ? '…' : ''}"</p>
           <input
             className="field-underline w-full"
             placeholder="Optional note…"

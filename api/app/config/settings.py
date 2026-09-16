@@ -44,6 +44,11 @@ class Settings(BaseSettings):
     fal_key: str = ""
     replicate_api_token: str = ""
 
+    # Web-search providers - all optional. When set, the discussions service
+    # routes through a hosted search API (authenticated, keyed) instead of
+    # scraping engines from the runtime IP, which gets IP-blocked.
+    brave_search_api_key: str = ""
+
     # Study defaults
     default_tradition: str = "non_denominational"
     default_imagery_policy: str = "symbolic"
@@ -52,6 +57,12 @@ class Settings(BaseSettings):
     # /api/auth/admin/promote). Ordinary registrations are never admin, so a
     # user cannot escalate themselves to super admin.
     bootstrap_admin_email: str = ""
+    # Google OAuth: client id used to verify Google ID tokens (audience check).
+    # When set, only ID tokens minted for THIS client id are accepted. The
+    # one hardcoded super-admin email is promoted to admin on first Google
+    # sign-in (cheatsheet pattern: hardcode exactly one super admin email).
+    google_client_id: str = ""
+    super_admin_email: str = ""
     # Comma-separated list of allowed CORS origins for the online deployment
     # (e.g. "https://app.example.com,https://www.example.com"). When empty,
     # only the local dev origin (http://localhost:<web_port>) is allowed.
@@ -65,6 +76,10 @@ class Settings(BaseSettings):
     @property
     def has_image_provider(self) -> bool:
         return bool(self.fal_key or self.replicate_api_token)
+
+    @property
+    def has_search_api(self) -> bool:
+        return bool(self.brave_search_api_key)
 
 
 @lru_cache

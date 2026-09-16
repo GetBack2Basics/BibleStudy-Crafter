@@ -49,6 +49,10 @@ def meta() -> dict:
             "image": s.has_image_provider,
         },
         "budget_cap_usd": s.monthly_budget_usd,
+        "auth": {
+            "google_enabled": bool(s.google_client_id),
+            "google_client_id": s.google_client_id or None,
+        },
     }
 
 

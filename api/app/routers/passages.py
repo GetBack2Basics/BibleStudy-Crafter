@@ -40,6 +40,43 @@ class PassageOut(BaseModel):
     order: int
     rationale: str
     highlights: list[dict] | None
+    source_reflections: list[dict] | None
+    verse_notes: list[dict] | None
+
+
+class SourceReflectionIn(BaseModel):
+    text: str = ""
+    note: str = ""
+    source_url: str = ""
+    source_title: str = ""
+
+
+class VerseNoteIn(BaseModel):
+    verse: int
+    content: str = ""
+
+
+class VerseNoteOut(BaseModel):
+    verse: int
+    notes: list[dict]  # [{id, content}]
+
+
+def _verse_range(session: Session, ref: str) -> tuple[int, int, int] | None:
+    """Parse a ref; return (book, chapter, verse) for a single verse, or
+    (book, chapter, vstart) with vstart..vend for a range. Returns None on bad ref."""
+    try:
+        parsed = bs.parse_ref(ref)
+    except ValueError:
+        return None
+    return (parsed.book, parsed.chapter, parsed.verse_start, parsed.verse_end)
+
+
+def _ref_covers_verse(session: Session, passage: DayPassage, verse: int) -> bool:
+    rng = _verse_range(session, passage.ref)
+    if rng is None:
+        return False
+    _, _, vstart, vend = rng
+    return vstart <= (verse or vstart) <= (vend or vstart)
 
 
 def _study_day(session: Session, study_id: int, day_number: int, user: User):
@@ -134,6 +171,138 @@ def delete_passage(study_id: int, day_number: int, passage_id: int,
     return {"ok": True}
 
 
+@router.post("/{study_id}/days/{day_number}/passages/{passage_id}/source_reflection",
+             response_model=PassageOut)
+def attach_source_reflection(
+        study_id: int, day_number: int, passage_id: int,
+        body: SourceReflectionIn,
+        user: User = Depends(get_current_user),
+        session: Session = Depends(get_session),
+) -> PassageOut:
+    _, d = _study_day(session, study_id, day_number, user)
+    p = session.get(DayPassage, passage_id)
+    if p is None or p.study_day_id != d.id:
+        raise HTTPException(404, "passage not found")
+    existing = p.source_reflections or []
+    existing.append({
+        "text": body.text,
+        "note": body.note,
+        "source_url": body.source_url,
+        "source_title": body.source_title,
+    })
+    p.source_reflections = existing
+    session.add(p)
+    session.commit()
+    session.refresh(p)
+    return _out(p)
+
+
+@router.delete("/{study_id}/days/{day_number}/passages/{passage_id}/source_reflections/{idx}")
+def delete_source_reflection(
+        study_id: int, day_number: int, passage_id: int, idx: int,
+        user: User = Depends(get_current_user),
+        session: Session = Depends(get_session),
+) -> dict:
+    _, d = _study_day(session, study_id, day_number, user)
+    p = session.get(DayPassage, passage_id)
+    if p is None or p.study_day_id != d.id:
+        raise HTTPException(404, "passage not found")
+    existing = p.source_reflections or []
+    if idx < 0 or idx >= len(existing):
+        raise HTTPException(404, "source reflection not found")
+    existing.pop(idx)
+    p.source_reflections = existing or None
+    session.add(p)
+    session.commit()
+    return {"ok": True}
+
+
+@router.get("/{study_id}/days/{day_number}/passages/{passage_id}/verse_notes")
+def list_verse_notes(
+        study_id: int, day_number: int, passage_id: int,
+        user: User = Depends(get_current_user),
+        session: Session = Depends(get_session),
+) -> dict[int, list[dict]]:
+    _, d = _study_day(session, study_id, day_number, user)
+    p = session.get(DayPassage, passage_id)
+    if p is None or p.study_day_id != d.id:
+        raise HTTPException(404, "passage not found")
+    return p.verse_notes or {}
+
+
+@router.post("/{study_id}/days/{day_number}/passages/{passage_id}/verse_notes")
+def upsert_verse_note(
+        study_id: int, day_number: int, passage_id: int,
+        body: VerseNoteIn,
+        user: User = Depends(get_current_user),
+        session: Session = Depends(get_session),
+) -> dict[int, list[dict]]:
+    _, d = _study_day(session, study_id, day_number, user)
+    p = session.get(DayPassage, passage_id)
+    if p is None or p.study_day_id != d.id:
+        raise HTTPException(404, "passage not found")
+    existing = p.verse_notes or []
+    bucket = next((b for b in existing if b.get("verse") == body.verse), None)
+    if bucket is None:
+        bucket = {"verse": body.verse, "notes": []}
+        existing.append(bucket)
+    note_id = f"{p.id}-{body.verse}-{len(bucket['notes'])}"
+    bucket["notes"].append({"id": note_id, "content": body.content})
+    p.verse_notes = existing
+    session.add(p)
+    session.commit()
+    return {bucket["verse"]: bucket["notes"]}
+
+
+@router.put("/{study_id}/days/{day_number}/passages/{passage_id}/verse_notes/{verse}/notes/{note_id}")
+def update_verse_note(
+        study_id: int, day_number: int, passage_id: int, verse: int, note_id: str,
+        body: VerseNoteIn,
+        user: User = Depends(get_current_user),
+        session: Session = Depends(get_session),
+) -> dict[int, list[dict]]:
+    _, d = _study_day(session, study_id, day_number, user)
+    p = session.get(DayPassage, passage_id)
+    if p is None or p.study_day_id != d.id:
+        raise HTTPException(404, "passage not found")
+    existing = p.verse_notes or []
+    bucket = next((b for b in existing if b.get("verse") == verse), None)
+    if bucket is None:
+        raise HTTPException(404, "verse not found")
+    note = next((n for n in bucket["notes"] if n.get("id") == note_id), None)
+    if note is None:
+        raise HTTPException(404, "note not found")
+    note["content"] = body.content
+    p.verse_notes = existing
+    session.add(p)
+    session.commit()
+    return {verse: bucket["notes"]}
+
+
+@router.delete("/{study_id}/days/{day_number}/passages/{passage_id}/verse_notes/{verse}/notes/{note_id}")
+def delete_verse_note(
+        study_id: int, day_number: int, passage_id: int, verse: int, note_id: str,
+        user: User = Depends(get_current_user),
+        session: Session = Depends(get_session),
+) -> dict[int, list[dict]]:
+    _, d = _study_day(session, study_id, day_number, user)
+    p = session.get(DayPassage, passage_id)
+    if p is None or p.study_day_id != d.id:
+        raise HTTPException(404, "passage not found")
+    existing = p.verse_notes or []
+    bucket = next((b for b in existing if b.get("verse") == verse), None)
+    if bucket is None:
+        raise HTTPException(404, "verse not found")
+    bucket["notes"] = [n for n in bucket["notes"] if n.get("id") != note_id]
+    if not bucket["notes"]:
+        existing = [b for b in existing if b.get("verse") != verse]
+    p.verse_notes = existing or None
+    session.add(p)
+    session.commit()
+    return {verse: bucket["notes"]}
+
+
 def _out(p: DayPassage) -> PassageOut:
     return PassageOut(id=p.id, ref=p.ref, translation=p.translation, text=p.text,
-                      order=p.order, rationale=p.rationale, highlights=p.highlights)
+                      order=p.order, rationale=p.rationale, highlights=p.highlights,
+                      source_reflections=p.source_reflections, verse_notes=p.verse_notes)

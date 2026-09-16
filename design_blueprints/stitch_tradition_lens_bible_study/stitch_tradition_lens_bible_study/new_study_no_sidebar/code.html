@@ -1,0 +1,185 @@
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={theme:{extend:{"colors":{"on-surface":"#0b1c30","on-background":"#0b1c30","on-secondary-fixed":"#1b1c15","error":"#ba1a1a","on-tertiary-fixed":"#261900","secondary-fixed-dim":"#c7c7bc","on-primary-container":"#96a9be","surface-container-high":"#dce9ff","tertiary-container":"#503800","on-surface-variant":"#43474c","secondary":"#5e5f56","primary-fixed":"#d1e4fb","tertiary":"#342400","surface-container-lowest":"#ffffff","surface-variant":"#d3e4fe","surface":"#f8f9ff","on-tertiary-fixed-variant":"#5d4201","on-error":"#ffffff","inverse-surface":"#213145","on-tertiary-container":"#c7a15a","tertiary-fixed":"#ffdea5","outline-variant":"#c4c6cd","tertiary-fixed-dim":"#e9c176","on-secondary-fixed-variant":"#46473f","inverse-primary":"#b5c8df","on-primary-fixed":"#091d2e","surface-tint":"#4e6073","on-secondary-container":"#64655c","on-tertiary":"#ffffff","primary-container":"#2c3e50","on-secondary":"#ffffff","surface-dim":"#cbdbf5","surface-container-low":"#eff4ff","on-error-container":"#93000a","error-container":"#ffdad6","outline":"#74777d","primary":"#162839","surface-container":"#e5eeff","on-primary":"#ffffff","on-primary-fixed-variant":"#36485b","surface-container-highest":"#d3e4fe","primary-fixed-dim":"#b5c8df","secondary-fixed":"#e4e3d7","background":"#f8f9ff","surface-bright":"#f8f9ff","inverse-on-surface":"#eaf1ff","secondary-container":"#e4e3d7"},"borderRadius":{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},"spacing":{"container-max":"1200px","reading-width":"720px","margin-desktop":"40px","gutter":"24px","margin-mobile":"16px","unit":"8px"},"fontFamily":{"ui-label-sm":["Inter"],"headline-lg":["EB Garamond"],"headline-md":["EB Garamond"],"display-scripture-mobile":["EB Garamond"],"ui-label-lg":["Inter"],"ui-label-md":["Inter"],"body-reading":["EB Garamond"],"display-scripture":["EB Garamond"]},"fontSize":{"ui-label-sm":["12px",{"lineHeight":"16px","fontWeight":"500"}],"headline-lg":["28px",{"lineHeight":"36px","fontWeight":"600"}],"headline-md":["22px",{"lineHeight":"28px","fontWeight":"600"}],"display-scripture-mobile":["26px",{"lineHeight":"36px","fontWeight":"500"}],"ui-label-lg":["16px",{"lineHeight":"24px","letterSpacing":"0.02em","fontWeight":"600"}],"ui-label-md":["14px",{"lineHeight":"20px","fontWeight":"500"}],"body-reading":["20px",{"lineHeight":"32px","fontWeight":"400"}],"display-scripture":["34px",{"lineHeight":"48px","letterSpacing":"-0.01em","fontWeight":"500"}]}}}}</script><link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head><body class="bg-background font-body-reading text-on-background"><div><header class="fixed top-0 left-0 right-0 h-16 bg-surface/80 backdrop-blur-xl z-40 flex items-center justify-between px-margin-desktop shadow-sm"><div class="flex items-center gap-8"><span class="font-headline-lg text-headline-lg text-primary tracking-tight">BibleStudy Crafter</span><div class="flex items-center bg-surface-container-lowest/50 border-b border-outline-variant w-96 px-3 py-1.5"><span class="material-symbols-outlined text-outline text-[20px]">search</span><input class="bg-transparent border-none focus:ring-0 text-ui-label-md font-ui-label-md w-full px-2 outline-none text-on-surface" placeholder="Search scriptures, commentaries..." type="text"/></div></div><div class="flex items-center gap-6"><button class="w-auto flex items-center justify-center gap-2 bg-primary text-on-primary font-ui-label-md text-ui-label-md px-4 py-2 rounded-xl hover:shadow-lg transition-all active:scale-95"><span class="material-symbols-outlined text-[18px]">add_circle</span>New Study</button><button class="text-on-surface-variant hover:text-on-surface transition-colors"><span class="material-symbols-outlined">notifications</span></button><div class="relative group"><div class="flex items-center gap-3 pl-4 border-l border-outline-variant cursor-pointer"><div class="text-right hidden sm:block"><p class="text-ui-label-md font-ui-label-md text-on-surface">Dr. Scholasticus</p><p class="text-ui-label-sm font-ui-label-sm text-on-surface-variant">Lead Researcher</p></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div><div class="absolute right-0 mt-2 w-56 bg-surface-container-lowest rounded-xl shadow-lg border border-outline-variant/20 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 flex flex-col py-2"><nav class="flex flex-col space-y-1 px-2"><a aria-current="page" class="flex items-center px-4 py-2 rounded-lg transition-all bg-primary-container text-on-primary-container font-semibold" data-path="dashboard" href="#"><span class="material-symbols-outlined mr-3 text-[18px]">dashboard</span>Dashboard</a><a class="flex items-center px-4 py-2 rounded-lg text-on-surface-variant font-ui-label-md text-ui-label-md hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="library" href="#"><span class="material-symbols-outlined mr-3 text-[18px]">auto_stories</span>My Library</a><a class="flex items-center px-4 py-2 rounded-lg text-on-surface-variant font-ui-label-md text-ui-label-md hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="community-lenses" href="#"><span class="material-symbols-outlined mr-3 text-[18px]">groups</span>Community Lenses</a><a class="flex items-center px-4 py-2 rounded-lg text-on-surface-variant font-ui-label-md text-ui-label-md hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="settings" href="#"><span class="material-symbols-outlined mr-3 text-[18px]">settings</span>Settings</a></nav></div></div></div></header><main class="relative pt-16 min-h-screen bg-surface flex flex-col justify-between"><div class="flex flex-col w-full px-margin-desktop py-margin-desktop space-y-12 max-w-container-max mx-auto relative overflow-hidden flex-grow">
+<!-- Ambient Background Decorations -->
+<div class="absolute -top-40 -right-40 w-96 h-96 bg-primary-fixed-dim/20 rounded-full blur-[100px] pointer-events-none"></div>
+<div class="absolute top-1/2 -left-32 w-72 h-72 bg-tertiary-fixed-dim/15 rounded-full blur-[80px] pointer-events-none"></div>
+<!-- Header Section -->
+<div class="flex flex-col space-y-4 max-w-3xl relative z-10">
+<div class="flex items-center space-x-3 text-secondary">
+<span class="material-symbols-outlined text-[16px]">add_circle</span>
+<span class="font-ui-label-lg text-ui-label-lg uppercase tracking-widest text-primary">Workspace Preparation</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Initiate New Study</h1>
+<p class="font-body-reading text-body-reading text-on-surface-variant leading-relaxed max-w-2xl">
+            Configure the parameters of your investigation. The parameters set here will curate the initial texts and commentaries selected by the system for your review.
+        </p>
+</div>
+<!-- Main Configuration Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter relative z-10 items-start">
+<!-- Left Column: Form Steps -->
+<div class="lg:col-span-8 flex flex-col space-y-8">
+<!-- Step 1: Subject of Inquiry -->
+<div class="bg-surface-container-lowest shadow-sm rounded-xl p-8 relative overflow-hidden group hover:shadow-md transition-shadow duration-300">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary/20 group-hover:bg-primary transition-colors duration-300"></div>
+<div class="flex items-start space-x-6">
+<div class="flex-shrink-0 w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary font-ui-label-lg text-ui-label-lg">
+                        1
+                    </div>
+<div class="flex-grow space-y-4">
+<h2 class="font-headline-md text-headline-md text-on-surface">Subject of Inquiry</h2>
+<p class="font-ui-label-md text-ui-label-md text-on-surface-variant">Enter a theme, historical period, or specific scripture reference to anchor your study.</p>
+<div class="relative">
+<input class="w-full bg-surface py-4 px-6 rounded-lg text-on-surface font-body-reading text-body-reading placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all border-none" placeholder="e.g., The concept of 'Hesed' in the Psalms..." type="text"/>
+<span class="material-symbols-outlined absolute right-4 top-4 text-outline">search</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Step 2: Pacing & Duration -->
+<div class="bg-surface-container-lowest shadow-sm rounded-xl p-8 relative overflow-hidden group hover:shadow-md transition-shadow duration-300">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary/20 group-hover:bg-primary transition-colors duration-300"></div>
+<div class="flex items-start space-x-6">
+<div class="flex-shrink-0 w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary font-ui-label-lg text-ui-label-lg">
+                        2
+                    </div>
+<div class="flex-grow space-y-6">
+<div class="space-y-1">
+<h2 class="font-headline-md text-headline-md text-on-surface">Pacing &amp; Duration</h2>
+<p class="font-ui-label-md text-ui-label-md text-on-surface-variant">Select the intended depth and timeframe for this investigation.</p>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+<!-- Option 1 -->
+<button class="flex flex-col items-center justify-center p-4 rounded-lg bg-surface hover:bg-surface-container-high focus:bg-primary-container focus:text-on-primary-container text-on-surface transition-colors group/btn">
+<span class="material-symbols-outlined mb-2 text-outline group-focus/btn:text-on-primary-container">bolt</span>
+<span class="font-ui-label-lg text-ui-label-lg">Brief Overview</span>
+<span class="font-ui-label-sm text-ui-label-sm text-on-surface-variant mt-1">1-2 Days</span>
+</button>
+<!-- Option 2 (Active state simulated) -->
+<button class="flex flex-col items-center justify-center p-4 rounded-lg bg-primary-container text-on-primary-container transition-colors group/btn relative overflow-hidden shadow-sm">
+<div class="absolute inset-0 bg-white/5 opacity-0 group-hover/btn:opacity-100 transition-opacity"></div>
+<span class="material-symbols-outlined mb-2 text-on-primary-container">menu_book</span>
+<span class="font-ui-label-lg text-ui-label-lg">Detailed Study</span>
+<span class="font-ui-label-sm text-ui-label-sm opacity-80 mt-1">1-2 Weeks</span>
+</button>
+<!-- Option 3 -->
+<button class="flex flex-col items-center justify-center p-4 rounded-lg bg-surface hover:bg-surface-container-high focus:bg-primary-container focus:text-on-primary-container text-on-surface transition-colors group/btn">
+<span class="material-symbols-outlined mb-2 text-outline group-focus/btn:text-on-primary-container">school</span>
+<span class="font-ui-label-lg text-ui-label-lg">Deep Exegesis</span>
+<span class="font-ui-label-sm text-ui-label-sm text-on-surface-variant mt-1">1+ Months</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Step 3: Theological Lens -->
+<div class="bg-surface-container-lowest shadow-sm rounded-xl p-8 relative overflow-hidden group hover:shadow-md transition-shadow duration-300">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary/20 group-hover:bg-primary transition-colors duration-300"></div>
+<div class="flex items-start space-x-6">
+<div class="flex-shrink-0 w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary font-ui-label-lg text-ui-label-lg">
+                        3
+                    </div>
+<div class="flex-grow space-y-6">
+<div class="flex items-center justify-between">
+<div class="space-y-1">
+<h2 class="font-headline-md text-headline-md text-on-surface">Theological Lens</h2>
+<p class="font-ui-label-md text-ui-label-md text-on-surface-variant">Apply specific hermeneutical perspectives to the analysis.</p>
+</div>
+<button class="text-primary hover:text-primary-fixed-dim transition-colors">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+<div class="flex flex-wrap gap-3">
+<span class="inline-flex items-center px-4 py-2 rounded-full bg-tertiary-container text-on-tertiary-container font-ui-label-md text-ui-label-md shadow-sm cursor-pointer hover:opacity-90 transition-opacity">
+                                Historical-Critical
+                                <span class="material-symbols-outlined text-[16px] ml-2">check</span>
+</span>
+<span class="inline-flex items-center px-4 py-2 rounded-full bg-surface text-on-surface font-ui-label-md text-ui-label-md shadow-sm cursor-pointer hover:bg-surface-container transition-colors">
+                                Patristic Reception
+                            </span>
+<span class="inline-flex items-center px-4 py-2 rounded-full bg-surface text-on-surface font-ui-label-md text-ui-label-md shadow-sm cursor-pointer hover:bg-surface-container transition-colors">
+                                Feminist Critique
+                            </span>
+<span class="inline-flex items-center px-4 py-2 rounded-full bg-tertiary-container text-on-tertiary-container font-ui-label-md text-ui-label-md shadow-sm cursor-pointer hover:opacity-90 transition-opacity">
+                                Literary Analysis
+                                <span class="material-symbols-outlined text-[16px] ml-2">check</span>
+</span>
+<span class="inline-flex items-center px-4 py-2 rounded-full bg-surface text-on-surface font-ui-label-md text-ui-label-md shadow-sm cursor-pointer hover:bg-surface-container transition-colors">
+                                Canonical
+                            </span>
+</div>
+</div>
+</div>
+</div>
+<!-- Step 4: Translation -->
+<div class="bg-surface-container-lowest shadow-sm rounded-xl p-8 relative overflow-hidden group hover:shadow-md transition-shadow duration-300">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary/20 group-hover:bg-primary transition-colors duration-300"></div>
+<div class="flex items-start space-x-6">
+<div class="flex-shrink-0 w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary font-ui-label-lg text-ui-label-lg">
+                        4
+                    </div>
+<div class="flex-grow space-y-6">
+<div class="space-y-1">
+<h2 class="font-headline-md text-headline-md text-on-surface">Primary Translation</h2>
+<p class="font-ui-label-md text-ui-label-md text-on-surface-variant">Select the base text for your investigation.</p>
+</div>
+<div class="relative">
+<select class="w-full bg-surface py-4 px-6 rounded-lg text-on-surface font-ui-label-lg text-ui-label-lg appearance-none cursor-pointer hover:bg-surface-container-low transition-colors border-none focus:ring-2 focus:ring-primary/30 outline-none">
+<option>New Revised Standard Version (NRSV)</option>
+<option>English Standard Version (ESV)</option>
+<option>New International Version (NIV)</option>
+<option>Novum Testamentum Graece (NA28)</option>
+<option>Biblia Hebraica Stuttgartensia (BHS)</option>
+</select>
+<span class="material-symbols-outlined absolute right-6 top-4 pointer-events-none text-outline">expand_more</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Summary & Actions -->
+<div class="lg:col-span-4 sticky top-24">
+<div class="bg-primary text-on-primary rounded-xl p-8 shadow-xl flex flex-col space-y-8 relative overflow-hidden">
+<!-- Decorative background elements -->
+<div class="absolute -bottom-10 -right-10 w-40 h-40 bg-white/5 rounded-full blur-2xl"></div>
+<div class="absolute top-10 -left-10 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
+<div>
+<h3 class="font-headline-md text-headline-md mb-2">Study Summary</h3>
+<p class="font-ui-label-sm text-ui-label-sm text-primary-fixed-dim uppercase tracking-wider">Ready to Generate</p>
+</div>
+<div class="space-y-4">
+<div class="flex items-start justify-between border-b border-white/10 pb-4">
+<span class="font-ui-label-sm text-ui-label-sm text-primary-fixed-dim">Focus</span>
+<span class="font-ui-label-md text-ui-label-md text-right max-w-[150px] truncate">The concept of 'Hesed'...</span>
+</div>
+<div class="flex items-start justify-between border-b border-white/10 pb-4">
+<span class="font-ui-label-sm text-ui-label-sm text-primary-fixed-dim">Depth</span>
+<span class="font-ui-label-md text-ui-label-md text-right">Detailed Study</span>
+</div>
+<div class="flex items-start justify-between border-b border-white/10 pb-4">
+<span class="font-ui-label-sm text-ui-label-sm text-primary-fixed-dim">Lenses</span>
+<span class="font-ui-label-md text-ui-label-md text-right">Historical, Literary</span>
+</div>
+<div class="flex items-start justify-between border-b border-white/10 pb-4">
+<span class="font-ui-label-sm text-ui-label-sm text-primary-fixed-dim">Base Text</span>
+<span class="font-ui-label-md text-ui-label-md text-right">NRSV</span>
+</div>
+</div>
+<div class="pt-4">
+<button class="w-full bg-tertiary-container text-on-tertiary-container hover:bg-tertiary-container/90 py-4 px-6 rounded-lg font-ui-label-lg text-ui-label-lg flex items-center justify-center space-x-2 transition-all transform hover:-translate-y-1 shadow-md hover:shadow-lg">
+<span class="material-symbols-outlined text-[20px]">search_insights</span>
+<span>Find Relevant Passages</span>
+</button>
+<p class="text-center font-ui-label-sm text-ui-label-sm text-primary-fixed-dim mt-4">This action will query the library and present initial texts for review.</p>
+</div>
+</div>
+<!-- Aesthetic Image Placeholder -->
+<div class="mt-8 rounded-xl overflow-hidden shadow-sm relative h-48 group">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="A macro photograph of an ancient manuscript page under warm, directional light. The text is faded, and the parchment texture is prominent, evoking a sense of history and careful study. The color palette leans towards warm ochre, muted gold, and deep sepia tones." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDL6oPHxWnz5PhtaF9zv8qCYG7dKu1gbQwbwpPP4Wee0MGLPvex22HajwCvpyDBT4E7uwzJGhEDTo7k86oLDmqU2HIuRr88vf95rmZZiJRzSKk0GU8fFh2hqqRz4GbBiSSc6LSVNFF7DQkyKAdKWuJFpQ58ig4XS7eGxMW2tmiYr2UikoHL1Ni1W5JDIiIBBi5vEgT4LTe3UUMe55Ff6CP_uGXvA9_SoCsHWsYoKQ9W6MbrfalF6cYz')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent"></div>
+<div class="absolute bottom-4 left-4 right-4">
+<p class="font-ui-label-md text-ui-label-md text-white/90 italic">"The study of the text is a dialogue across centuries."</p>
+</div>
+</div>
+</div>
+</div>
+</div><footer class="w-full px-margin-desktop py-6 border-t border-outline-variant/30 flex flex-col sm:flex-row justify-between items-center gap-2 bg-surface-container-lowest z-10"><span class="text-ui-label-sm font-ui-label-sm text-outline">(c)(r) A project of GetBack2Basics</span><span class="text-[10px] font-ui-label-sm text-outline/60">Build: 202310271430</span></footer></main></div></body></html>

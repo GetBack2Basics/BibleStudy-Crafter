@@ -139,8 +139,8 @@ def _fallback_outline(topic: str, minutes: int, days: int) -> Outline:
 DAY_PROMPT = """Write day {day} of a Bible study titled "{title}".
 Today's focus: {focus}
 
-Passages to anchor the day (their text is provided below; DO NOT write out any
-verse yourself - speak from the text that is given):
+SCRIPTURE TEXT FOR TODAY - every passage below is provided for you; DO NOT write
+out any verse yourself - speak from the text that is given:
 {passages}
 
 AMALGAMATED READING FOR TODAY - EVERY PASSAGE, IN SEVERAL VERSIONS
@@ -156,15 +156,15 @@ not from one passage and not from one version):
 Produce a JSON object with exactly these keys (no other text, no markdown):
 {{
   "heading": str,
-  "opening_prayer": str (2-3 sentences. GROUND it in the AMALGAMATED reading
-      above: it must draw on EVERY passage listed for today, not just the first -
+  "opening_prayer": str (2-3 sentences. GROUND it in the day's scripture above:
+      it must draw on EVERY passage listed for today, not just the first -
       let the day's readings speak together as one prayer. Echo short, real
       phrases (a few words each) taken from AT LEAST TWO DIFFERENT VERSIONS in
       the amalgamated block, so the wording of more than one translation is
       audible. Do NOT name the versions and do NOT cite references inside the
       prayer, and do not reproduce a whole verse - weave the borrowed phrases
       into what the reader wants to say to God about what these verses reveal.
-      Stay inside what the Scripture actually says; import no outside claims.),
+      Stay inside what the Scripture actually says; do not import outside claims.),
   "commentary": str (~{commentary_words} words, 2-4 short paragraphs; explain
       the passage plainly, honest about difficulty),
   "questions": [str, str, str] (exactly {questions} reflection questions),

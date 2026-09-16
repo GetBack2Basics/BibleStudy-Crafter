@@ -52,6 +52,7 @@ async def test_build_discussions_cites_real_sources_only(monkeypatch):
     from app.services.llm import LLMResult
 
     monkeypatch.setattr(httpx.AsyncClient, "post", _fake_post)
+    monkeypatch.setattr(httpx.AsyncClient, "get", _fake_post)
 
     real_url = "https://www.biblegateway.com/passage/?search=John+3%3A16"
 

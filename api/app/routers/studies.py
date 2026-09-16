@@ -405,3 +405,156 @@ def update_day_endpoint(study_id: int, day_number: int, body: DayUpdate,
     session.refresh(target)
     events.emit("info", "study", f"Study {study_id} day {day_number} edited")
     return _to_out(s).model_dump()["days"][day_number - 1]
+
+
+# ---------------------------------------------------------------- verse curation for a day
+
+class VerseSuggestionOut(BaseModel):
+    ref: str
+    snippet: str          # ~75-word snippet from the loaded translation
+    search_hit: bool       # True => came from corpus search, not a canned suggestion
+
+
+class PassageReplaceIn(BaseModel):
+    passages: list[dict]   # [{ref, translation?}]  (rationale optional)
+
+
+@router.get("/{study_id}/days/{day_number}/verse_suggestions")
+def verse_suggestions_endpoint(
+        study_id: int, day_number: int,
+        q: str | None = None,
+        user: User = Depends(get_current_user),
+        session: Session = Depends(get_session),
+) -> list[VerseSuggestionOut]:
+    """Return candidate verses for a day: the day's existing passages plus, when
+    `q` is given, corpus search hits ranked by relevance. Each hit carries a
+    ~75-word snippet from the loaded translation so the user can judge it before
+    picking it."""
+    s = session.get(Study, study_id)
+    if s is None or s.user_id != user.id:
+        raise HTTPException(404, "study not found")
+    target = next((d for d in s.days if d.day_number == day_number), None)
+    if target is None:
+        raise HTTPException(400, "day out of range")
+
+    out: list[VerseSuggestionOut] = []
+    seen: set[str] = set()
+
+    def _add(ref: str, snippet: str, from_search: bool) -> None:
+        key = ref.split()[0].upper() + "|" + ref
+        if key in seen:
+            return
+        seen.add(key)
+        out.append(VerseSuggestionOut(ref=ref, snippet=snippet, search_hit=from_search))
+
+    # Existing day passages (already chosen) — show first so the user sees what's
+    # currently there and can keep or replace them.
+    for p in (target.passages or []):
+        if getattr(p, "ref", None):
+            _add(p.ref, _verse_snippet(session, p.ref, s.primary_translation), from_search=False)
+
+    # Corpus search hits when a query is supplied.
+    if q and q.strip():
+        try:
+            hits = bs.search(q.strip(), s.primary_translation, limit=12)
+        except Exception:
+            hits = []
+        for h in hits:
+            _add(f"{h.book} {h.chapter}:{h.verse}", _truncate_words(h.text, 75), from_search=True)
+
+    return out
+
+
+@router.put("/{study_id}/days/{day_number}/passages")
+async def replace_day_passages(
+        study_id: int, day_number: int,
+        body: PassageReplaceIn,
+        user: User = Depends(get_current_user),
+        session: Session = Depends(get_session),
+) -> dict:
+    """Replace a day's first-class passages with the user's selection (from the
+    verse-suggestions picker or typed in by hand), then regenerate the day's
+    commentary/notes around the new passages."""
+    s = session.get(Study, study_id)
+    if s is None or s.user_id != user.id:
+        raise HTTPException(404, "study not found")
+    target = next((d for d in s.days if d.day_number == day_number), None)
+    if target is None:
+        raise HTTPException(400, "day out of range")
+
+    # Validate every ref resolves + text is available in the chosen (or primary) translation.
+    resolved: list[dict] = []
+    for item in body.passages:
+        ref_raw = (item.get("ref") or "").strip()
+        if not ref_raw:
+            continue
+        tr = (item.get("translation") or s.primary_translation).upper()
+        try:
+            parsed = bs.parse_ref(ref_raw)
+        except ValueError:
+            raise HTTPException(400, f"cannot parse reference: {ref_raw}")
+        try:
+            verses = bs.get_passage(session, parsed, tr)
+        except LookupError as exc:
+            raise HTTPException(400, str(exc))
+        if not verses:
+            raise HTTPException(400, f"no text for {ref_raw} in {tr}")
+        resolved.append({
+            "ref": ref_raw,
+            "translation": tr,
+            "text": " ".join(v["text"] for v in verses),
+            "rationale": (item.get("rationale") or "").strip(),
+        })
+
+    # Persist as first-class DayPassage rows (replace whatever was there).
+    if getattr(target, "id", None) is not None:
+        from app.models import DayPassage
+        session.exec(
+            DayPassage.__table__.delete().where(DayPassage.study_day_id == target.id)
+        ).execution_options(synchronize_session=False)
+        order = 0
+        for rp in resolved:
+            dp = DayPassage(
+                study_day_id=target.id, ref=rp["ref"], translation=rp["translation"],
+                text=rp["text"], order=order, rationale=rp["rationale"],
+                highlights=None, source_reflections=None, verse_notes=None,
+            )
+            session.add(dp)
+            order += 1
+        target.blocks_json = {**(target.blocks_json or {}), "scripture": [
+            {"ref": r["ref"], "translation": r["translation"], "text": r["text"], "rationale": r["rationale"]}
+            for r in resolved
+        ]}
+        session.commit()
+        session.refresh(target)
+
+    # Regenerate the day's commentary/notes around the new passages.
+    try:
+        draft = await study_generate_day(s, day_number, session=session,
+                                         tradition=s.tradition, translation=s.primary_translation)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+    asyncio.create_task(_build_discussions_safe(study_id, day_number))
+    return {"day_number": day_number, "status": "ready", "draft": draft}
+
+
+def _verse_snippet(session: Session, ref: str, translation: str) -> str:
+    """First ~75 words of a verse's text in the given translation, for the
+    verse-suggestion list."""
+    try:
+        parsed = bs.parse_ref(ref)
+    except ValueError:
+        return ""
+    try:
+        rows = bs.get_passage(session, parsed, translation)
+    except LookupError:
+        return ""
+    text = " ".join(v["text"] for v in rows)
+    return _truncate_words(text, 75) if text else ""
+
+
+def _truncate_words(text: str, n: int) -> str:
+    words = text.split()
+    if len(words) <= n:
+        return text
+    return " ".join(words[:n]) + "…"
