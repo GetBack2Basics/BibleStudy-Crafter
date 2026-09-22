@@ -64,6 +64,24 @@ export type StudyCreate = {
   selected_refs?: string[]   // curated verse pool from corpus search
 }
 
+export type TTSChoice = {
+  short_name: string
+  gender: string
+  friendly_name: string
+  locale: string
+}
+
+export const ttsDefaultVoices: TTSChoice[] = [
+  { short_name: 'gtts-en', gender: 'Female', friendly_name: 'Google English (en)', locale: 'en' },
+  { short_name: 'gtts-en_US', gender: 'Female', friendly_name: 'Google English (United States)', locale: 'en-US' },
+  { short_name: 'gtts-en_GB', gender: 'Female', friendly_name: 'Google English (United Kingdom)', locale: 'en-GB' },
+  { short_name: 'gtts-en_AU', gender: 'Female', friendly_name: 'Google English (Australia)', locale: 'en-AU' },
+  { short_name: 'gtts-es', gender: 'Female', friendly_name: 'Google Spanish (es)', locale: 'es' },
+  { short_name: 'gtts-fr', gender: 'Female', friendly_name: 'Google French (fr)', locale: 'fr' },
+  { short_name: 'gtts-de', gender: 'Female', friendly_name: 'Google German (de)', locale: 'de' },
+  { short_name: 'gtts-ja', gender: 'Female', friendly_name: 'Google Japanese (ja)', locale: 'ja' },
+]
+
 const j = (r: Response) => {
   if (!r.ok) throw new Error(`${r.status} ${r.statusText}`)
   return r.json()
@@ -195,6 +213,16 @@ export const studies = {
   refreshDiscussions: (id: number, day: number): Promise<{ day_number: number; discussions: DayOut['discussions'] }> =>
     api.fetch(`/api/studies/${id}/days/${day}/discussions`, {
       method: 'POST',
+    }).then(j),
+
+  ttsVoices: (): Promise<{ voices: TTSChoice[]; count: number }> =>
+    api.fetch(`/api/tts/voices`).then(j),
+
+  ttsRender: (id: number, day: number, voice: string): Promise<{ asset_id: number; status: string }> =>
+    api.fetch(`/api/tts/render`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ study_id: id, day_number: day, voice }),
     }).then(j),
 }
 

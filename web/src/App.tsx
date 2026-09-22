@@ -4,7 +4,7 @@ import StatusDock from './components/StatusDock'
 import AuthScreen from './components/AuthScreen'
 import { api } from './lib/api'
 import { auth } from './lib/auth'
-import { studies as studyApi, bible, preferences, passages, TRADITIONS, type StudyOut, type DayOut, type DayDraft, type TranslationInfo, type CompareVerse, type PassageOut, type SearchHit } from './lib/studies'
+import { studies as studyApi, bible, preferences, passages, TRADITIONS, type StudyOut, type DayOut, type DayDraft, type TranslationInfo, type CompareVerse, type PassageOut, type SearchHit, type TTSChoice, ttsDefaultVoices } from './lib/studies'
 
 const STATUS_CLS: Record<string, string> = {
   pending: 'text-outline',
@@ -840,9 +840,185 @@ function DayDetail() {
         navigate(`/study/${studyId}/day/${dayNum}`)
       }} />
 
+      <DayTTS studyId={studyId} day={day} />
+
       <div className="text-ui-label-md text-on-surface-variant">
         {study.status} · {study.days.filter((d) => d.status === 'ready').length}/{study.total_days} days ready
       </div>
+    </div>
+  )
+}
+
+/* ---------- Read aloud: TTS for a day's content ---------- */
+
+function DayTTS({ studyId, day }: { studyId: number; day: DayOut }) {
+  const [voices, setVoices] = useState<TTSChoice[]>(ttsDefaultVoices)
+  const [selectedVoice, setSelectedVoice] = useState<TTSChoice | null>(null)
+  const [loadingVoices, setLoadingVoices] = useState(false)
+  const [ttsStatus, setTtsStatus] = useState<{ asset_id?: number; status?: string } | null>(null)
+  const [loadingRender, setLoadingRender] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const assetPollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // When the day changes, reset TTS state so the picker and play button start fresh.
+  useEffect(() => {
+    setTtsStatus(null)
+    setSelectedVoice(voices[0] ?? null)
+    setErr(null)
+  }, [day.day_number, voices])
+
+  const loadVoices = async () => {
+    if (voices.length > 0 && voices[0]?.short_name) return
+    setLoadingVoices(true)
+    try {
+      const res = await studyApi.ttsVoices()
+      setVoices(res.voices.length ? res.voices : ttsDefaultVoices)
+      if (!selectedVoice || !res.voices.find((v) => v.short_name === selectedVoice.short_name)) {
+        setSelectedVoice(res.voices[0] ?? ttsDefaultVoices[0] ?? null)
+      }
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e))
+      setVoices(ttsDefaultVoices)
+      setSelectedVoice(ttsDefaultVoices[0] ?? null)
+    } finally {
+      setLoadingVoices(false)
+    }
+  }
+
+  useEffect(() => { loadVoices() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const startRender = async () => {
+    if (!selectedVoice) return
+    setLoadingRender(true)
+    setTtsStatus(null)
+    setErr(null)
+    try {
+      const res = await studyApi.ttsRender(studyId, day.day_number, selectedVoice.short_name)
+      setTtsStatus(res)
+      if (res.status === 'rendering') {
+        pollAsset(res.asset_id)
+      } else if (res.status === 'ready') {
+        startPlayback(res.asset_id)
+      }
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e))
+    } finally {
+      setLoadingRender(false)
+    }
+  }
+
+  const pollAsset = (assetId: number) => {
+    if (assetPollRef.current) clearInterval(assetPollRef.current)
+    assetPollRef.current = setInterval(async () => {
+      try {
+        const r = await fetch(`${api.url}/api/tts/asset/${assetId}`, {
+          method: 'GET',
+          headers: { Authorization: `Bearer ${auth.accessToken()}` },
+        })
+        if (r.status === 200) {
+          if (assetPollRef.current) clearInterval(assetPollRef.current)
+          setTtsStatus({ asset_id: assetId, status: 'ready' })
+          startPlayback(assetId)
+        } else if (r.status === 409) {
+          if (assetPollRef.current) clearInterval(assetPollRef.current)
+          setTtsStatus({ asset_id: assetId, status: 'failed' })
+          setErr('Voice rendering failed')
+        }
+        // 202 still rendering - keep polling
+      } catch {
+        /* keep polling */
+      }
+    }, 1500)
+  }
+
+  const startPlayback = (assetId: number) => {
+    if (assetPollRef.current) clearInterval(assetPollRef.current)
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.src = ''
+    }
+    const src = `${api.url}/api/tts/asset/${assetId}`
+    const audio = new Audio(src)
+    audioRef.current = audio
+    audio.addEventListener('error', () => setErr('Playback failed'))
+    audio.play().catch(() => {/* autoplay blocked; user can press play */})
+  }
+
+  const ttsReady = ttsStatus?.status === 'ready'
+  const ttsRendering = ttsStatus?.status === 'rendering'
+  const hasVoice = Boolean(selectedVoice)
+  const dayReady = day.status === 'ready' && day.blocks_json
+  const contentEmpty = dayReady && !day.blocks_json?.opening_prayer &&
+    !day.blocks_json?.commentary && (!day.blocks_json?.questions || day.blocks_json.questions.length === 0) &&
+    !day.blocks_json?.closing_prayer
+
+  return (
+    <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-4 shadow-ambient">
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <I name="speaker_wave" cls="text-[20px] text-primary" />
+          <span className="font-ui-label-sm text-on-surface-variant">Read aloud</span>
+        </div>
+
+        <label className="flex flex-1 min-w-0 flex-wrap items-center gap-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest px-3 py-1.5">
+          <span className="shrink-0 font-ui-label-sm text-on-surface-variant">Voice</span>
+          <select
+            className="field-underline inline-block w-auto min-w-0 text-on-surface"
+            value={selectedVoice?.short_name ?? ''}
+            onChange={(e) => {
+              const v = voices.find((vv) => vv.short_name === e.target.value)
+              setSelectedVoice(v ?? null)
+            }}
+            disabled={loadingVoices || voices.length === 0}
+          >
+            {loadingVoices && <option value="">Loading voices…</option>}
+            {voices.map((v) => (
+              <option key={v.short_name} value={v.short_name}>
+                {v.friendly_name || `${v.locale} · ${v.gender} · ${v.short_name}`}
+              </option>
+            ))}
+          </select>
+          {voices.length === 0 && !loadingVoices && (
+            <span className="text-ui-label-sm text-error">No voices available</span>
+          )}
+        </label>
+
+        <div className="flex items-center gap-2 ml-auto">
+          <button
+            onClick={startRender}
+            disabled={!dayReady || contentEmpty || !hasVoice || ttsRendering || loadingRender}
+            className="btn-outline disabled:opacity-50 disabled:text-on-surface-variant"
+          >
+            {ttsRendering ? 'Rendering…' : loadingRender ? 'Starting…' : ttsReady ? 'Re-read' : 'Read'}
+            <I name={ttsRendering ? 'hourglass_empty' : ttsReady ? 'replay' : 'play_arrow'} cls="text-[18px]" />
+          </button>
+
+          {ttsReady && (
+            <button
+              onClick={() => { if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0 } }}
+              className="btn-ghost"
+              title="Stop"
+            >
+              <I name="stop" cls="text-[18px]" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {ttsRendering && (
+        <div className="mt-3 flex items-center gap-2 text-ui-label-sm text-tertiary">
+          <span className="relative flex h-2 w-24 overflow-hidden rounded-full bg-outline-variant/30">
+            <span className="animate-pulse h-full rounded-full bg-primary" style={{ width: '40%' }} />
+          </span>
+          <span>Rendering voice…</span>
+        </div>
+      )}
+
+      {err && <p className="mt-2 text-ui-label-sm text-error">{err}</p>}
+
+      {/* Hidden audio element for playback */}
+      <audio ref={audioRef} />
     </div>
   )
 }

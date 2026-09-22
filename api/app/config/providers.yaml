@@ -5,7 +5,7 @@
 #       paid  -> gated behind the CostGate modal + monthly budget
 
 text:
-  chain: [openrouter_free, ollama, gemini_free]
+  chain: [ollama, openrouter_free, gemini_free]
 
   providers:
     openrouter_free:

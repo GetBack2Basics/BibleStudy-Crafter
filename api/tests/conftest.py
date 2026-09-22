@@ -5,6 +5,9 @@ default `client` fixture seeds a user and overrides `get_current_user` so the
 pre-existing tests keep working without per-test tokens. Security tests use the
 `anon_client` fixture, which keeps the real auth dependency (so 401/403 paths
 are exercised for real).
+
+Added: a `direct_session(client)` helper for tests that need to seed DB rows
+(Study/StudyDay/Asset) directly without going through the API.
 """
 import json
 
@@ -14,7 +17,7 @@ from sqlmodel import Session, SQLModel, create_engine, select
 from sqlalchemy.pool import StaticPool
 
 from app.auth import hash_password
-from app.models import Translation, User, Verse
+from app.models import Translation, User, Verse, Study, StudyDay
 
 
 def _make_engine():
@@ -36,6 +39,12 @@ def _seed(engine):
                     text="For God so loved the world, that he gave his only "
                          "begotten Son"))
         s.commit()
+
+
+def direct_session(client: TestClient) -> Session:
+    """Return a direct SQLModel Session for the in-memory DB behind `client`."""
+    from app import db as db_mod
+    return Session(db_mod._engine)
 
 
 @pytest.fixture

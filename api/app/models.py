@@ -7,7 +7,7 @@ it NULL. Phase 7 adds a User table and backfills - purely additive, no rewrites.
 from datetime import datetime, timedelta, timezone
 from typing import Any, List, Optional
 
-from sqlalchemy import Column, Index, UniqueConstraint
+from sqlalchemy import Column, Index, LargeBinary, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.types import JSON
 from sqlmodel import Field, Relationship, SQLModel
@@ -186,6 +186,8 @@ class Asset(SQLModel, table=True):
     model: str = Field(default="", max_length=120)
     prompt: str = Field(default="")
     file_path: str = Field(default="", max_length=500)
+    media_type: str = Field(default="", max_length=120)
+    content: bytes = Field(default=b"")
     cost_usd: float = Field(default=0.0)
     status: str = Field(default="queued", max_length=24)
     error: Optional[str] = Field(default=None, max_length=1000)
