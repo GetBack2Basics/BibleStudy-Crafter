@@ -635,7 +635,7 @@ function DraftEditor({ draft, editing, onChange, onSelect, studyId, day, notes, 
 
   return (
     <div className="space-y-4 text-body-reading text-on-surface">
-      <CollapsibleSection title="Primary Texts" icon="auto_stories" defaultOpen>
+      <CollapsibleSection title="Scriptures" icon="auto_stories" defaultOpen>
         <PassageEditor studyId={studyId} day={day} onChanged={() => { /* passage changes are server-side; nothing to sync into draft */ }} />
       </CollapsibleSection>
 
@@ -836,8 +836,12 @@ function DayDetail() {
       )}
 
       <DayCard studyId={studyId} day={day} onGenerate={async () => {
-        await studyApi.generateDay(studyId, dayNum)
-        navigate(`/study/${studyId}/day/${dayNum}`)
+        try {
+          await studyApi.generateDay(studyId, dayNum)
+          navigate(`/study/${studyId}/day/${dayNum}`)
+        } catch (e) {
+          setErr(e instanceof Error ? e.message : String(e))
+        }
       }} />
 
       <DayTTS studyId={studyId} day={day} />
@@ -1328,7 +1332,7 @@ function PassageEditor({ studyId, day, onChanged }: {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 font-ui-label-lg text-ui-label-lg text-on-surface">
-        <I name="auto_stories" cls="text-[20px] text-primary" /> Primary Texts
+        <I name="auto_stories" cls="text-[20px] text-primary" /> Scriptures
       </div>
       {err && <p className="text-ui-label-sm text-error">{err}</p>}
       {busy && <p className="text-ui-label-sm text-on-surface-variant">Loading passages…</p>}

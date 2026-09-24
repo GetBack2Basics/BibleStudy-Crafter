@@ -163,20 +163,49 @@ async def _call_ollama(client: httpx.AsyncClient, provider: Provider, model: Mod
         "model": model.id,
         "system": system,
         "prompt": prompt,
-        "stream": False,
+        "stream": True,
         "options": {"temperature": temperature},
     }
     if json_mode:
         payload["format"] = "json"
 
-    resp = await client.post(f"{provider.resolved_base_url()}/api/generate",
-                             json=payload, timeout=DEFAULT_TIMEOUT)
-    resp.raise_for_status()
-    body = resp.json()
-    text = body.get("response", "")
+    headers: dict[str, str] = {}
+    if provider.api_key():
+        headers["Authorization"] = f"Bearer {provider.api_key()}"
+
+    chunks: list[str] = []
+    done = False
+    async with client.stream(
+        "POST",
+        f"{provider.resolved_base_url()}/api/generate",
+        json=payload,
+        timeout=DEFAULT_TIMEOUT,
+        headers=headers or None,
+    ) as resp:
+        resp.raise_for_status()
+        async for raw in resp.aiter_text():
+            if not raw:
+                continue
+            for line in raw.splitlines():
+                if not line.startswith("{") or not line.endswith("}"):
+                    continue
+                try:
+                    body = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if body.get("done"):
+                    done = True
+                    break
+                chunk = body.get("response", "")
+                if chunk:
+                    chunks.append(chunk)
+            if done:
+                break
+
+    text = "".join(chunks)
     return (text,
-            int(body.get("prompt_eval_count") or _estimate_tokens(system + prompt)),
-            int(body.get("eval_count") or _estimate_tokens(text)))
+            int(_estimate_tokens(system + prompt)),
+            int(_estimate_tokens(text)))
 
 
 _TRANSPORTS = {

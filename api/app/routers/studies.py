@@ -269,14 +269,20 @@ async def generate_day_endpoint(study_id: int, day_number: int,
         raise HTTPException(404, "study not found")
     if day_number < 1 or day_number > s.total_days:
         raise HTTPException(400, "day out of range")
+    events.emit("info", "study", f"Study {study_id} day {day_number}: regenerating…",
+                study_id=study_id, progress=75)
     try:
         draft = await study_generate_day(s, day_number, session=session,
                                          tradition=s.tradition,
                                          translation=s.primary_translation)
     except ValueError as exc:
+        events.emit("error", "study", f"Study {study_id} day {day_number} failed: {exc}",
+                    study_id=study_id)
         raise HTTPException(400, str(exc))
     # Best-effort real, cited discussions for the freshly generated day.
     asyncio.create_task(_build_discussions_safe(study_id, day_number))
+    events.emit("success", "study", f"Study {study_id} day {day_number} regenerated",
+                study_id=study_id, progress=100)
     return {"day_number": day_number, "status": "ready", "draft": draft}
 
 
@@ -384,8 +390,14 @@ async def revise_day_endpoint(study_id: int, day_number: int, body: DayRevise,
 @router.put("/{study_id}/days/{day_number}")
 def update_day_endpoint(study_id: int, day_number: int, body: DayUpdate,
                         session: Session = Depends(get_session)) -> dict:
-    """Persist user edits to a day's blocks_json (inline editing)."""
+    """Persist user edits to a day's blocks_json (inline editing).
+
+    Rejects the update when the commentary cites a verse reference that is not
+    one of the day's passages -- the commentary section must only discuss scripture
+    that is provided in full in the Scriptures section.
+    """
     from app.services.planner import make_summary
+    import re
 
     s = session.get(Study, study_id)
     if s is None:
@@ -393,6 +405,42 @@ def update_day_endpoint(study_id: int, day_number: int, body: DayUpdate,
     target = next((d for d in s.days if d.day_number == day_number), None)
     if target is None:
         raise HTTPException(400, "day out of range")
+
+    # --- Scriptures-coverage guard ---
+    commentary = body.blocks_json.get("commentary") if body.blocks_json else ""
+    if commentary and getattr(target, "id", None) is not None:
+        day_refs = {pp.ref.lower().strip() for pp in (
+            session.exec(
+                select(DayPassage).where(DayPassage.study_day_id == target.id)
+                .order_by(DayPassage.order)
+            ).all()
+        )}
+        bare_refs = _extract_bible_refs(commentary)
+        # Allow a range (e.g. "2 Cor 6:14-16") when the passage row is the
+        # canonical single start verse ("2 Cor 6:14") --- the DB stores the
+        # start ref, and commentary naturally cites the full range.
+        def _normalise(ref: str) -> str:
+            return ref.lower().strip()
+
+        def _covered(ref: str) -> bool:
+            if _normalise(ref) in day_refs:
+                return True
+            # range form "book ch:v-v" -> start is "book ch:v"
+            m = re.match(
+                r"(?:[0-9]+\s+)?(?:[A-Za-z]+\s+)*[A-Za-z]+\s+[0-9]+:[0-9]+",
+                ref, re.IGNORECASE,
+            )
+            if m:
+                return _normalise(m.group(0)) in day_refs
+            return False
+
+        unknown = sorted({r for r in bare_refs if not _covered(r)})
+        if unknown:
+            raise HTTPException(
+                400,
+                "Commentary cites scripture not in the Scriptures section: "
+                + ", ".join(unknown)
+            )
 
     target.blocks_json = body.blocks_json
     if body.notes is not None:
@@ -552,6 +600,22 @@ def _verse_snippet(session: Session, ref: str, translation: str) -> str:
     text = " ".join(v["text"] for v in rows)
     return _truncate_words(text, 75) if text else ""
 
+
+def _extract_bible_refs(text: str) -> list[str]:
+    """Return bare verse references found in commentary prose.
+
+    Catches forms like ``John 3:16``, ``2 Corinthians 6:14-16``, ``1 Pet 2:3``,
+    ``Psalms 103:8-14``. Trailing sentence punctuation (``.,;:)``) is stripped so a
+    reference at the end of a sentence isn't glued to the period.
+    """
+    return [
+        m.rstrip(".,;:)")
+        for m in re.findall(
+            r"(?:[0-9]+\s+)?(?:[A-Za-z]+\s+)*[A-Za-z]+\s+[0-9]+:[0-9]+(?:[-–][0-9]+)?",
+            text,
+            re.IGNORECASE,
+        )
+    ]
 
 def _truncate_words(text: str, n: int) -> str:
     words = text.split()
