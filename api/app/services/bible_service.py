@@ -252,3 +252,111 @@ def get_comparison(session, ref: Reference, codes: list[str]) -> list[dict]:
         {"verse": n, "texts": {code: rows.get(n, "") for code, rows in per_code.items()}}
         for n in verse_numbers
     ]
+
+
+# ------------------------------------------------ extraction & scripture coverage
+
+def extract_bible_refs(text: str) -> list[Reference]:
+    """Find all valid Bible references cited in arbitrary text.
+
+    Returns a list of parsed Reference objects in order of appearance,
+    ignoring false positives that fail safe_parse_ref.
+    """
+    if not text:
+        return []
+    found: list[Reference] = []
+    seen: set[tuple[int, int, int, int]] = set()
+
+    # Find candidate chapter/verse blocks
+    for m in re.finditer(r"\b\d+(?:[:.]\d+(?:[-–—]\d+)?)?\b", text):
+        start_idx = m.start()
+        cv_part = m.group(0)
+        # Look behind up to 40 characters for book words
+        lead = text[max(0, start_idx - 40):start_idx]
+        words = re.findall(r"[A-Za-z0-9]+", lead)
+        parsed = None
+        for w_count in (3, 2, 1):
+            if len(words) >= w_count:
+                candidate = " ".join(words[-w_count:]) + " " + cv_part
+                parsed = safe_parse_ref(candidate)
+                if parsed is not None:
+                    break
+        if parsed is not None:
+            key = (parsed.book, parsed.chapter, parsed.verse_start, parsed.verse_end)
+            if key not in seen:
+                seen.add(key)
+                found.append(parsed)
+
+    return found
+
+
+def is_ref_covered(ref: Reference, existing: list[Reference]) -> bool:
+    """Check if `ref` is fully covered by any reference in `existing`."""
+    for ex in existing:
+        if ex.book != ref.book or ex.chapter != ref.chapter:
+            continue
+        if ex.is_whole_chapter:
+            return True
+        if ref.is_whole_chapter:
+            continue
+        ex_end = ex.verse_end or ex.verse_start
+        ref_end = ref.verse_end or ref.verse_start
+        if ex.verse_start <= ref.verse_start and ref_end <= ex_end:
+            return True
+    return False
+
+
+def resolve_ref_text(ref: Reference, translation: str = "KJV", session=None) -> str:
+    """Resolve verse text for a reference. Uses existing session if provided,
+    otherwise opens one with get_engine()."""
+    from sqlmodel import Session
+    from app.db import get_engine
+    if session is not None:
+        try:
+            rows = get_passage(session, ref, translation)
+            return " ".join(v["text"] for v in rows)
+        except Exception:
+            return ""
+    try:
+        with Session(get_engine()) as s:
+            rows = get_passage(s, ref, translation)
+            return " ".join(v["text"] for v in rows)
+    except Exception:
+        return ""
+
+
+def ensure_scriptures_include_mentioned(
+    scripture_blocks: list[dict],
+    text_sources: list[str],
+    translation: str = "KJV",
+    session=None,
+) -> list[dict]:
+    """Ensure that `scripture_blocks` contains all verses mentioned across `text_sources`.
+
+    Any referenced verse not already covered is resolved from the Bible database
+    and appended as a scripture block.
+    """
+    blocks = list(scripture_blocks or [])
+    existing_refs: list[Reference] = []
+    for blk in blocks:
+        parsed = safe_parse_ref(blk.get("ref", ""))
+        if parsed is not None:
+            existing_refs.append(parsed)
+
+    for src in text_sources:
+        if not src:
+            continue
+        for ref in extract_bible_refs(src):
+            if not is_ref_covered(ref, existing_refs):
+                text = resolve_ref_text(ref, translation, session=session)
+                blocks.append({
+                    "ref": ref.ref,
+                    "book": ref.book_name,
+                    "text": text,
+                    "translation": translation,
+                    "rationale": f"Referenced in study content ({ref.ref})",
+                })
+                existing_refs.append(ref)
+
+    return blocks
+

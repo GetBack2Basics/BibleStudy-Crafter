@@ -28,24 +28,10 @@ from app.services.studies import build_day_discussions
 
 router = APIRouter(prefix="/api/studies", tags=["studies"])
 
-import re
-
 def _extract_bible_refs(text: str) -> list[str]:
     """Find Bible references cited in text like 'John 3:16', '1 Cor 13:4-8'."""
-    if not text:
-        return []
-    pattern = re.compile(
-        r"\b(?:[1-3]\s+)?[A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*\s+\d+(?::\d+(?:[-\u2013]\d+)?)?\b"
-    )
-    found = []
-    for match in pattern.finditer(text):
-        candidate = match.group(0).strip()
-        try:
-            bs.parse_ref(candidate)
-            found.append(candidate)
-        except ValueError:
-            pass
-    return found
+    return [r.ref for r in bs.extract_bible_refs(text)]
+
 
 STATUSES = ("pending", "generating", "ready", "failed")
 
@@ -424,6 +410,34 @@ async def revise_day_endpoint(study_id: int, day_number: int, body: DayRevise,
         raise HTTPException(status_code=402, detail="KEY_REQUIRED: AI provider is unavailable or quota was exhausted. Please add your API key in Settings/Profile.")
     revised = res.text.strip()
     target.blocks_json = {**(target.blocks_json or {}), "commentary": revised}
+    
+    # Ensure scriptures section includes all verses mentioned in other sections
+    text_sources = [
+        target.blocks_json.get("commentary") or "",
+        target.blocks_json.get("opening_prayer") or "",
+        target.blocks_json.get("closing_prayer") or "",
+        target.blocks_json.get("heading") or "",
+        *[str(q) for q in target.blocks_json.get("questions", []) if str(q).strip()],
+    ]
+    scripture = target.blocks_json.get("scripture") or []
+    if not scripture and getattr(target, "id", None) is not None:
+        existing_dps = session.exec(
+            select(DayPassage).where(DayPassage.study_day_id == target.id)
+            .order_by(DayPassage.order)
+        ).all()
+        scripture = [
+            {"ref": p.ref, "translation": p.translation, "text": p.text, "rationale": p.rationale}
+            for p in existing_dps
+        ]
+    tr = s.primary_translation or "KJV"
+    updated_scripture = bs.ensure_scriptures_include_mentioned(
+        scripture, text_sources, translation=tr, session=session
+    )
+    target.blocks_json["scripture"] = updated_scripture
+    if getattr(target, "id", None) is not None:
+        from app.services.studies import _sync_passages
+        _sync_passages(session, target, updated_scripture, tr)
+
     session.add(target)
     session.commit()
     events.emit("success", "study", f"Study {study_id} day {day_number} revised")
@@ -436,12 +450,11 @@ def update_day_endpoint(study_id: int, day_number: int, body: DayUpdate,
                         session: Session = Depends(get_session)) -> dict:
     """Persist user edits to a day's blocks_json (inline editing).
 
-    Rejects the update when the commentary cites a verse reference that is not
-    one of the day's passages -- the commentary section must only discuss scripture
-    that is provided in full in the Scriptures section.
+    The scriptures section includes all verses mentioned across the other
+    sections such as commentary and prayers, auto-resolving any newly cited
+    verses.
     """
     from app.services.planner import make_summary
-    import re
 
     s = session.get(Study, study_id)
     if s is None:
@@ -450,41 +463,35 @@ def update_day_endpoint(study_id: int, day_number: int, body: DayUpdate,
     if target is None:
         raise HTTPException(400, "day out of range")
 
-    # --- Scriptures-coverage guard ---
-    commentary = body.blocks_json.get("commentary") if body.blocks_json else ""
-    if commentary and getattr(target, "id", None) is not None:
-        day_refs = {pp.ref.lower().strip() for pp in (
-            session.exec(
-                select(DayPassage).where(DayPassage.study_day_id == target.id)
-                .order_by(DayPassage.order)
-            ).all()
-        )}
-        bare_refs = _extract_bible_refs(commentary)
-        # Allow a range (e.g. "2 Cor 6:14-16") when the passage row is the
-        # canonical single start verse ("2 Cor 6:14") --- the DB stores the
-        # start ref, and commentary naturally cites the full range.
-        def _normalise(ref: str) -> str:
-            return ref.lower().strip()
+    # --- Auto-include all mentioned scriptures in the Scriptures section ---
+    blocks = body.blocks_json or {}
+    text_sources = [
+        blocks.get("commentary") or "",
+        blocks.get("opening_prayer") or "",
+        blocks.get("closing_prayer") or "",
+        blocks.get("heading") or "",
+        *[str(q) for q in blocks.get("questions", []) if str(q).strip()],
+    ]
+    if body.notes:
+        text_sources.extend(str(v) for v in body.notes.values() if v)
 
-        def _covered(ref: str) -> bool:
-            if _normalise(ref) in day_refs:
-                return True
-            # range form "book ch:v-v" -> start is "book ch:v"
-            m = re.match(
-                r"(?:[0-9]+\s+)?(?:[A-Za-z]+\s+)*[A-Za-z]+\s+[0-9]+:[0-9]+",
-                ref, re.IGNORECASE,
-            )
-            if m:
-                return _normalise(m.group(0)) in day_refs
-            return False
+    scripture = blocks.get("scripture") or []
+    if not scripture and getattr(target, "id", None) is not None:
+        existing_dps = session.exec(
+            select(DayPassage).where(DayPassage.study_day_id == target.id)
+            .order_by(DayPassage.order)
+        ).all()
+        scripture = [
+            {"ref": p.ref, "translation": p.translation, "text": p.text, "rationale": p.rationale}
+            for p in existing_dps
+        ]
 
-        unknown = sorted({r for r in bare_refs if not _covered(r)})
-        if unknown:
-            raise HTTPException(
-                400,
-                "Commentary cites scripture not in the Scriptures section: "
-                + ", ".join(unknown)
-            )
+    tr = s.primary_translation or "KJV"
+    updated_scripture = bs.ensure_scriptures_include_mentioned(
+        scripture, text_sources, translation=tr, session=session
+    )
+    blocks["scripture"] = updated_scripture
+    body.blocks_json = blocks
 
     target.blocks_json = body.blocks_json
     if body.notes is not None:
@@ -492,6 +499,11 @@ def update_day_endpoint(study_id: int, day_number: int, body: DayUpdate,
     if target.status == "pending":
         target.status = "ready"
     target.context_summary = make_summary(body.blocks_json, target.context_summary)
+    
+    if getattr(target, "id", None) is not None:
+        from app.services.studies import _sync_passages
+        _sync_passages(session, target, updated_scripture, tr)
+
     session.add(target)
     session.commit()
     session.refresh(target)
@@ -645,21 +657,6 @@ def _verse_snippet(session: Session, ref: str, translation: str) -> str:
     return _truncate_words(text, 75) if text else ""
 
 
-def _extract_bible_refs(text: str) -> list[str]:
-    """Return bare verse references found in commentary prose.
-
-    Catches forms like ``John 3:16``, ``2 Corinthians 6:14-16``, ``1 Pet 2:3``,
-    ``Psalms 103:8-14``. Trailing sentence punctuation (``.,;:)``) is stripped so a
-    reference at the end of a sentence isn't glued to the period.
-    """
-    return [
-        m.rstrip(".,;:)")
-        for m in re.findall(
-            r"(?:[0-9]+\s+)?(?:[A-Za-z]+\s+)*[A-Za-z]+\s+[0-9]+:[0-9]+(?:[-–][0-9]+)?",
-            text,
-            re.IGNORECASE,
-        )
-    ]
 
 def _truncate_words(text: str, n: int) -> str:
     words = text.split()

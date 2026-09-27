@@ -133,10 +133,10 @@ def test_summary_excludes_prior_text_when_none():
 
 # ----------------------------------------------------------- rationale uniqueness
 
-def test_corpus_fallback_rationale_is_ref_specific():
+def test_corpus_fallback_rationale_is_ref_specific(client):
     """No-provider fallback must not repeat a generic 'relevant to <topic>'
     string across verses; each rationale is anchored to its own reference."""
-    passages = planner._corpus_passages("yoked", "KJV", limit=3)
+    passages = planner._corpus_passages("forgive", "KJV", limit=3)
     assert passages, "expected at least one corpus-derived passage"
     assert all(p.rational for p in passages), "every passage needs a rationale"
     # The old generic template is gone.

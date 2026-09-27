@@ -352,6 +352,20 @@ async def generate_day(title: str, focus: str, passages: list[Passage],
         text = str(value or "").strip()
         return text or default
 
+    # The Scriptures section must include all verses mentioned in other sections
+    # such as commentary, opening prayer, closing prayer, questions, and heading.
+    text_sources = [
+        _clean(data.get("opening_prayer")),
+        _clean(data.get("commentary")),
+        _clean(data.get("closing_prayer")),
+        _clean(data.get("heading")),
+        *[str(q) for q in data.get("questions", []) if str(q).strip()],
+    ]
+    from app.services.bible_service import ensure_scriptures_include_mentioned
+    scripture_blocks = ensure_scriptures_include_mentioned(
+        scripture_blocks, text_sources, translation=translation, session=session
+    )
+
     return {
         "heading": _clean(data.get("heading"), focus),
         "opening_prayer": _clean(data.get("opening_prayer")),

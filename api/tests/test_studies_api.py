@@ -371,3 +371,68 @@ def test_day_notes_persisted(client):
     assert r.status_code == 200
     got = client.get(f"/api/studies/{sid}").json()["days"][0]
     assert got["notes"] == {"commentary": "my takeaway"}
+
+
+def test_generation_includes_commentary_and_prayer_verses(client):
+    """When a day is generated, any verses mentioned in commentary and prayers
+    must be automatically included in the scriptures section and DayPassage rows."""
+    async def _day_with_mentions(*a, **k):
+        from app.services.llm import LLMResult
+        prompt = a[0] if a else k.get("prompt", "")
+        if "Write day" in prompt:
+            payload = {
+                "heading": "Love and Forgiveness",
+                "opening_prayer": "Lord, as we recall John 3:16, thank You for Your love.",
+                "commentary": "In Matthew 6:14-15 we learn to forgive others.",
+                "questions": ["How does John 3:16 guide us?"],
+                "closing_prayer": "Amen in Jesus' name.",
+            }
+        else:
+            payload = OUTLINE
+        return LLMResult(text=json.dumps(payload), provider="ollama", model="m",
+                         tokens_in=1, tokens_out=1, data=payload)
+
+    with patch("app.services.planner.complete", _day_with_mentions):
+        sid = client.post("/api/studies", json={"topic": "Grace", "total_days": 1,
+                                              "minutes_per_day": 15}).json()["study_id"]
+        for _ in range(50):
+            got = client.get(f"/api/studies/{sid}").json()
+            if got["status"] == "ready":
+                break
+            time.sleep(0.1)
+
+    day1 = got["days"][0]
+    scripture_refs = [s["ref"] for s in day1["blocks_json"]["scripture"]]
+    assert "John 3:16" in scripture_refs
+    assert "Matthew 6:14-15" in scripture_refs
+
+    passages = client.get(f"/api/studies/{sid}/days/1/passages").json()
+    passage_refs = [p["ref"] for p in passages]
+    assert "John 3:16" in passage_refs
+    assert "Matthew 6:14-15" in passage_refs
+
+
+def test_update_day_includes_mentioned_verses(client):
+    """When a day is updated with commentary and prayer mentioning new verses,
+    they must be auto-included in the scriptures section."""
+    sid = _make_ready_study(client)
+    edited = {
+        "heading": "Daily Walk",
+        "opening_prayer": "Lord, we look to John 3:16 for comfort.",
+        "commentary": "We also reflect on Matthew 6:14-15 and forgive freely.",
+        "scripture": [],
+        "questions": ["What does John 3:16 teach?"],
+        "closing_prayer": "Amen.",
+    }
+    r = client.put(f"/api/studies/{sid}/days/1", json={"blocks_json": edited})
+    assert r.status_code == 200
+    res_scripture = r.json()["blocks_json"]["scripture"]
+    res_refs = [s["ref"] for s in res_scripture]
+    assert "John 3:16" in res_refs
+    assert "Matthew 6:14-15" in res_refs
+
+    passages = client.get(f"/api/studies/{sid}/days/1/passages").json()
+    passage_refs = [p["ref"] for p in passages]
+    assert "John 3:16" in passage_refs
+    assert "Matthew 6:14-15" in passage_refs
+

@@ -596,7 +596,7 @@ function StudyDetail() {
 
 /* ---------- Day card with inline editing + select-to-revise ---------- */
 
-function DayCard({ studyId, day, onGenerate }: { studyId: number; day: DayOut; onGenerate: () => void }) {
+function DayCard({ studyId, day, onGenerate, defaultOpen = false }: { studyId: number; day: DayOut; onGenerate: () => void; defaultOpen?: boolean }) {
   const dayLink = `/study/${studyId}/day/${day.day_number}`
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState<DayDraft | null>(day.blocks_json ?? null)
@@ -613,8 +613,8 @@ function DayCard({ studyId, day, onGenerate }: { studyId: number; day: DayOut; o
   const [instruction, setInstruction] = useState('')
   const [revBusy, setRevBusy] = useState(false)
 
-  // day-level collapse (default collapsed so long studies stay scannable)
-  const [dayOpen, setDayOpen] = useState(false)
+  // day-level collapse (default collapsed so long studies stay scannable, or open on detail page)
+  const [dayOpen, setDayOpen] = useState(defaultOpen)
 
   // keep local draft in sync with the server ONLY when not actively editing,
   // so the 2s poll doesn't clobber in-progress edits
@@ -978,7 +978,7 @@ function DayDetail() {
         </div>
       )}
 
-      <DayCard studyId={studyId} day={day} onGenerate={async () => {
+      <DayCard studyId={studyId} day={day} defaultOpen onGenerate={async () => {
         try {
           await studyApi.generateDay(studyId, dayNum)
           navigate(`/study/${studyId}/day/${dayNum}`)
@@ -1414,7 +1414,8 @@ function PassageEditor({ studyId, day, fallbackScripture, onChanged }: {
     }
   }
 
-  useEffect(() => { load() }, [studyId, day]) // eslint-disable-line react-hooks/exhaustive-deps
+  const scriptureKey = JSON.stringify(fallbackScripture?.map((s) => s.ref) ?? [])
+  useEffect(() => { load() }, [studyId, day, scriptureKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const reloadWhenDone = async (p: Promise<unknown>) => {
     await p
