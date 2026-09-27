@@ -74,14 +74,13 @@ async def test_est_minutes_within_20pct():
     assert len(out.days) == 5
 
 
-async def test_outline_falls_back_without_provider():
+async def test_outline_raises_without_provider():
     from app.services.llm import NoProviderAvailable
     async def _boom(*a, **k):
         raise NoProviderAvailable("none")
     with patch("app.services.planner.complete", _boom):
-        out = await generate_outline("Hope", 15, 5)
-    assert len(out.days) == 5
-    assert out.title == "Hope"
+        with pytest.raises(NoProviderAvailable):
+            await generate_outline("Hope", 15, 5)
 
 
 # ----------------------------------------------------------- anti-hallucination

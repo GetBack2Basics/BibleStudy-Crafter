@@ -96,19 +96,17 @@ Return ONLY JSON matching this schema, no commentary:
 
 async def generate_outline(topic: str, minutes_per_day: int, total_days: int,
                            *, tradition: str = None, session=None,
-                           study_id: int | None = None) -> Outline:
+                           study_id: int | None = None,
+                           custom_keys: dict[str, str] | None = None) -> Outline:
     from app.services.prompts import build_system
     b = budget(minutes_per_day)
     prompt = OUTLINE_PROMPT.format(
         topic=topic, total_days=total_days, minutes=minutes_per_day,
         reading_words=b["reading_words"], commentary_words=b["commentary_words"],
         questions=b["questions"])
-    try:
-        res = await complete(prompt, system=build_system(tradition=tradition),
-                             json_mode=True, session=session, study_id=study_id)
-    except NoProviderAvailable:
-        # Deterministic fallback so the app is usable with no provider at all.
-        return _fallback_outline(topic, minutes_per_day, total_days)
+    res = await complete(prompt, system=build_system(tradition=tradition),
+                         json_mode=True, session=session, study_id=study_id,
+                         custom_keys=custom_keys)
     data = res.data
     days = [
         DayPlan(
@@ -287,7 +285,8 @@ async def generate_day(title: str, focus: str, passages: list[Passage],
                        prev_scripture: str | None = None,
                        tradition: str = None, session=None,
                        study_id: int | None = None,
-                       translation: str = "KJV") -> dict[str, Any]:
+                       translation: str = "KJV",
+                       custom_keys: dict[str, str] | None = None) -> dict[str, Any]:
     """Draft one day. Returns a dict ready to store as blocks_json.
 
     The anti-hallucination guarantee: the LLM returns only references; we
@@ -339,13 +338,10 @@ async def generate_day(title: str, focus: str, passages: list[Passage],
         prev_block=prev_block, snippet=snippet,
         commentary_words=b["commentary_words"], questions=b["questions"])
 
-    try:
-        res = await complete(prompt, system=build_system(tradition=tradition),
-                             json_mode=True, session=session, study_id=study_id)
-        data = res.data
-    except NoProviderAvailable:
-        data = {"heading": focus, "opening_prayer": "", "commentary": "",
-                "questions": [], "closing_prayer": ""}
+    res = await complete(prompt, system=build_system(tradition=tradition),
+                         json_mode=True, session=session, study_id=study_id,
+                         custom_keys=custom_keys)
+    data = res.data
 
     # Do NOT silently substitute generic placeholder text when the model returns
     # empty fields. A weak/empty response is surfaced as blank (the UI already
@@ -480,7 +476,8 @@ RATIONALE RULE (critical):
 
 async def plan_passages(topic: str, focus: str, count: int = 3,
                         translation: str = "KJV", *,
-                        session=None, study_id: int | None = None) -> list[Passage]:
+                        session=None, study_id: int | None = None,
+                        custom_keys: dict[str, str] | None = None) -> list[Passage]:
     """Focused, single-purpose passage pick the weak free-tier models can
     reliably fulfil (the full outline prompt often drops the passages array).
 
@@ -492,7 +489,8 @@ async def plan_passages(topic: str, focus: str, count: int = 3,
         topic=topic, focus=focus, count=count, translation=translation)
     try:
         res = await complete(prompt, system=build_system(),
-                             json_mode=True, session=session, study_id=study_id)
+                             json_mode=True, session=session, study_id=study_id,
+                             custom_keys=custom_keys)
         data = res.data
         out = [
             Passage(ref=str(p.get("ref", "")).strip(),

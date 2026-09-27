@@ -123,11 +123,11 @@ export const passages = {
   list: (studyId: number, day: number): Promise<PassageOut[]> =>
     api.fetch(`/api/studies/${studyId}/days/${day}/passages`).then(j),
 
-  add: (studyId: number, day: number, ref: string, translation?: string): Promise<PassageOut> =>
+  add: (studyId: number, day: number, ref: string, rationale?: string, translation?: string): Promise<PassageOut> =>
     api.fetch(`/api/studies/${studyId}/days/${day}/passages`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ref, translation: translation ?? null }),
+      body: JSON.stringify({ ref, rationale: rationale ?? '', translation: translation ?? null }),
     }).then(j),
 
   update: (studyId: number, day: number, passageId: number, body: {

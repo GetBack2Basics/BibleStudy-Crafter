@@ -15,7 +15,7 @@ import yaml
 from app.config.settings import get_settings
 
 REGISTRY_PATH = Path(__file__).parent / "providers.yaml"
-VALID_KINDS = {"openai_compatible", "gemini", "ollama", "fal", "replicate", "edge_tts"}
+VALID_KINDS = {"openai_compatible", "gemini", "ollama", "anthropic", "fal", "replicate", "edge_tts"}
 VALID_TIERS = {"free", "paid"}
 
 
@@ -44,23 +44,40 @@ class Provider:
     def is_free(self) -> bool:
         return self.tier == "free"
 
-    def api_key(self) -> str:
+    def api_key(self, custom_keys: dict[str, str] | None = None) -> str:
         """Resolve the provider's API key.
 
-        Real environment variables win (that's how Docker Compose injects them,
-        and how pytest's monkeypatch sets them), with a fallback to pydantic's
-        settings so a key placed only in .env still works in plain `python` runs.
-        Reading os.environ directly keeps the result correct regardless of the
-        get_settings() lru_cache, which otherwise serves stale values when a test
-        mutates the environment after the cache is warm.
+        Custom user keys take highest priority if provided.
+        Otherwise real environment variables win, with a fallback to pydantic settings.
         """
+        if custom_keys:
+            # Check candidate key names
+            candidates = [
+                self.env_key,
+                self.env_key.lower() if self.env_key else None,
+                f"{self.name}_api_key",
+                f"{self.kind}_api_key",
+                self.name,
+                self.kind,
+            ]
+            if "openrouter" in self.name or "openrouter" in self.kind:
+                candidates.extend(["openrouter_api_key", "openrouter"])
+            if "gemini" in self.name or "gemini" in self.kind:
+                candidates.extend(["gemini_api_key", "gemini"])
+            if "anthropic" in self.name or "anthropic" in self.kind:
+                candidates.extend(["anthropic_api_key", "anthropic"])
+            if "fal" in self.name or "fal" in self.kind:
+                candidates.extend(["fal_key", "fal_api_key", "fal"])
+            if "replicate" in self.name or "replicate" in self.kind:
+                candidates.extend(["replicate_api_token", "replicate_key", "replicate"])
+
+            for k in candidates:
+                if k and k in custom_keys and custom_keys[k]:
+                    return custom_keys[k]
+
         if not self.env_key:
             return ""
         import os
-        # An environment variable that is explicitly set (even to empty) wins
-        # over the .env file fallback. This lets a deployment disable a provider
-        # by exporting an empty key, and makes "no keys" test simulations reliable
-        # regardless of what the .env file on disk happens to contain.
         if self.env_key in os.environ:
             return os.environ[self.env_key] or ""
         return getattr(get_settings(), self.env_key.lower(), "") or ""
@@ -70,11 +87,11 @@ class Provider:
             return getattr(get_settings(), self.base_url_setting, "") or ""
         return self.base_url
 
-    def is_available(self) -> bool:
+    def is_available(self, custom_keys: dict[str, str] | None = None) -> bool:
         """No key required -> available. Key required -> only if it is set."""
         if self.env_key is None:
             return True
-        return bool(self.api_key())
+        return bool(self.api_key(custom_keys))
 
     def default_model(self) -> Model:
         if not self.models:
@@ -104,12 +121,13 @@ class Registry:
             "audio": self.audio_chain,
         }[capability]
 
-    def available_chain(self, capability: str, tier: str | None = None) -> list[Provider]:
+    def available_chain(self, capability: str, tier: str | None = None,
+                        custom_keys: dict[str, str] | None = None) -> list[Provider]:
         """Providers from the configured chain that can actually be used now."""
         out: list[Provider] = []
         for name in self.chain(capability):
             provider = self.get(capability, name)
-            if provider is None or not provider.is_available():
+            if provider is None or not provider.is_available(custom_keys):
                 continue
             if tier == "free" and not provider.is_free:
                 continue

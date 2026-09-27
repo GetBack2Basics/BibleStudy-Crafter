@@ -2,8 +2,9 @@ import { useEffect, useRef, useState, createContext, useContext } from 'react'
 import { Link, Routes, Route, useNavigate, useParams } from 'react-router-dom'
 import StatusDock from './components/StatusDock'
 import AuthScreen from './components/AuthScreen'
+import ProfileModal from './components/ProfileModal'
 import { api } from './lib/api'
-import { auth } from './lib/auth'
+import { auth, type AuthUser } from './lib/auth'
 import { studies as studyApi, bible, preferences, passages, TRADITIONS, type StudyOut, type DayOut, type DayDraft, type TranslationInfo, type CompareVerse, type PassageOut, type SearchHit, type TTSChoice, ttsDefaultVoices } from './lib/studies'
 
 const STATUS_CLS: Record<string, string> = {
@@ -15,6 +16,69 @@ const STATUS_CLS: Record<string, string> = {
 
 const StudyTitleCtx = createContext<{ title: string | null; dayNum?: number } | null>(null)
 const SetStudyTitleCtx = createContext<((v: { title: string; dayNum?: number } | null) => void) | null>(null)
+export const OpenProfileCtx = createContext<(tab?: 'profile' | 'byok' | 'admin') => void>(() => {})
+
+export function isKeyError(errText?: string | null): boolean {
+  if (!errText) return false
+  const lower = errText.toLowerCase()
+  return (
+    lower.includes('key_required') ||
+    lower.includes('no text provider') ||
+    lower.includes('all providers failed') ||
+    lower.includes('all text providers failed') ||
+    lower.includes('api key') ||
+    lower.includes('402') ||
+    lower.includes('noprovideravailable') ||
+    lower.includes('openrouter_free') ||
+    lower.includes('gemini_free') ||
+    lower.includes('exhausted')
+  )
+}
+
+export function ApiKeyAlert({ error, className = '' }: { error?: string | null; className?: string }) {
+  const openProfile = useContext(OpenProfileCtx)
+  return (
+    <div className={`rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 shadow-ambient ${className}`}>
+      <div className="flex items-start gap-3">
+        <span className="material-symbols-outlined text-2xl text-amber-400 shrink-0">key</span>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-headline-sm text-sm font-bold text-amber-300">
+            API Key Required for AI Generation
+          </h3>
+          <p className="mt-1 text-xs text-on-surface-variant leading-relaxed">
+            {error && error.includes('KEY_REQUIRED')
+              ? error.replace(/^.*KEY_REQUIRED:\s*/i, '')
+              : 'The free AI model pool could not be reached or quota was exhausted. Please configure your free Google Gemini or OpenRouter API key to continue generating study content.'}
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <button
+              onClick={() => openProfile('byok')}
+              className="btn-primary text-xs py-1.5 px-3.5 flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow"
+            >
+              <I name="key" cls="text-[16px]" /> Add API Key (Free)
+            </button>
+            <a
+              href="https://aistudio.google.com/app/apikey"
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs text-primary underline hover:text-primary-container inline-flex items-center gap-1"
+            >
+              Get free Gemini Key <I name="open_in_new" cls="text-[13px]" />
+            </a>
+            <a
+              href="https://openrouter.ai/keys"
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs text-on-surface-variant underline hover:text-on-surface inline-flex items-center gap-1"
+            >
+              Get free OpenRouter Key <I name="open_in_new" cls="text-[13px]" />
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 const I = ({ name, cls = 'text-[18px]' }: { name: string; cls?: string }) => (
   <span className={`material-symbols-outlined ${cls}`}>{name}</span>
@@ -54,31 +118,45 @@ function CollapsibleSection({ title, icon, defaultOpen = true, children, right, 
 
 export default function App() {
   const [authed, setAuthed] = useState<boolean>(() => auth.accessToken() !== null)
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null)
+  const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const [profileTab, setProfileTab] = useState<'profile' | 'byok' | 'admin'>('profile')
   const [studiesList, setStudiesList] = useState<StudyOut[]>([])
   const [loadingList, setLoadingList] = useState(false)
   const [studyTitle, setStudyTitle] = useState<{ title: string; dayNum?: number } | null>(null)
+
+  const openProfile = (tab: 'profile' | 'byok' | 'admin' = 'profile') => {
+    setProfileTab(tab)
+    setIsProfileOpen(true)
+  }
 
   const refreshList = () => {
     setLoadingList(true)
     studyApi.list().then(setStudiesList).catch(() => setStudiesList([])).finally(() => setLoadingList(false))
   }
 
+  const loadUser = () => {
+    auth.me().then(setCurrentUser).catch(() => {})
+  }
+
   const handleLogout = async () => {
     await auth.logout()
     setAuthed(false)
+    setCurrentUser(null)
     setStudiesList([])
     window.history.back()
   }
 
   // Any unrecoverable 401 (e.g. refresh expired) drops the user to the login screen.
   useEffect(() => {
-    api.setUnauthorizedHandler(() => { setAuthed(false); setStudiesList([]) })
+    api.setUnauthorizedHandler(() => { setAuthed(false); setCurrentUser(null); setStudiesList([]) })
   }, [])
 
   const handleDelete = async (id: number) => {
     if (!confirm('Delete this study? This cannot be undone.')) return
     await studyApi.remove(id)
     refreshList()
+    loadUser()
   }
 
   const handleDeleteAll = async () => {
@@ -86,25 +164,58 @@ export default function App() {
     await studyApi.removeAll()
     window.history.back()
     refreshList()
+    loadUser()
   }
 
-  useEffect(() => { if (authed) refreshList() }, [authed])
+  useEffect(() => {
+    if (authed) {
+      refreshList()
+      loadUser()
+    }
+  }, [authed])
 
   if (!authed) {
-    return <AuthScreen onAuthed={() => setAuthed(true)} />
+    return <AuthScreen onAuthed={() => { setAuthed(true); loadUser() }} />
   }
 
+  const roleLabel = currentUser?.role || (currentUser?.is_admin ? 'ADMIN' : 'MEMBER')
+
   return (
+    <OpenProfileCtx.Provider value={openProfile}>
     <SetStudyTitleCtx.Provider value={setStudyTitle}>
     <StudyTitleCtx.Provider value={studyTitle}>
     <div className="min-h-screen bg-background text-on-background">
-      <header className="sticky top-0 z-30 flex flex-wrap items-center gap-4 border-b border-outline-variant/20 bg-surface-container-lowest/80 px-margin-mobile py-4 backdrop-blur lg:px-margin-desktop">
+      <header className="sticky top-0 z-30 flex flex-wrap items-center gap-4 border-b border-outline-variant/20 bg-surface-container-lowest/80 px-margin-mobile py-3.5 backdrop-blur lg:px-margin-desktop">
         <Link to="/" className="font-headline-lg text-headline-lg text-primary tracking-tight hover:text-primary-container transition-colors">
           {studyTitle?.title ?? 'BibleStudy-Crafter'}{studyTitle && studyTitle.dayNum ? ` · Day ${studyTitle.dayNum}` : ''}
         </Link>
-        <div className="ml-auto flex flex-wrap items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center gap-3">
+          {/* User Account / BYOK Button */}
+          <button
+            onClick={() => openProfile('profile')}
+            className="flex items-center gap-2.5 rounded-full border border-outline-variant/30 bg-surface-container-low px-3 py-1.5 hover:bg-surface-container-high transition-all shadow-sm"
+          >
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/20 text-primary font-bold text-xs overflow-hidden">
+              {currentUser?.picture_url ? (
+                <img src={currentUser.picture_url} alt="Avatar" className="h-full w-full object-cover" />
+              ) : (
+                <span>{(currentUser?.display_name || currentUser?.email || 'U')[0].toUpperCase()}</span>
+              )}
+            </div>
+            <div className="text-left hidden sm:block">
+              <div className="text-xs font-semibold text-on-surface truncate max-w-[120px]">
+                {currentUser?.display_name || currentUser?.email?.split('@')[0]}
+              </div>
+              <div className="text-[10px] text-on-surface-variant flex items-center gap-1">
+                <span>{roleLabel}</span>
+                <span>·</span>
+                <span className="text-primary font-medium">Keys & Settings</span>
+              </div>
+            </div>
+          </button>
+
           <button onClick={handleLogout}
-                  className="text-ui-label-sm text-on-surface-variant hover:text-error transition-colors">
+                  className="text-ui-label-sm text-on-surface-variant hover:text-error transition-colors px-2 py-1 rounded-lg">
             Sign out
           </button>
         </div>
@@ -118,10 +229,19 @@ export default function App() {
         </Routes>
       </main>
 
+      <ProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+        currentUser={currentUser}
+        onUserUpdated={(u) => setCurrentUser(u)}
+        initialTab={profileTab}
+      />
+
       <StatusDock />
     </div>
     </StudyTitleCtx.Provider>
     </SetStudyTitleCtx.Provider>
+    </OpenProfileCtx.Provider>
   )
 }
 
@@ -283,7 +403,13 @@ function StudyList({ studies, loading, onRefresh, onDelete, onDeleteAll }: {
             <p className="text-ui-label-sm text-on-surface-variant">No verses found for "{topic.trim()}" in {version}. Try a different word.</p>
           ) : null}
 
-          {err && <p className="text-ui-label-sm text-error">{err}</p>}
+          {err && (
+            isKeyError(err) ? (
+              <ApiKeyAlert error={err} className="my-3" />
+            ) : (
+              <p className="text-ui-label-sm text-error">{err}</p>
+            )
+          )}
           <div>
             <button type="submit" disabled={busy}
               className="btn-primary px-8 py-3 disabled:opacity-50">
@@ -431,6 +557,21 @@ function StudyDetail() {
         </p>
       </div>
 
+      {study.status === 'failed' && (
+        <ApiKeyAlert
+          error="AI Generation Failed: The AI provider was unreachable or free quota was exhausted. Please configure your free Gemini or OpenRouter key below to continue."
+          className="my-3"
+        />
+      )}
+
+      {err && (
+        isKeyError(err) ? (
+          <ApiKeyAlert error={err} className="my-3" />
+        ) : (
+          <div className="text-error my-3">{err}</div>
+        )
+      )}
+
       {study.status === 'generating' && (
         <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-4 shadow-ambient">
           <div className="mb-2 flex items-center justify-between text-ui-label-md">
@@ -569,7 +710,13 @@ function DayCard({ studyId, day, onGenerate }: { studyId: number; day: DayOut; o
 
       {dayOpen && (
         <div className="space-y-4">
-          {err && <p className="mb-2 text-ui-label-sm text-error">{err}</p>}
+          {err && (
+            isKeyError(err) ? (
+              <ApiKeyAlert error={err} className="mb-2" />
+            ) : (
+              <p className="mb-2 text-ui-label-sm text-error">{err}</p>
+            )
+          )}
 
           {/* Revise-with-AI panel (mirrors JobHunt_Crafter select-to-revise) */}
           {editing && (
@@ -636,12 +783,8 @@ function DraftEditor({ draft, editing, onChange, onSelect, studyId, day, notes, 
   return (
     <div className="space-y-4 text-body-reading text-on-surface">
       <CollapsibleSection title="Scriptures" icon="auto_stories" defaultOpen>
-        <PassageEditor studyId={studyId} day={day} onChanged={() => { /* passage changes are server-side; nothing to sync into draft */ }} />
+        <PassageEditor studyId={studyId} day={day} fallbackScripture={draft.scripture} onChanged={() => { /* passage changes are server-side; nothing to sync into draft */ }} />
       </CollapsibleSection>
-
-      {draft.scripture && draft.scripture.length > 0 && (
-        <p className="text-ui-label-sm text-on-surface-variant">Note: the scripture above is now managed as reorderable, version-switchable passages. The quoted text below is a read-only snapshot from generation.</p>
-      )}
 
       {editing ? (
         <CollapsibleSection title="Edit content" icon="edit" defaultOpen>
@@ -1239,14 +1382,16 @@ function QuestionsEditor({ questions, onChange }: { questions: string[]; onChang
 
 /* ---------- Scripture passages: version-switchable, reorderable, highlightable ---------- */
 
-function PassageEditor({ studyId, day, onChanged }: {
+function PassageEditor({ studyId, day, fallbackScripture, onChanged }: {
   studyId: number
   day: number
+  fallbackScripture?: Array<{ ref: string; translation?: string; text?: string; rationale?: string }>
   onChanged: () => void
 }) {
   const [list, setList] = useState<PassageOut[]>([])
   const [all, setAll] = useState<TranslationInfo[]>([])
   const [busy, setBusy] = useState(false)
+  const [seeding, setSeeding] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const [newRef, setNewRef] = useState('')
   const [hlText, setHlText] = useState<string | null>(null)
@@ -1254,6 +1399,7 @@ function PassageEditor({ studyId, day, onChanged }: {
 
   const load = async () => {
     setBusy(true)
+    setErr(null)
     try {
       const [ps, ts] = await Promise.all([
         passages.list(studyId, day),
@@ -1274,6 +1420,24 @@ function PassageEditor({ studyId, day, onChanged }: {
     await p
     await load()
     onChanged()
+  }
+
+  const seedFromDraft = async () => {
+    if (!fallbackScripture || fallbackScripture.length === 0) return
+    setSeeding(true)
+    try {
+      for (const item of fallbackScripture) {
+        if (item.ref) {
+          await passages.add(studyId, day, item.ref, item.rationale, item.translation)
+        }
+      }
+      await load()
+      onChanged()
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e))
+    } finally {
+      setSeeding(false)
+    }
   }
 
   const switchVersion = (id: number, code: string) =>
@@ -1329,13 +1493,40 @@ function PassageEditor({ studyId, day, onChanged }: {
     reloadWhenDone(passages.update(studyId, day, pid, { highlights }))
   }
 
+  const hasFallback = fallbackScripture && fallbackScripture.length > 0
+
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2 font-ui-label-lg text-ui-label-lg text-on-surface">
-        <I name="auto_stories" cls="text-[20px] text-primary" /> Scriptures
+      <div className="flex items-center justify-between font-ui-label-lg text-ui-label-lg text-on-surface">
+        <div className="flex items-center gap-2">
+          <I name="auto_stories" cls="text-[20px] text-primary" /> Scriptures
+        </div>
+        {list.length === 0 && hasFallback && !busy && (
+          <button
+            onClick={seedFromDraft}
+            disabled={seeding}
+            className="btn-outline text-[12px] py-1 px-2.5 flex items-center gap-1.5"
+            title="Import scriptures into the interactive passages editor"
+          >
+            <I name="sync" cls={`text-[15px] ${seeding ? 'animate-spin' : ''}`} />
+            {seeding ? 'Importing…' : 'Make Passages Interactive'}
+          </button>
+        )}
       </div>
-      {err && <p className="text-ui-label-sm text-error">{err}</p>}
-      {busy && <p className="text-ui-label-sm text-on-surface-variant">Loading passages…</p>}
+
+      {err && (
+        <div className="flex items-center justify-between rounded-xl bg-error/10 border border-error/30 p-2.5 text-ui-label-sm text-error">
+          <span>{err}</span>
+          <button onClick={load} className="btn-ghost text-error underline text-xs">Retry</button>
+        </div>
+      )}
+
+      {busy && <p className="text-ui-label-sm text-on-surface-variant flex items-center gap-2">
+        <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        Loading passages…
+      </p>}
+
+      {/* Render active passages */}
       {list.map((p, i) => (
         <div key={p.id} className="passage-card">
           <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -1411,6 +1602,30 @@ function PassageEditor({ studyId, day, onChanged }: {
           )}
         </div>
       ))}
+
+      {/* Fallback view when no database DayPassage rows exist yet */}
+      {!busy && list.length === 0 && hasFallback && (
+        <div className="space-y-3">
+          {fallbackScripture!.map((fs, i) => (
+            <div key={i} className="passage-card border border-outline-variant/30">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="font-ui-label-sm font-semibold text-primary">{fs.ref}</span>
+                {fs.translation && <span className="text-ui-label-xs text-on-surface-variant font-mono">{fs.translation}</span>}
+              </div>
+              {fs.text && (
+                <div className="w-full rounded-xl bg-surface-container-lowest px-3 py-2 font-body-reading text-on-surface">
+                  {fs.text}
+                </div>
+              )}
+              {fs.rationale && <div className="mt-1 text-ui-label-sm italic text-on-surface-variant">Why: {fs.rationale}</div>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!busy && list.length === 0 && !hasFallback && (
+        <p className="text-ui-label-sm text-on-surface-variant">No scripture passages added for this day yet. Add one below:</p>
+      )}
 
       <div className="flex items-center gap-2">
         <input

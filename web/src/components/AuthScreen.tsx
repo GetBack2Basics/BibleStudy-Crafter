@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { auth } from '../lib/auth'
 import { api } from '../lib/api'
 
@@ -15,18 +15,29 @@ export default function AuthScreen({ onAuthed }: { onAuthed: () => void }) {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [googleBusy, setGoogleBusy] = useState(false)
-  // The client id is baked in; the button shows only if it is non-empty AND the
-  // backend reports Google enabled (cheatsheet: option is conditional).
-  const googleClientId = __GOOGLE_CLIENT_ID__ || ''
-  const [googleEnabled, setGoogleEnabled] = useState<boolean | null>(googleClientId ? null : false)
+  
+  const [googleClientId, setGoogleClientId] = useState<string>(
+    typeof __GOOGLE_CLIENT_ID__ !== 'undefined' ? __GOOGLE_CLIENT_ID__ : ''
+  )
+  const [googleEnabled, setGoogleEnabled] = useState<boolean>(false)
+  const googleBtnRef = useRef<HTMLDivElement | null>(null)
 
-  // Ask the backend whether Google sign-in is actually configured server-side.
-  useState(() => {
-    if (!googleClientId) { setGoogleEnabled(false); return }
+  // Fetch server meta to dynamically detect GOOGLE_CLIENT_ID from backend if not set at build time
+  useEffect(() => {
     api.meta()
-      .then((m) => setGoogleEnabled(Boolean(m.auth?.google_enabled)))
-      .catch(() => setGoogleEnabled(false))
-  })
+      .then((m) => {
+        const clientId = m.auth?.google_client_id || googleClientId
+        if (clientId) {
+          setGoogleClientId(clientId)
+          setGoogleEnabled(true)
+        } else {
+          setGoogleEnabled(false)
+        }
+      })
+      .catch(() => {
+        if (googleClientId) setGoogleEnabled(true)
+      })
+  }, [])
 
   const handleGoogle = async (credential: string) => {
     setError(null)
@@ -41,21 +52,47 @@ export default function AuthScreen({ onAuthed }: { onAuthed: () => void }) {
     }
   }
 
-  // Google Identity Services: render the One Tap button into a div and wire its
-  // callback to our backend exchange. Done imperatively so we only load GIS once
-  // the button is actually shown.
-  const googleDivRef = (el: HTMLDivElement | null) => {
-    if (!el || !googleEnabled || !(window as any).google?.accounts?.id) return
-    ;(window as any).google.accounts.id.initialize({
-      client_id: googleClientId,
-      callback: (resp: { credential: string }) => handleGoogle(resp.credential),
-    })
-    ;(window as any).google.accounts.id.renderButton(el, {
-      theme: 'outline',
-      size: 'large',
-      width: el.clientWidth || 280,
-    })
-  }
+  // Initialize and render Google button
+  useEffect(() => {
+    if (!googleEnabled || !googleClientId || !googleBtnRef.current) return
+
+    const initGoogle = () => {
+      if ((window as any).google?.accounts?.id) {
+        try {
+          ;(window as any).google.accounts.id.initialize({
+            client_id: googleClientId,
+            callback: (resp: { credential: string }) => handleGoogle(resp.credential),
+          })
+          if (googleBtnRef.current) {
+            googleBtnRef.current.innerHTML = ''
+            ;(window as any).google.accounts.id.renderButton(googleBtnRef.current, {
+              theme: 'outline',
+              size: 'large',
+              type: 'standard',
+              shape: 'pill',
+              text: 'signin_with',
+              logo_alignment: 'left',
+              width: googleBtnRef.current.clientWidth || 320,
+            })
+          }
+        } catch (e) {
+          console.warn('Google Auth init error:', e)
+        }
+      }
+    }
+
+    if ((window as any).google?.accounts?.id) {
+      initGoogle()
+    } else {
+      const interval = setInterval(() => {
+        if ((window as any).google?.accounts?.id) {
+          clearInterval(interval)
+          initGoogle()
+        }
+      }, 200)
+      return () => clearInterval(interval)
+    }
+  }, [googleEnabled, googleClientId, mode])
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -73,67 +110,93 @@ export default function AuthScreen({ onAuthed }: { onAuthed: () => void }) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background text-on-background px-4">
-      <form onSubmit={submit} className="w-full max-w-sm bg-surface-container-lowest rounded-xl border border-outline-variant/20 p-8 space-y-4">
-        <h1 className="font-headline-lg text-headline-lg text-primary">BibleStudy-Crafter</h1>
-        <p className="text-ui-body-md text-on-surface-variant">
-          {mode === 'login' ? 'Sign in to your studies' : 'Create your account'}
-        </p>
+    <div className="min-h-screen flex items-center justify-center bg-background text-on-background px-4 py-8">
+      <div className="w-full max-w-md bg-surface-container-lowest rounded-3xl border border-outline-variant/30 p-8 shadow-2xl space-y-6">
+        <div className="text-center space-y-2">
+          <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-1">
+            <span className="material-symbols-outlined text-[28px]">menu_book</span>
+          </div>
+          <h1 className="font-headline-lg text-2xl font-bold text-primary tracking-tight">BibleStudy-Crafter</h1>
+          <p className="text-xs text-on-surface-variant max-w-xs mx-auto">
+            {mode === 'login' ? 'Welcome back. Sign in to your devotionals & study plans.' : 'Create your free account to start crafting theological studies.'}
+          </p>
+        </div>
 
         {googleEnabled && (
-          <div className="space-y-3">
-            <div ref={googleDivRef} className="flex justify-center" />
-            <div className="flex items-center gap-2 text-ui-label-sm text-on-surface-variant">
-              <span className="h-px flex-1 bg-outline-variant/30" />
-              or
-              <span className="h-px flex-1 bg-outline-variant/30" />
+          <div className="space-y-4">
+            <div ref={googleBtnRef} className="flex justify-center min-h-[44px]" />
+            <div className="flex items-center gap-3 text-xs text-on-surface-variant">
+              <span className="h-px flex-1 bg-outline-variant/20" />
+              <span>or with email</span>
+              <span className="h-px flex-1 bg-outline-variant/20" />
             </div>
           </div>
         )}
-        {googleEnabled === false && (
-          <p className="text-ui-label-sm text-on-surface-variant">Google sign-in is not configured on this server.</p>
-        )}
 
-        {mode === 'register' && (
-          <input
-            className="w-full rounded-lg bg-surface-container px-3 py-2 text-ui-body-md outline-none focus:ring-2 focus:ring-primary"
-            placeholder="Display name (optional)"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-          />
-        )}
-        <input
-          type="email" required
-          className="w-full rounded-lg bg-surface-container px-3 py-2 text-ui-body-md outline-none focus:ring-2 focus:ring-primary"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <input
-          type="password" required minLength={8}
-          className="w-full rounded-lg bg-surface-container px-3 py-2 text-ui-body-md outline-none focus:ring-2 focus:ring-primary"
-          placeholder="Password (min 8 chars)"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+        <form onSubmit={submit} className="space-y-4">
+          {mode === 'register' && (
+            <div>
+              <label className="block text-xs font-medium text-on-surface-variant mb-1">Display Name</label>
+              <input
+                className="w-full rounded-xl border border-outline-variant/30 bg-surface-container-low px-3.5 py-2.5 text-sm text-on-surface outline-none focus:border-primary transition-colors"
+                placeholder="e.g. David"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+              />
+            </div>
+          )}
 
-        {error && <p className="text-ui-label-sm text-error">{error}</p>}
+          <div>
+            <label className="block text-xs font-medium text-on-surface-variant mb-1">Email Address</label>
+            <input
+              type="email"
+              required
+              className="w-full rounded-xl border border-outline-variant/30 bg-surface-container-low px-3.5 py-2.5 text-sm text-on-surface outline-none focus:border-primary transition-colors"
+              placeholder="user@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
 
-        <button
-          type="submit" disabled={busy || googleBusy}
-          className="w-full rounded-lg bg-primary px-4 py-2 text-ui-label-lg text-on-primary font-medium disabled:opacity-50"
-        >
-          {busy ? 'Please wait…' : mode === 'login' ? 'Sign in' : 'Create account'}
-        </button>
+          <div>
+            <label className="block text-xs font-medium text-on-surface-variant mb-1">Password</label>
+            <input
+              type="password"
+              required
+              minLength={8}
+              className="w-full rounded-xl border border-outline-variant/30 bg-surface-container-low px-3.5 py-2.5 text-sm text-on-surface outline-none focus:border-primary transition-colors"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
 
-        <button
-          type="button"
-          className="w-full text-ui-label-sm text-on-surface-variant hover:text-primary"
-          onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
-        >
-          {mode === 'login' ? 'Need an account? Register' : 'Have an account? Sign in'}
-        </button>
-      </form>
+          {error && (
+            <div className="rounded-xl bg-rose-500/10 border border-rose-500/30 p-3 text-xs text-rose-300 flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px] shrink-0">error</span>
+              <span>{error}</span>
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={busy || googleBusy}
+            className="w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary hover:bg-primary/90 transition-all shadow-md disabled:opacity-50"
+          >
+            {busy || googleBusy ? 'Authenticating…' : mode === 'login' ? 'Sign In' : 'Create Account'}
+          </button>
+
+          <div className="text-center pt-2">
+            <button
+              type="button"
+              className="text-xs text-on-surface-variant hover:text-primary transition-colors"
+              onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(null) }}
+            >
+              {mode === 'login' ? "Don't have an account? Create one" : 'Already have an account? Sign in'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }

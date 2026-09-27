@@ -1,0 +1,777 @@
+import React, { useState, useEffect } from 'react'
+import { auth, type AuthUser } from '../lib/auth'
+import { keysApi, type KeyStatus, type TestKeyResult } from '../lib/keys'
+
+type Tab = 'profile' | 'byok' | 'admin'
+
+interface ProfileModalProps {
+  isOpen: boolean
+  onClose: () => void
+  currentUser: AuthUser | null
+  onUserUpdated: (user: AuthUser) => void
+  initialTab?: Tab
+}
+
+export default function ProfileModal({
+  isOpen,
+  onClose,
+  currentUser,
+  onUserUpdated,
+  initialTab = 'profile',
+}: ProfileModalProps) {
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab)
+
+  useEffect(() => {
+    if (isOpen) {
+      setActiveTab(initialTab)
+    }
+  }, [isOpen, initialTab])
+
+  // Profile Form state
+  const [displayName, setDisplayName] = useState('')
+  const [organization, setOrganization] = useState('')
+  const [phone, setPhone] = useState('')
+  const [pictureUrl, setPictureUrl] = useState('')
+  const [notes, setNotes] = useState('')
+  const [profileSaving, setProfileSaving] = useState(false)
+  const [profileMsg, setProfileMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+
+  // BYOK State
+  const [_keyStatus, setKeyStatus] = useState<KeyStatus | null>(null)
+  const [useCustomKeys, setUseCustomKeys] = useState(false)
+  const [preferredProvider, setPreferredProvider] = useState('auto')
+  const [geminiKey, setGeminiKey] = useState('')
+  const [openrouterKey, setOpenrouterKey] = useState('')
+  const [anthropicKey, setAnthropicKey] = useState('')
+  const [falKey, setFalKey] = useState('')
+  const [replicateKey, setReplicateKey] = useState('')
+  const [byokSaving, setByokSaving] = useState(false)
+  const [byokMsg, setByokMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [testingProvider, setTestingProvider] = useState<string | null>(null)
+  const [testResults, setTestResults] = useState<Record<string, TestKeyResult>>({})
+
+  // Admin Tab State
+  const [adminUsers, setAdminUsers] = useState<AuthUser[]>([])
+  const [loadingUsers, setLoadingUsers] = useState(false)
+  const [adminMsg, setAdminMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+
+  const isAdmin = currentUser?.is_admin || currentUser?.role === 'SUPER_ADMIN' || currentUser?.role === 'ADMIN'
+
+  useEffect(() => {
+    if (currentUser) {
+      setDisplayName(currentUser.display_name || '')
+      setOrganization(currentUser.organization || '')
+      setPhone(currentUser.phone || '')
+      setPictureUrl(currentUser.picture_url || '')
+      setNotes(currentUser.notes || '')
+    }
+  }, [currentUser])
+
+  useEffect(() => {
+    if (isOpen) {
+      loadKeyStatus()
+      if (isAdmin && activeTab === 'admin') {
+        loadAdminUsers()
+      }
+    }
+  }, [isOpen, activeTab, isAdmin])
+
+  const loadKeyStatus = async () => {
+    try {
+      const status = await keysApi.getStatus()
+      setKeyStatus(status)
+      setUseCustomKeys(status.use_custom_keys)
+      setPreferredProvider(status.preferred_provider)
+      if (status.masked_keys.gemini) setGeminiKey(status.masked_keys.gemini)
+      if (status.masked_keys.openrouter) setOpenrouterKey(status.masked_keys.openrouter)
+      if (status.masked_keys.anthropic) setAnthropicKey(status.masked_keys.anthropic)
+      if (status.masked_keys.fal) setFalKey(status.masked_keys.fal)
+      if (status.masked_keys.replicate) setReplicateKey(status.masked_keys.replicate)
+    } catch {
+      // silent
+    }
+  }
+
+  const loadAdminUsers = async () => {
+    setLoadingUsers(true)
+    try {
+      const list = await auth.listAdminUsers()
+      setAdminUsers(list)
+    } catch (err: any) {
+      setAdminMsg({ type: 'error', text: err.message || 'Failed to load user list' })
+    } finally {
+      setLoadingUsers(false)
+    }
+  }
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setProfileSaving(true)
+    setProfileMsg(null)
+    try {
+      const updated = await auth.updateProfile({
+        display_name: displayName,
+        organization,
+        phone,
+        picture_url: pictureUrl,
+        notes,
+      })
+      onUserUpdated(updated)
+      setProfileMsg({ type: 'success', text: 'Profile updated successfully!' })
+      setTimeout(() => setProfileMsg(null), 3000)
+    } catch (err: any) {
+      setProfileMsg({ type: 'error', text: err.message || 'Failed to update profile' })
+    } finally {
+      setProfileSaving(false)
+    }
+  }
+
+  const handleSaveKeys = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setByokSaving(true)
+    setByokMsg(null)
+    const hasKeys = Boolean(
+      (geminiKey && !geminiKey.startsWith('****')) ||
+      (openrouterKey && !openrouterKey.startsWith('****')) ||
+      (anthropicKey && !anthropicKey.startsWith('****')) ||
+      (falKey && !falKey.startsWith('****')) ||
+      (replicateKey && !replicateKey.startsWith('****')) ||
+      _keyStatus?.has_gemini ||
+      _keyStatus?.has_openrouter ||
+      _keyStatus?.has_anthropic
+    )
+    const shouldEnableCustom = useCustomKeys || hasKeys
+    try {
+      const updated = await keysApi.saveSettings({
+        use_custom_keys: shouldEnableCustom,
+        preferred_provider: preferredProvider,
+        gemini_api_key: geminiKey,
+        openrouter_api_key: openrouterKey,
+        anthropic_api_key: anthropicKey,
+        fal_key: falKey,
+        replicate_api_token: replicateKey,
+      })
+      setKeyStatus(updated)
+      setUseCustomKeys(updated.use_custom_keys)
+      setByokMsg({
+        type: 'success',
+        text: updated.use_custom_keys
+          ? 'API Keys saved! BYOK Mode is active — your custom keys will now be used.'
+          : 'API Key preferences saved (Free Mode active).',
+      })
+      setTimeout(() => setByokMsg(null), 4000)
+    } catch (err: any) {
+      setByokMsg({ type: 'error', text: err.message || 'Failed to save API keys' })
+    } finally {
+      setByokSaving(false)
+    }
+  }
+
+  const handleTestKey = async (provider: string, rawKey: string) => {
+    if (!rawKey || rawKey.startsWith('****')) {
+      setByokMsg({ type: 'error', text: `Please enter a valid ${provider} API key to test.` })
+      return
+    }
+    setTestingProvider(provider)
+    try {
+      const res = await keysApi.testKey({ provider, api_key: rawKey })
+      setTestResults((prev) => ({ ...prev, [provider]: res }))
+      if (res.success) {
+        setUseCustomKeys(true)
+      }
+    } catch (err: any) {
+      setTestResults((prev) => ({
+        ...prev,
+        [provider]: { success: false, latency_ms: 0, message: err.message || 'Test failed', error: String(err) },
+      }))
+    } finally {
+      setTestingProvider(null)
+    }
+  }
+
+  const handleRoleChange = async (userId: number, newRole: string) => {
+    try {
+      const updated = await auth.updateUserRole(userId, newRole)
+      setAdminUsers((prev) => prev.map((u) => (u.id === userId ? updated : u)))
+      setAdminMsg({ type: 'success', text: `Role updated for ${updated.email}` })
+      setTimeout(() => setAdminMsg(null), 2500)
+    } catch (err: any) {
+      setAdminMsg({ type: 'error', text: err.message || 'Failed to change role' })
+    }
+  }
+
+  const handleStatusToggle = async (userId: number, currentActive: boolean) => {
+    try {
+      const updated = await auth.updateUserStatus(userId, !currentActive)
+      setAdminUsers((prev) => prev.map((u) => (u.id === userId ? updated : u)))
+    } catch (err: any) {
+      setAdminMsg({ type: 'error', text: err.message || 'Failed to update status' })
+    }
+  }
+
+  const handleDeleteUser = async (userId: number, email: string) => {
+    if (!confirm(`Are you sure you want to permanently delete account ${email}?`)) return
+    try {
+      await auth.deleteUser(userId)
+      setAdminUsers((prev) => prev.filter((u) => u.id !== userId))
+      setAdminMsg({ type: 'success', text: `Deleted ${email}` })
+      setTimeout(() => setAdminMsg(null), 2500)
+    } catch (err: any) {
+      setAdminMsg({ type: 'error', text: err.message || 'Failed to delete user' })
+    }
+  }
+
+  if (!isOpen) return null
+
+  const roleBadge = (role: string) => {
+    switch (role) {
+      case 'SUPER_ADMIN':
+        return (
+          <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/15 px-2.5 py-0.5 text-xs font-semibold text-purple-400 border border-purple-500/30">
+            <span className="material-symbols-outlined text-[14px]">shield_with_heart</span> Super Admin
+          </span>
+        )
+      case 'ADMIN':
+        return (
+          <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/15 px-2.5 py-0.5 text-xs font-semibold text-blue-400 border border-blue-500/30">
+            <span className="material-symbols-outlined text-[14px]">verified_user</span> Admin
+          </span>
+        )
+      default:
+        return (
+          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-semibold text-emerald-400 border border-emerald-500/30">
+            <span className="material-symbols-outlined text-[14px]">person</span> Member
+          </span>
+        )
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto animate-fade-in">
+      <div className="relative w-full max-w-3xl rounded-3xl border border-outline-variant/30 bg-surface-container-low p-6 shadow-2xl transition-all">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-outline-variant/20 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary font-bold text-lg border border-primary/20 overflow-hidden">
+              {currentUser?.picture_url ? (
+                <img src={currentUser.picture_url} alt="Profile" className="h-full w-full object-cover" />
+              ) : (
+                <span>{(currentUser?.display_name || currentUser?.email || 'U')[0].toUpperCase()}</span>
+              )}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="font-headline-sm text-lg font-bold text-on-surface">
+                  {currentUser?.display_name || 'My Account'}
+                </h2>
+                {roleBadge(currentUser?.role || 'MEMBER')}
+              </div>
+              <p className="text-xs text-on-surface-variant font-mono">{currentUser?.email}</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-full p-1.5 text-on-surface-variant hover:bg-surface-container-high transition-colors"
+          >
+            <span className="material-symbols-outlined text-2xl">close</span>
+          </button>
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="mt-4 flex gap-2 border-b border-outline-variant/20 pb-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab('profile')}
+            className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium transition-all ${
+              activeTab === 'profile'
+                ? 'bg-primary/15 text-primary border border-primary/30 shadow-sm'
+                : 'text-on-surface-variant hover:bg-surface-container-high'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[18px]">account_circle</span>
+            Profile Details
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('byok')}
+            className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium transition-all ${
+              activeTab === 'byok'
+                ? 'bg-primary/15 text-primary border border-primary/30 shadow-sm'
+                : 'text-on-surface-variant hover:bg-surface-container-high'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[18px]">key</span>
+            API Keys & BYOK
+          </button>
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => setActiveTab('admin')}
+              className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium transition-all ${
+                activeTab === 'admin'
+                  ? 'bg-primary/15 text-primary border border-primary/30 shadow-sm'
+                  : 'text-on-surface-variant hover:bg-surface-container-high'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[18px]">manage_accounts</span>
+              User Management
+            </button>
+          )}
+        </div>
+
+        {/* Tab 1: Profile Details */}
+        {activeTab === 'profile' && (
+          <form onSubmit={handleSaveProfile} className="mt-5 space-y-4">
+            {profileMsg && (
+              <div
+                className={`rounded-xl p-3 text-xs flex items-center gap-2 ${
+                  profileMsg.type === 'success'
+                    ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'
+                    : 'bg-rose-500/10 text-rose-300 border border-rose-500/30'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[18px]">
+                  {profileMsg.type === 'success' ? 'check_circle' : 'error'}
+                </span>
+                {profileMsg.text}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-on-surface-variant mb-1">
+                  Display Name
+                </label>
+                <input
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="e.g. Pastor John"
+                  className="w-full rounded-xl border border-outline-variant/30 bg-surface-container px-3 py-2 text-sm text-on-surface focus:border-primary focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-on-surface-variant mb-1">
+                  Organization / Church
+                </label>
+                <input
+                  type="text"
+                  value={organization}
+                  onChange={(e) => setOrganization(e.target.value)}
+                  placeholder="e.g. Grace Fellowship"
+                  className="w-full rounded-xl border border-outline-variant/30 bg-surface-container px-3 py-2 text-sm text-on-surface focus:border-primary focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-on-surface-variant mb-1">
+                  Phone (Optional)
+                </label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+1 (555) 000-0000"
+                  className="w-full rounded-xl border border-outline-variant/30 bg-surface-container px-3 py-2 text-sm text-on-surface focus:border-primary focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-on-surface-variant mb-1">
+                  Profile Avatar URL
+                </label>
+                <input
+                  type="url"
+                  value={pictureUrl}
+                  onChange={(e) => setPictureUrl(e.target.value)}
+                  placeholder="https://..."
+                  className="w-full rounded-xl border border-outline-variant/30 bg-surface-container px-3 py-2 text-sm text-on-surface focus:border-primary focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-on-surface-variant mb-1">
+                Personal Notes / Bio
+              </label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={3}
+                placeholder="Study interests, favorite Bible topics, theological focus..."
+                className="w-full rounded-xl border border-outline-variant/30 bg-surface-container px-3 py-2 text-sm text-on-surface focus:border-primary focus:outline-none resize-none"
+              />
+            </div>
+
+            <div className="rounded-2xl bg-surface-container-high/40 p-4 border border-outline-variant/20 flex items-center justify-between">
+              <div>
+                <span className="text-xs text-on-surface-variant">Account Info:</span>
+                <p className="text-xs text-on-surface mt-0.5">
+                  Auth: <strong>{currentUser?.auth_provider}</strong> · Studies created:{' '}
+                  <strong>{currentUser?.study_count ?? 0}</strong>
+                </p>
+              </div>
+              <button
+                type="submit"
+                disabled={profileSaving}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-on-primary hover:bg-primary/90 transition-all disabled:opacity-50"
+              >
+                {profileSaving ? 'Saving...' : 'Save Profile'}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Tab 2: BYOK & API Keys */}
+        {activeTab === 'byok' && (
+          <form onSubmit={handleSaveKeys} className="mt-5 space-y-4">
+            {byokMsg && (
+              <div
+                className={`rounded-xl p-3 text-xs flex items-center gap-2 ${
+                  byokMsg.type === 'success'
+                    ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'
+                    : 'bg-rose-500/10 text-rose-300 border border-rose-500/30'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[18px]">
+                  {byokMsg.type === 'success' ? 'check_circle' : 'error'}
+                </span>
+                {byokMsg.text}
+              </div>
+            )}
+
+            {/* Mode Selector Card */}
+            <div
+              onClick={() => setUseCustomKeys(!useCustomKeys)}
+              className={`cursor-pointer rounded-2xl border p-4 transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-3 ${
+                useCustomKeys
+                  ? 'border-emerald-500/40 bg-emerald-500/10 shadow-sm'
+                  : 'border-primary/20 bg-primary/5'
+              }`}
+            >
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className={`text-sm font-bold flex items-center gap-1.5 ${useCustomKeys ? 'text-emerald-400' : 'text-primary'}`}>
+                    <span className="material-symbols-outlined text-[18px]">{useCustomKeys ? 'vpn_key' : 'bolt'}</span>
+                    AI Generation Tier: {useCustomKeys ? 'BYOK Mode Active' : 'Free Tier Mode'}
+                  </h3>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                      useCustomKeys
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                        : 'bg-primary/20 text-primary border border-primary/30'
+                    }`}
+                  >
+                    {useCustomKeys ? 'Custom Keys Used' : 'Server Pool'}
+                  </span>
+                </div>
+                <p className="text-xs text-on-surface-variant mt-1 max-w-lg">
+                  {useCustomKeys
+                    ? 'Your configured API keys (Gemini, OpenRouter, Anthropic) will be directly used for all outline and study generation.'
+                    : 'Using Free Tier Model Pool (Default). Zero keys required — powered by free models and server pool.'}
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer shrink-0" onClick={(e) => e.stopPropagation()}>
+                <input
+                  type="checkbox"
+                  checked={useCustomKeys}
+                  onChange={(e) => setUseCustomKeys(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-surface-container-high peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                <span className="ml-2 text-xs font-semibold text-on-surface">
+                  {useCustomKeys ? 'BYOK Mode' : 'Free Mode'}
+                </span>
+              </label>
+            </div>
+
+            {/* Provider Preference Selector */}
+            <div className="rounded-2xl border border-outline-variant/20 bg-surface-container p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+              <div>
+                <label className="text-xs font-semibold text-on-surface flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[16px] text-primary">tune</span>
+                  Preferred AI Provider & Model
+                </label>
+                <p className="text-[11px] text-on-surface-variant mt-0.5">
+                  Choose your primary provider (automatically falls over to other available models on high demand or errors).
+                </p>
+              </div>
+              <select
+                value={preferredProvider}
+                onChange={(e) => setPreferredProvider(e.target.value)}
+                className="rounded-xl border border-outline-variant/30 bg-surface-container-low px-3 py-1.5 text-xs text-on-surface focus:border-primary focus:outline-none shrink-0"
+              >
+                <option value="auto">Auto (Best Available + Auto-Failover)</option>
+                <option value="gemini">Google Gemini (Gemini Flash)</option>
+                <option value="openrouter">OpenRouter (Multi-Model Pool)</option>
+                <option value="anthropic">Anthropic (Claude 3.5 Haiku)</option>
+              </select>
+            </div>
+
+            {/* Keys Input List */}
+            <div className="space-y-3">
+              {/* Google Gemini Key */}
+              <div className="rounded-2xl border border-outline-variant/20 bg-surface-container p-3.5">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-semibold text-on-surface flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[16px] text-primary">auto_awesome</span>
+                    Google Gemini API Key
+                  </label>
+                  <a
+                    href="https://aistudio.google.com/app/apikey"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[11px] text-primary hover:underline flex items-center gap-0.5"
+                  >
+                    Get Free Key <span className="material-symbols-outlined text-[12px]">open_in_new</span>
+                  </a>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="password"
+                    value={geminiKey}
+                    onChange={(e) => {
+                      setGeminiKey(e.target.value)
+                      if (e.target.value) setUseCustomKeys(true)
+                    }}
+                    placeholder="AIzaSy..."
+                    className="flex-1 rounded-xl border border-outline-variant/30 bg-surface-container-low px-3 py-1.5 text-xs text-on-surface focus:border-primary focus:outline-none font-mono"
+                  />
+                  <button
+                    type="button"
+                    disabled={testingProvider === 'gemini'}
+                    onClick={() => handleTestKey('gemini', geminiKey)}
+                    className="rounded-xl border border-outline-variant/40 bg-surface-container-high px-3 py-1.5 text-xs font-medium text-on-surface hover:bg-surface-container-highest transition-colors disabled:opacity-50"
+                  >
+                    {testingProvider === 'gemini' ? 'Testing...' : 'Test'}
+                  </button>
+                </div>
+                {testResults['gemini'] && (
+                  <p
+                    className={`mt-1.5 text-[11px] ${
+                      testResults['gemini'].success ? 'text-emerald-400' : 'text-rose-400'
+                    }`}
+                  >
+                    {testResults['gemini'].message} ({testResults['gemini'].latency_ms}ms)
+                  </p>
+                )}
+              </div>
+
+              {/* OpenRouter Key */}
+              <div className="rounded-2xl border border-outline-variant/20 bg-surface-container p-3.5">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-semibold text-on-surface flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[16px] text-tertiary">hub</span>
+                    OpenRouter API Key
+                  </label>
+                  <a
+                    href="https://openrouter.ai/keys"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[11px] text-primary hover:underline flex items-center gap-0.5"
+                  >
+                    Get OpenRouter Key <span className="material-symbols-outlined text-[12px]">open_in_new</span>
+                  </a>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="password"
+                    value={openrouterKey}
+                    onChange={(e) => {
+                      setOpenrouterKey(e.target.value)
+                      if (e.target.value) setUseCustomKeys(true)
+                    }}
+                    placeholder="sk-or-v1-..."
+                    className="flex-1 rounded-xl border border-outline-variant/30 bg-surface-container-low px-3 py-1.5 text-xs text-on-surface focus:border-primary focus:outline-none font-mono"
+                  />
+                  <button
+                    type="button"
+                    disabled={testingProvider === 'openrouter'}
+                    onClick={() => handleTestKey('openrouter', openrouterKey)}
+                    className="rounded-xl border border-outline-variant/40 bg-surface-container-high px-3 py-1.5 text-xs font-medium text-on-surface hover:bg-surface-container-highest transition-colors disabled:opacity-50"
+                  >
+                    {testingProvider === 'openrouter' ? 'Testing...' : 'Test'}
+                  </button>
+                </div>
+                {testResults['openrouter'] && (
+                  <p
+                    className={`mt-1.5 text-[11px] ${
+                      testResults['openrouter'].success ? 'text-emerald-400' : 'text-rose-400'
+                    }`}
+                  >
+                    {testResults['openrouter'].message} ({testResults['openrouter'].latency_ms}ms)
+                  </p>
+                )}
+              </div>
+
+              {/* Anthropic Key */}
+              <div className="rounded-2xl border border-outline-variant/20 bg-surface-container p-3.5">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-semibold text-on-surface flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[16px] text-secondary">psychology</span>
+                    Anthropic API Key (Claude)
+                  </label>
+                  <a
+                    href="https://console.anthropic.com/"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[11px] text-primary hover:underline flex items-center gap-0.5"
+                  >
+                    Console <span className="material-symbols-outlined text-[12px]">open_in_new</span>
+                  </a>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="password"
+                    value={anthropicKey}
+                    onChange={(e) => {
+                      setAnthropicKey(e.target.value)
+                      if (e.target.value) setUseCustomKeys(true)
+                    }}
+                    placeholder="sk-ant-..."
+                    className="flex-1 rounded-xl border border-outline-variant/30 bg-surface-container-low px-3 py-1.5 text-xs text-on-surface focus:border-primary focus:outline-none font-mono"
+                  />
+                  <button
+                    type="button"
+                    disabled={testingProvider === 'anthropic'}
+                    onClick={() => handleTestKey('anthropic', anthropicKey)}
+                    className="rounded-xl border border-outline-variant/40 bg-surface-container-high px-3 py-1.5 text-xs font-medium text-on-surface hover:bg-surface-container-highest transition-colors disabled:opacity-50"
+                  >
+                    {testingProvider === 'anthropic' ? 'Testing...' : 'Test'}
+                  </button>
+                </div>
+                {testResults['anthropic'] && (
+                  <p
+                    className={`mt-1.5 text-[11px] ${
+                      testResults['anthropic'].success ? 'text-emerald-400' : 'text-rose-400'
+                    }`}
+                  >
+                    {testResults['anthropic'].message} ({testResults['anthropic'].latency_ms}ms)
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="submit"
+                disabled={byokSaving}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-on-primary hover:bg-primary/90 transition-all disabled:opacity-50"
+              >
+                {byokSaving ? 'Saving Keys...' : 'Save API Key Settings'}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Tab 3: Admin User Management */}
+        {activeTab === 'admin' && isAdmin && (
+          <div className="mt-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-on-surface">Registered User Accounts</h3>
+              <button
+                type="button"
+                onClick={loadAdminUsers}
+                className="text-xs text-primary hover:underline flex items-center gap-1"
+              >
+                <span className="material-symbols-outlined text-[16px]">refresh</span> Refresh
+              </button>
+            </div>
+
+            {adminMsg && (
+              <div
+                className={`rounded-xl p-3 text-xs flex items-center gap-2 ${
+                  adminMsg.type === 'success'
+                    ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'
+                    : 'bg-rose-500/10 text-rose-300 border border-rose-500/30'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[18px]">
+                  {adminMsg.type === 'success' ? 'check_circle' : 'error'}
+                </span>
+                {adminMsg.text}
+              </div>
+            )}
+
+            {loadingUsers ? (
+              <div className="py-8 text-center text-xs text-on-surface-variant">Loading user directory...</div>
+            ) : (
+              <div className="overflow-x-auto rounded-2xl border border-outline-variant/20 bg-surface-container">
+                <table className="w-full text-left text-xs text-on-surface">
+                  <thead className="border-b border-outline-variant/20 bg-surface-container-high/60 text-on-surface-variant">
+                    <tr>
+                      <th className="px-3.5 py-2.5">User / Email</th>
+                      <th className="px-3.5 py-2.5">Role</th>
+                      <th className="px-3.5 py-2.5">Studies</th>
+                      <th className="px-3.5 py-2.5">Status</th>
+                      <th className="px-3.5 py-2.5 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-outline-variant/10">
+                    {adminUsers.map((u) => {
+                      const isSuper = u.role === 'SUPER_ADMIN'
+                      return (
+                        <tr key={u.id} className="hover:bg-surface-container-high/30 transition-colors">
+                          <td className="px-3.5 py-2.5">
+                            <div className="font-semibold text-on-surface">{u.display_name || u.email.split('@')[0]}</div>
+                            <div className="text-[11px] text-on-surface-variant font-mono">{u.email}</div>
+                          </td>
+                          <td className="px-3.5 py-2.5">
+                            {isSuper ? (
+                              <span className="font-bold text-purple-400">SUPER_ADMIN</span>
+                            ) : (
+                              <select
+                                value={u.role || 'MEMBER'}
+                                onChange={(e) => handleRoleChange(u.id, e.target.value)}
+                                className="rounded-lg border border-outline-variant/30 bg-surface-container-low px-2 py-1 text-xs text-on-surface focus:border-primary focus:outline-none"
+                              >
+                                <option value="MEMBER">MEMBER</option>
+                                <option value="ADMIN">ADMIN</option>
+                                <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+                              </select>
+                            )}
+                          </td>
+                          <td className="px-3.5 py-2.5 font-mono">{u.study_count ?? 0}</td>
+                          <td className="px-3.5 py-2.5">
+                            <button
+                              type="button"
+                              disabled={isSuper}
+                              onClick={() => handleStatusToggle(u.id, u.is_active)}
+                              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors ${
+                                u.is_active
+                                  ? 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25'
+                                  : 'bg-rose-500/15 text-rose-400 hover:bg-rose-500/25'
+                              }`}
+                            >
+                              <span className="material-symbols-outlined text-[12px]">
+                                {u.is_active ? 'check' : 'block'}
+                              </span>
+                              {u.is_active ? 'Active' : 'Disabled'}
+                            </button>
+                          </td>
+                          <td className="px-3.5 py-2.5 text-right">
+                            {!isSuper && u.id !== currentUser?.id && (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteUser(u.id, u.email)}
+                                className="rounded-lg p-1 text-on-surface-variant hover:text-error hover:bg-error/10 transition-colors"
+                                title="Delete user"
+                              >
+                                <span className="material-symbols-outlined text-[18px]">delete</span>
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

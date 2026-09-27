@@ -5,7 +5,7 @@
 #       paid  -> gated behind the CostGate modal + monthly budget
 
 text:
-  chain: [ollama, openrouter_free, gemini_free]
+  chain: [openrouter_free, gemini_free, openrouter_paid, anthropic]
 
   providers:
     openrouter_free:
@@ -17,34 +17,21 @@ text:
       cost_per_1k_in: 0.0
       cost_per_1k_out: 0.0
       models:
-        - id: "meta-llama/llama-3.3-70b-instruct:free"
-          label: "Llama 3.3 70B (free)"
-          context: 65536
         - id: "google/gemma-2-9b-it:free"
           label: "Gemma 2 9B (free)"
           context: 8192
+        - id: "meta-llama/llama-3.3-70b-instruct:free"
+          label: "Llama 3.3 70B (free)"
+          context: 65536
         - id: "qwen/qwen-2.5-72b-instruct:free"
           label: "Qwen 2.5 72B (free)"
           context: 32768
-
-    ollama:
-      label: "Ollama (local, offline)"
-      kind: ollama
-      base_url_setting: ollama_base_url
-      env_key: null            # no key needed
-      tier: free
-      cost_per_1k_in: 0.0
-      cost_per_1k_out: 0.0
-      models:
-        - id: "llama3.1:8b"
-          label: "Llama 3.1 8B (local)"
-          context: 32768
-        - id: "mistral:7b"
-          label: "Mistral 7B (local)"
+        - id: "mistralai/mistral-7b-instruct:free"
+          label: "Mistral 7B (free)"
           context: 32768
 
     gemini_free:
-      label: "Google Gemini (free tier)"
+      label: "Google Gemini"
       kind: gemini
       base_url: "https://generativelanguage.googleapis.com/v1beta"
       env_key: GEMINI_API_KEY
@@ -52,12 +39,24 @@ text:
       cost_per_1k_in: 0.0
       cost_per_1k_out: 0.0
       models:
-        - id: "gemini-2.0-flash"
-          label: "Gemini 2.0 Flash"
+        - id: "gemini-flash-latest"
+          label: "Gemini Flash"
+          context: 1048576
+        - id: "gemini-3.6-flash"
+          label: "Gemini 3.6 Flash"
+          context: 1048576
+        - id: "gemini-3.8-flash"
+          label: "Gemini 3.8 Flash"
+          context: 1048576
+        - id: "gemini-3.5-flash"
+          label: "Gemini 3.5 Flash"
+          context: 1048576
+        - id: "gemini-pro-latest"
+          label: "Gemini Pro"
           context: 1048576
 
     openrouter_paid:
-      label: "OpenRouter (paid models)"
+      label: "OpenRouter"
       kind: openai_compatible
       base_url: "https://openrouter.ai/api/v1"
       env_key: OPENROUTER_API_KEY
@@ -65,12 +64,34 @@ text:
       cost_per_1k_in: 0.0002
       cost_per_1k_out: 0.0008
       models:
+        - id: "google/gemini-2.0-flash-001"
+          label: "Gemini 2.0 Flash"
+          context: 1048576
+        - id: "meta-llama/llama-3.3-70b-instruct"
+          label: "Llama 3.3 70B"
+          context: 65536
         - id: "anthropic/claude-3.5-haiku"
           label: "Claude 3.5 Haiku"
           context: 200000
         - id: "openai/gpt-4o-mini"
           label: "GPT-4o mini"
           context: 128000
+
+    anthropic:
+      label: "Anthropic Claude"
+      kind: anthropic
+      base_url: "https://api.anthropic.com/v1"
+      env_key: ANTHROPIC_API_KEY
+      tier: paid
+      cost_per_1k_in: 0.0008
+      cost_per_1k_out: 0.004
+      models:
+        - id: "claude-3-5-haiku-20241022"
+          label: "Claude 3.5 Haiku"
+          context: 200000
+        - id: "claude-3-5-sonnet-20241022"
+          label: "Claude 3.5 Sonnet"
+          context: 200000
 
 image:
   chain: [fal_cheap]

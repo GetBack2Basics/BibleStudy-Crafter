@@ -56,13 +56,45 @@ class UserOut(BaseModel):
     id: int
     email: str
     display_name: str
-    is_admin: bool
-    is_active: bool
+    role: str = "MEMBER"
+    auth_provider: str = "EMAIL"
+    picture_url: str = ""
+    organization: str = ""
+    phone: str = ""
+    notes: str = ""
+    is_admin: bool = False
+    is_active: bool = True
+    created_at: datetime
+    updated_at: datetime
+    study_count: int = 0
 
     @classmethod
-    def from_user(cls, u: User) -> "UserOut":
-        return cls(id=u.id, email=u.email, display_name=u.display_name,
-                   is_admin=u.is_admin, is_active=u.is_active)
+    def from_user(cls, u: User, study_count: int = 0) -> "UserOut":
+        role = u.role or ("SUPER_ADMIN" if u.is_admin else "MEMBER")
+        return cls(
+            id=u.id or 0,
+            email=u.email,
+            display_name=u.display_name,
+            role=role,
+            auth_provider=u.auth_provider or "EMAIL",
+            picture_url=u.picture_url or "",
+            organization=u.organization or "",
+            phone=u.phone or "",
+            notes=u.notes or "",
+            is_admin=bool(u.is_admin or role in ("SUPER_ADMIN", "ADMIN")),
+            is_active=bool(u.is_active),
+            created_at=u.created_at,
+            updated_at=u.updated_at,
+            study_count=study_count,
+        )
+
+
+class ProfileUpdateIn(BaseModel):
+    display_name: str | None = None
+    organization: str | None = None
+    phone: str | None = None
+    picture_url: str | None = None
+    notes: str | None = None
 
 
 class RefreshIn(BaseModel):
@@ -86,17 +118,18 @@ def register(body: RegisterIn, session: Session = Depends(get_session)) -> Token
     if session.exec(select(User).where(User.email == email)).first():
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,
                             detail="An account with that email already exists")
-    # Admin is granted ONLY via the configured bootstrap email (or an existing
-    # admin using /api/auth/admin/promote). No ordinary registration can become
-    # an admin, so self-escalation to super admin is impossible.
+    
     settings = get_settings()
-    is_admin = bool(settings.bootstrap_admin_email
-                    and email == settings.bootstrap_admin_email.lower())
+    is_super = bool((settings.super_admin_email and email == settings.super_admin_email.lower()) or
+                    (settings.bootstrap_admin_email and email == settings.bootstrap_admin_email.lower()))
+    role = "SUPER_ADMIN" if is_super else "MEMBER"
     user = User(
         email=email,
         display_name=(body.display_name or email.split("@")[0])[:120],
         password_hash=hash_password(body.password),
-        is_admin=is_admin,
+        role=role,
+        auth_provider="EMAIL",
+        is_admin=is_super,
     )
     session.add(user)
     session.commit()
@@ -118,6 +151,16 @@ def login(body: LoginIn, session: Session = Depends(get_session)) -> TokenOut:
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail="Account is disabled")
+    
+    settings = get_settings()
+    is_super = bool(settings.super_admin_email and email == settings.super_admin_email.lower())
+    if is_super and (user.role != "SUPER_ADMIN" or not user.is_admin):
+        user.role = "SUPER_ADMIN"
+        user.is_admin = True
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+
     access = create_access_token(user)
     refresh = create_refresh_token(session, user)
     return TokenOut(access_token=access, refresh_token=refresh,
@@ -143,27 +186,156 @@ def logout(body: RefreshIn, session: Session = Depends(get_session)) -> Response
 
 
 @router.get("/me", response_model=UserOut)
-def me(user: User = Depends(get_current_user)) -> UserOut:
-    return UserOut.from_user(user)
+def me(user: User = Depends(get_current_user), session: Session = Depends(get_session)) -> UserOut:
+    from app.models import Study
+    from sqlalchemy import func
+    count = session.exec(select(func.count(Study.id)).where(Study.user_id == user.id)).one() or 0
+    return UserOut.from_user(user, study_count=count)
 
 
-# Admin-only: promote/demote a user. Gated by require_admin so no ordinary user
-# can escalate themselves.
+@router.patch("/profile", response_model=UserOut)
+def update_profile(
+    body: ProfileUpdateIn,
+    user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+) -> UserOut:
+    if body.display_name is not None:
+        user.display_name = body.display_name.strip()[:120]
+    if body.organization is not None:
+        user.organization = body.organization.strip()[:120]
+    if body.phone is not None:
+        user.phone = body.phone.strip()[:40]
+    if body.picture_url is not None:
+        user.picture_url = body.picture_url.strip()[:500]
+    if body.notes is not None:
+        user.notes = body.notes.strip()
+    user.updated_at = datetime.now(timezone.utc)
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+
+    from app.models import Study
+    from sqlalchemy import func
+    count = session.exec(select(func.count(Study.id)).where(Study.user_id == user.id)).one() or 0
+    return UserOut.from_user(user, study_count=count)
+
+
+# ------------------------------------------------------------- Admin Endpoints
+
 class PromoteIn(BaseModel):
     user_id: int
     is_admin: bool
 
 
+class RoleUpdateIn(BaseModel):
+    role: str  # SUPER_ADMIN | ADMIN | MEMBER
+
+
+class StatusUpdateIn(BaseModel):
+    is_active: bool
+
+
+@router.get("/admin/users", response_model=list[UserOut])
+def list_users(
+    admin: User = Depends(require_admin),
+    session: Session = Depends(get_session),
+) -> list[UserOut]:
+    from app.models import Study
+    from sqlalchemy import func
+    users = session.exec(select(User).order_by(User.id)).all()
+    out = []
+    for u in users:
+        count = session.exec(select(func.count(Study.id)).where(Study.user_id == u.id)).one() or 0
+        out.append(UserOut.from_user(u, study_count=count))
+    return out
+
+
 @router.post("/admin/promote", response_model=UserOut)
-def promote(body: PromoteIn,
-            admin: User = Depends(require_admin),
-            session: Session = Depends(get_session)) -> UserOut:
+def promote(
+    body: PromoteIn,
+    admin: User = Depends(require_admin),
+    session: Session = Depends(get_session),
+) -> UserOut:
     target = session.get(User, body.user_id)
     if target is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="User not found")
     target.is_admin = body.is_admin
+    target.role = "ADMIN" if body.is_admin else "MEMBER"
+    target.updated_at = datetime.now(timezone.utc)
     session.add(target)
     session.commit()
     session.refresh(target)
     return UserOut.from_user(target)
+
+
+@router.patch("/admin/users/{user_id}/role", response_model=UserOut)
+def update_user_role(
+    user_id: int,
+    body: RoleUpdateIn,
+    admin: User = Depends(require_admin),
+    session: Session = Depends(get_session),
+) -> UserOut:
+    target = session.get(User, user_id)
+    if target is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    
+    settings = get_settings()
+    if settings.super_admin_email and target.email == settings.super_admin_email.lower():
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot alter Super Admin role")
+    
+    valid_roles = {"SUPER_ADMIN", "ADMIN", "MEMBER"}
+    if body.role not in valid_roles:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid role. Must be one of {valid_roles}")
+
+    target.role = body.role
+    target.is_admin = body.role in ("SUPER_ADMIN", "ADMIN")
+    target.updated_at = datetime.now(timezone.utc)
+    session.add(target)
+    session.commit()
+    session.refresh(target)
+    return UserOut.from_user(target)
+
+
+@router.patch("/admin/users/{user_id}/status", response_model=UserOut)
+def update_user_status(
+    user_id: int,
+    body: StatusUpdateIn,
+    admin: User = Depends(require_admin),
+    session: Session = Depends(get_session),
+) -> UserOut:
+    target = session.get(User, user_id)
+    if target is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    
+    settings = get_settings()
+    if settings.super_admin_email and target.email == settings.super_admin_email.lower():
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot disable Super Admin account")
+
+    target.is_active = body.is_active
+    target.updated_at = datetime.now(timezone.utc)
+    session.add(target)
+    session.commit()
+    session.refresh(target)
+    return UserOut.from_user(target)
+
+
+@router.delete("/admin/users/{user_id}", status_code=204)
+def delete_user(
+    user_id: int,
+    admin: User = Depends(require_admin),
+    session: Session = Depends(get_session),
+) -> Response:
+    target = session.get(User, user_id)
+    if target is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    
+    settings = get_settings()
+    if settings.super_admin_email and target.email == settings.super_admin_email.lower():
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot delete Super Admin account")
+    if target.id == admin.id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot delete your own account")
+
+    session.delete(target)
+    session.commit()
+    return Response(status_code=204)

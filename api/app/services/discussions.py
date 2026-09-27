@@ -315,9 +315,7 @@ async def _brave_search(query: str) -> list[Source]:
                 "q": query, "count": _PER_QUERY, "freshness": "all"})
             resp.raise_for_status()
             data = resp.json()
-    except Exception as exc:        # noqa: BLE001 - never crash a generation job
-        events.emit("warn", "discussions",
-                    f"brave search failed for {query!r}: {exc}")
+    except Exception:        # noqa: BLE001 - never crash a generation job
         return []
     return _parse_brave(data)
 
@@ -333,8 +331,7 @@ async def _search_one(url: str, query: str, parser) -> list[Source]:
                 resp = await client.get(url, params={"q": query})
             resp.raise_for_status()
             return parser(resp.text)[:_PER_QUERY]
-    except Exception as exc:        # noqa: BLE001 - never crash a generation job
-        events.emit("warn", "discussions", f"search failed for {query!r}: {exc}")
+    except Exception:        # noqa: BLE001 - never crash a generation job
         return []
 
 
@@ -421,8 +418,7 @@ async def _fetch_page_text(url: str, *, max_chars: int = 1200) -> str:
             resp = await client.get(url)
             resp.raise_for_status()
             return _strip_tags_to_text(resp.text)[:max_chars]
-    except Exception as exc:        # noqa: BLE001
-        events.emit("warn", "discussions", f"page fetch failed for {url}: {exc}")
+    except Exception:        # noqa: BLE001
         return ""
 
 
@@ -512,8 +508,7 @@ async def _fetch_reddit(query: str, limit: int = 6) -> list[Source]:
             resp = await client.get(REDDIT_SEARCH, params=params)
             resp.raise_for_status()
             data = resp.json().get("data", {}).get("children", [])
-    except Exception as exc:        # noqa: BLE001
-        events.emit("warn", "discussions", f"reddit search failed: {exc}")
+    except Exception:        # noqa: BLE001
         return []
     # Top N by engagement first.
     items = sorted(

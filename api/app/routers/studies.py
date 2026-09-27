@@ -22,10 +22,30 @@ from app.config import get_settings
 from app.db import get_engine, get_session
 from app.models import Study, StudyDay, DayPassage, Asset, User
 from app.services import events
+from app.services import bible_service as bs
 from app.services.studies import generate_day as study_generate_day
 from app.services.studies import build_day_discussions
 
 router = APIRouter(prefix="/api/studies", tags=["studies"])
+
+import re
+
+def _extract_bible_refs(text: str) -> list[str]:
+    """Find Bible references cited in text like 'John 3:16', '1 Cor 13:4-8'."""
+    if not text:
+        return []
+    pattern = re.compile(
+        r"\b(?:[1-3]\s+)?[A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*\s+\d+(?::\d+(?:[-\u2013]\d+)?)?\b"
+    )
+    found = []
+    for match in pattern.finditer(text):
+        candidate = match.group(0).strip()
+        try:
+            bs.parse_ref(candidate)
+            found.append(candidate)
+        except ValueError:
+            pass
+    return found
 
 STATUSES = ("pending", "generating", "ready", "failed")
 
@@ -118,10 +138,15 @@ async def _build_outline_and_day1(study_id: int, body: StudyCreate, user_id: int
             return
         try:
             from app.services.planner import generate_outline
+            from app.routers.keys import get_user_keys
+            user_keys = get_user_keys(session, user_id)
+            custom_keys = user_keys if user_keys.get("use_custom_keys") else None
+
             events.emit("info", "study", f"Study {study_id}: drafting outline…", study_id=study_id, progress=25)
             outline = await generate_outline(
                 body.topic, body.minutes_per_day, body.total_days,
-                tradition=study.tradition, session=session, study_id=study_id)
+                tradition=study.tradition, session=session, study_id=study_id,
+                custom_keys=custom_keys)
             study.title = outline.title
             # Distribute the curated verse pool across the study's days so day 1
             # doesn't absorb everything. Ordered canonically (chronological) then
@@ -168,13 +193,18 @@ async def _build_outline_and_day1(study_id: int, body: StudyCreate, user_id: int
             events.emit("info", "study", f"Study {study_id}: writing day 1…", study_id=study_id, progress=75)
             await study_generate_day(study, 1, session=session,
                                      tradition=study.tradition,
-                                     translation=study.primary_translation)
+                                     translation=study.primary_translation,
+                                     custom_keys=custom_keys)
             study.status = "ready"
             session.commit()
             events.emit("success", "study", f"Study {study_id} day 1 generated", study_id=study_id, progress=100)
             # Best-effort: gather real, cited discussions for day 1 in the background.
             asyncio.create_task(
                 _build_discussions_safe(study_id, 1))
+        except NoProviderAvailable as exc:
+            study.status = "failed"
+            session.commit()
+            events.emit("error", "llm", "AI Provider unavailable - API key required. Please enter your Gemini or OpenRouter key in Settings.", study_id=study_id)
         except Exception as exc:           # noqa: BLE001 - background job
             study.status = "failed"
             session.commit()
@@ -272,9 +302,22 @@ async def generate_day_endpoint(study_id: int, day_number: int,
     events.emit("info", "study", f"Study {study_id} day {day_number}: regenerating…",
                 study_id=study_id, progress=75)
     try:
+        from app.routers.keys import get_user_keys
+        from app.services.llm import NoProviderAvailable
+        user_keys = get_user_keys(session, user.id)
+        custom_keys = user_keys if user_keys.get("use_custom_keys") else None
+
         draft = await study_generate_day(s, day_number, session=session,
                                          tradition=s.tradition,
-                                         translation=s.primary_translation)
+                                         translation=s.primary_translation,
+                                         custom_keys=custom_keys)
+    except NoProviderAvailable as exc:
+        events.emit("error", "llm", "AI Provider unavailable - API key required",
+                    study_id=study_id)
+        raise HTTPException(
+            status_code=402,
+            detail="KEY_REQUIRED: AI generation requires an API key. Please add your free Gemini or OpenRouter key in your Profile."
+        )
     except ValueError as exc:
         events.emit("error", "study", f"Study {study_id} day {day_number} failed: {exc}",
                     study_id=study_id)
@@ -376,8 +419,9 @@ async def revise_day_endpoint(study_id: int, day_number: int, body: DayRevise,
     try:
         res = await complete(prompt, system=build_system(tradition=s.tradition),
                              study_id=study_id, session=session)
-    except NoProviderAvailable as exc:
-        raise HTTPException(502, str(exc))
+    except NoProviderAvailable:
+        events.emit("error", "llm", "AI Provider unavailable - API key required", study_id=study_id)
+        raise HTTPException(status_code=402, detail="KEY_REQUIRED: AI provider is unavailable or quota was exhausted. Please add your API key in Settings/Profile.")
     revised = res.text.strip()
     target.blocks_json = {**(target.blocks_json or {}), "commentary": revised}
     session.add(target)

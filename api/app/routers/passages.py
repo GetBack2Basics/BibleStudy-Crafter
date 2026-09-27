@@ -14,6 +14,7 @@ from app.auth import get_current_user
 from app.db import get_session
 from app.models import DayPassage, Study, StudyDay, Translation, User
 from app.services import bible_service as bs
+from app.services import events
 
 router = APIRouter(prefix="/api/studies", tags=["passages"])
 
@@ -127,6 +128,7 @@ def add_passage(study_id: int, day_number: int, body: PassageCreate,
     session.add(p)
     session.commit()
     session.refresh(p)
+    events.emit("success", "passages", f"Added scripture {p.ref} ({p.translation}) to Day {day_number}", study_id=study_id)
     return _out(p)
 
 
@@ -143,15 +145,18 @@ def update_passage(study_id: int, day_number: int, passage_id: int, body: Passag
             raise HTTPException(400, f"translation not loaded: {body.translation}")
         p.translation = body.translation
         p.text = _resolve_text(session, p.ref, body.translation)  # re-resolve in new version
+        events.emit("info", "passages", f"Switched {p.ref} to translation {body.translation}", study_id=study_id)
     if body.order is not None:
         p.order = body.order
     if body.highlights is not None:
         p.highlights = body.highlights
+        events.emit("info", "passages", f"Updated reflections on {p.ref}", study_id=study_id)
     if body.rationale is not None:
         p.rationale = body.rationale
     if body.note is not None:
         # Store the user's reflection note anchored to the verse text.
         p.highlights = [{"text": p.text, "note": body.note}]
+        events.emit("success", "passages", f"Saved note on {p.ref}", study_id=study_id)
     session.add(p)
     session.commit()
     session.refresh(p)
@@ -166,8 +171,10 @@ def delete_passage(study_id: int, day_number: int, passage_id: int,
     p = session.get(DayPassage, passage_id)
     if p is None or p.study_day_id != d.id:
         raise HTTPException(404, "passage not found")
+    ref = p.ref
     session.delete(p)
     session.commit()
+    events.emit("info", "passages", f"Removed passage {ref} from Day {day_number}", study_id=study_id)
     return {"ok": True}
 
 

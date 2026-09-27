@@ -16,11 +16,13 @@ import redis
 from app.config import get_settings
 
 RING_KEY = "biblestudy:events"
+SEQ_KEY = "biblestudy:events:seq"
 RING_MAX = 500
 
 Level = Literal["info", "success", "warn", "error"]
 
 _fallback: deque[dict[str, Any]] = deque(maxlen=RING_MAX)
+_local_seq = 0
 _client: redis.Redis | None = None
 _client_tried = False
 
@@ -49,7 +51,19 @@ def emit(
     progress: int | None = None,
 ) -> dict[str, Any]:
     """Record one activity-log entry. Never raises - logging must not break work."""
+    global _local_seq
+    _local_seq += 1
+    event_id = _local_seq
+
+    client = _redis()
+    if client is not None:
+        try:
+            event_id = int(client.incr(SEQ_KEY))
+        except Exception:
+            pass
+
     event = {
+        "id": event_id,
         "ts": time.time(),
         "level": level,
         "scope": scope,
@@ -59,7 +73,6 @@ def emit(
         "progress": progress,
     }
     payload = json.dumps(event)
-    client = _redis()
     if client is not None:
         try:
             pipe = client.pipeline()
@@ -73,29 +86,40 @@ def emit(
     return event
 
 
-def recent(limit: int = 200) -> list[dict[str, Any]]:
-    """Newest-last list of recent events."""
+def recent(limit: int = 200, after_id: int = 0) -> list[dict[str, Any]]:
+    """Newest-last list of recent events, optionally filtered by after_id."""
     limit = max(1, min(limit, RING_MAX))
     client = _redis()
+    items: list[dict[str, Any]] = []
     if client is not None:
         try:
             raw = client.lrange(RING_KEY, -limit, -1)
-            return [json.loads(r) for r in raw]
+            items = [json.loads(r) for r in raw]
         except Exception:
             pass
-    return list(_fallback)[-limit:]
+    if not items:
+        items = list(_fallback)[-limit:]
+
+    if after_id > 0:
+        return [it for it in items if it.get("id", 0) > after_id]
+    return items
 
 
 def clear() -> None:
+    global _local_seq
     client = _redis()
     if client is not None:
         try:
             client.delete(RING_KEY)
+            client.delete(SEQ_KEY)
         except Exception:
             pass
     _fallback.clear()
+    _local_seq = 0
 
 
 def _reset_client_for_tests() -> None:
-    global _client, _client_tried
+    global _client, _client_tried, _local_seq
     _client, _client_tried = None, False
+    _local_seq = 0
+

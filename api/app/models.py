@@ -33,9 +33,16 @@ class User(SQLModel, table=True):
     display_name: str = Field(max_length=120, default="")
     # scrypt hash: "scrypt$N$r$p$<salt_hex>$<hash_hex>" (see app.auth)
     password_hash: str = Field(default="")
+    role: str = Field(default="MEMBER", max_length=20)  # SUPER_ADMIN | ADMIN | MEMBER
+    auth_provider: str = Field(default="EMAIL", max_length=20)  # EMAIL | GOOGLE
+    picture_url: str = Field(default="", max_length=500)
+    organization: str = Field(default="", max_length=120)
+    phone: str = Field(default="", max_length=40)
+    notes: str = Field(default="")
     is_admin: bool = Field(default=False)
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=utcnow)
+    updated_at: datetime = Field(default_factory=utcnow)
 
     studies: List["Study"] = Relationship(
         back_populates="owner", sa_relationship_kwargs={"cascade": "all, delete-orphan"}

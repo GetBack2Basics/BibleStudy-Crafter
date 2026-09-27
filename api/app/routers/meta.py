@@ -63,23 +63,28 @@ def events_recent(limit: int = 200) -> dict:
 
 @router.get("/api/events")
 async def events_stream():
-    """SSE stream: replay the buffer, then tail new entries."""
+    """SSE stream: replay the buffer, then tail new entries reliably."""
     async def generator():
-        seen = 0
         backlog = events.recent(200)
+        last_id = 0
         for ev in backlog:
+            ev_id = ev.get("id", 0)
+            if ev_id > last_id:
+                last_id = ev_id
             yield {"event": "log", "data": json.dumps(ev)}
-        seen = len(backlog)
+
         last_beat = time.time()
         while True:
-            await asyncio.sleep(1.0)
-            current = events.recent(200)
-            if len(current) > seen:
-                for ev in current[seen:]:
+            await asyncio.sleep(0.5)
+            # Fetch any items with id > last_id
+            new_events = events.recent(100, after_id=last_id)
+            if new_events:
+                for ev in new_events:
+                    ev_id = ev.get("id", 0)
+                    if ev_id > last_id:
+                        last_id = ev_id
                     yield {"event": "log", "data": json.dumps(ev)}
-                seen = len(current)
-            elif len(current) < seen:
-                seen = len(current)
+
             if time.time() - last_beat > 15:
                 last_beat = time.time()
                 yield {"event": "heartbeat", "data": json.dumps({"ts": last_beat})}

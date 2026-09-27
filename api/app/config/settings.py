@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     secret_key: str = Field(default_factory=lambda: secrets.token_hex(32))
     media_root: str = "/media"
     bible_cache: str = "/bibles"
+    gcs_bucket_name: str = ""
+    gcs_project_id: str = ""
 
     # Host ports (see scripts/check_ports.py). web_port drives the CORS
     # allow-list, so moving a port never silently breaks the browser.

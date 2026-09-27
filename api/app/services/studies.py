@@ -21,7 +21,8 @@ from app.services.planner import make_summary
 
 async def generate_day(study: Study, day_number: int, *, session: Session,
                        tradition: str | None = None,
-                       translation: str = "KJV") -> dict[str, Any]:
+                       translation: str = "KJV",
+                       custom_keys: dict[str, str] | None = None) -> dict[str, Any]:
     """Generate (or regenerate) one day, pulling only the prior day's summary.
 
     Returns the blocks_json dict. The StudyDay row is updated in-place and the
@@ -46,7 +47,8 @@ async def generate_day(study: Study, day_number: int, *, session: Session,
         try:
             passages = await plan_passages(
                 topic=study.topic, focus=query, count=3,
-                translation=translation, study_id=study.id)
+                translation=translation, study_id=study.id,
+                custom_keys=custom_keys)
         except Exception:           # noqa: BLE001 - must not block generation
             passages = []
         if not passages:
@@ -74,6 +76,7 @@ async def generate_day(study: Study, day_number: int, *, session: Session,
         session=session,
         study_id=study.id,
         translation=translation,
+        custom_keys=custom_keys,
     )
 
     target.blocks_json = draft

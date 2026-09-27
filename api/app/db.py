@@ -52,6 +52,13 @@ def ensure_schema() -> None:
         "ALTER TABLE study_day ADD COLUMN IF NOT EXISTS discussions_json jsonb",
         "ALTER TABLE day_passage ADD COLUMN IF NOT EXISTS source_reflections jsonb",
         "ALTER TABLE day_passage ADD COLUMN IF NOT EXISTS verse_notes jsonb",
+        "ALTER TABLE user_account ADD COLUMN IF NOT EXISTS role varchar(20) DEFAULT 'MEMBER'",
+        "ALTER TABLE user_account ADD COLUMN IF NOT EXISTS auth_provider varchar(20) DEFAULT 'EMAIL'",
+        "ALTER TABLE user_account ADD COLUMN IF NOT EXISTS picture_url varchar(500) DEFAULT ''",
+        "ALTER TABLE user_account ADD COLUMN IF NOT EXISTS organization varchar(120) DEFAULT ''",
+        "ALTER TABLE user_account ADD COLUMN IF NOT EXISTS phone varchar(40) DEFAULT ''",
+        "ALTER TABLE user_account ADD COLUMN IF NOT EXISTS notes text DEFAULT ''",
+        "ALTER TABLE user_account ADD COLUMN IF NOT EXISTS updated_at timestamp with time zone DEFAULT NOW()",
     ]
     with engine.connect() as conn:
         for sql in stmts:

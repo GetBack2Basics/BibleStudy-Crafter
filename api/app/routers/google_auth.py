@@ -26,8 +26,11 @@ from sqlmodel import Session, select
 
 from app.config import get_settings
 from app.db import get_session
+from app.config import get_settings
+from app.db import get_session
 from app.models import User
 from app.auth import create_access_token, create_refresh_token
+from app.routers.auth import UserOut, TokenOut
 
 router = APIRouter(prefix="/api/auth", tags=["auth-google"])
 
@@ -36,26 +39,6 @@ _GOOGLE_TOKENINFO = "https://oauth2.googleapis.com/tokeninfo"
 
 class GoogleLoginIn(BaseModel):
     id_token: str
-
-
-class UserOut(BaseModel):
-    id: int
-    email: str
-    display_name: str
-    is_admin: bool
-    is_active: bool
-
-    @classmethod
-    def from_user(cls, u: User) -> "UserOut":
-        return cls(id=u.id, email=u.email, display_name=u.display_name,
-                   is_admin=u.is_admin, is_active=u.is_active)
-
-
-class TokenOut(BaseModel):
-    access_token: str
-    refresh_token: str
-    token_type: str = "bearer"
-    user: UserOut
 
 
 def _verify_google_id_token(id_token: str, expected_aud: str | None) -> dict:
@@ -102,12 +85,16 @@ def google_login(body: GoogleLoginIn,
     user = session.exec(select(User).where(User.email == email)).first()
     is_super = bool(settings.super_admin_email
                     and email == settings.super_admin_email.lower())
+    picture = str(payload.get("picture") or "")
 
     if user is None:
         user = User(
             email=email,
             display_name=(payload.get("name") or email.split("@")[0])[:120],
-            is_admin=is_super,        # super admin is granted on first seen
+            role="SUPER_ADMIN" if is_super else "MEMBER",
+            auth_provider="GOOGLE",
+            picture_url=picture,
+            is_admin=is_super,
             is_active=True,
         )
         session.add(user)
@@ -119,12 +106,15 @@ def google_login(body: GoogleLoginIn,
                     + (" (super admin)" if is_super else ""))
     else:
         changed = False
-        # Keep profile picture/name fresh; never downgrade a super admin.
-        if is_super and not user.is_admin:
+        if is_super and (user.role != "SUPER_ADMIN" or not user.is_admin):
+            user.role = "SUPER_ADMIN"
             user.is_admin = True
             changed = True
         if not user.display_name and payload.get("name"):
             user.display_name = payload.get("name")[:120]
+            changed = True
+        if picture and user.picture_url != picture:
+            user.picture_url = picture
             changed = True
         if changed:
             session.add(user)

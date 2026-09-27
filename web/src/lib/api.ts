@@ -3,12 +3,14 @@ import { auth } from './auth'
 const API = import.meta.env.VITE_API_URL ?? 'http://localhost:8421'
 
 export type LogEvent = {
+  id?: number
   ts: number
   level: 'info' | 'success' | 'warn' | 'error'
   scope: string
   message: string
   cost_usd: number | null
   study_id: number | null
+  progress?: number | null
 }
 
 export type Meta = {

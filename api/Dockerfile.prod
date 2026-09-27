@@ -1,0 +1,28 @@
+# Production Dockerfile for BibleStudy-Crafter API on Cloud Run
+FROM python:3.11-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PORT=8000
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      ffmpeg curl \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt \
+    && pip install --no-cache-dir google-cloud-storage
+
+ARG BUILD_STAMP=prod
+COPY . .
+
+RUN if [ "$BUILD_STAMP" = "dev" ] || [ -z "$BUILD_STAMP" ]; then \
+      date -u +%Y%m%d%H%M > /etc/build_stamp; \
+    else \
+      echo "$BUILD_STAMP" > /etc/build_stamp; \
+    fi
+
+EXPOSE 8000
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 2

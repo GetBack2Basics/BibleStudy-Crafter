@@ -7,7 +7,7 @@ from app.config.providers import get_registry, load_registry
 def test_registry_loads_and_validates():
     reg = load_registry()
     assert reg.text_chain[0] == "openrouter_free"
-    assert {p.name for p in reg.text} >= {"openrouter_free", "ollama", "gemini_free"}
+    assert {p.name for p in reg.text} >= {"openrouter_free", "gemini_free"}
     for p in reg.text + reg.image + reg.audio:
         assert p.models, f"{p.name} has no models"
         assert p.tier in {"free", "paid"}
@@ -21,20 +21,6 @@ def test_free_providers_cost_nothing():
             assert p.cost_per_1k_in == 0.0 and p.cost_per_1k_out == 0.0
 
 
-def test_ollama_available_without_any_key(monkeypatch):
-    """The offline fallback must never depend on an API key."""
-    monkeypatch.setenv("OPENROUTER_API_KEY", "")
-    monkeypatch.setenv("GEMINI_API_KEY", "")
-    from app.config import settings as s
-    s.get_settings.cache_clear()
-    get_registry.cache_clear()
-
-    reg = load_registry()
-    ollama = reg.get("text", "ollama")
-    assert ollama.env_key is None
-    assert ollama.is_available() is True
-
-
 def test_no_keys_leaves_only_keyless_providers(monkeypatch):
     monkeypatch.setenv("OPENROUTER_API_KEY", "")
     monkeypatch.setenv("GEMINI_API_KEY", "")
@@ -45,8 +31,7 @@ def test_no_keys_leaves_only_keyless_providers(monkeypatch):
     get_registry.cache_clear()
 
     reg = load_registry()
-    text = [p.name for p in reg.available_chain("text")]
-    assert text == ["ollama"]                       # only the keyless one survives
+    assert reg.available_chain("text") == []
     assert reg.available_chain("image") == []       # all image providers need keys
     assert [p.name for p in reg.available_chain("audio")] == ["edge_tts"]
 

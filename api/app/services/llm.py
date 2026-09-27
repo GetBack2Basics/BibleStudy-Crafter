@@ -103,7 +103,8 @@ def extract_json(raw: str) -> Any:
 
 async def _call_openai_compatible(client: httpx.AsyncClient, provider: Provider,
                                   model: Model, system: str, prompt: str,
-                                  json_mode: bool, temperature: float) -> tuple[str, int, int]:
+                                  json_mode: bool, temperature: float,
+                                  custom_keys: dict[str, str] | None = None) -> tuple[str, int, int]:
     payload: dict[str, Any] = {
         "model": model.id,
         "messages": [{"role": "system", "content": system},
@@ -113,10 +114,11 @@ async def _call_openai_compatible(client: httpx.AsyncClient, provider: Provider,
     if json_mode:
         payload["response_format"] = {"type": "json_object"}
 
+    key = provider.api_key(custom_keys)
     resp = await client.post(
         f"{provider.resolved_base_url()}/chat/completions",
         json=payload,
-        headers={"Authorization": f"Bearer {provider.api_key()}",
+        headers={"Authorization": f"Bearer {key}",
                  "HTTP-Referer": "http://localhost",
                  "X-Title": "BibleStudy-Crafter"},
         timeout=DEFAULT_TIMEOUT,
@@ -132,14 +134,16 @@ async def _call_openai_compatible(client: httpx.AsyncClient, provider: Provider,
 
 async def _call_gemini(client: httpx.AsyncClient, provider: Provider, model: Model,
                        system: str, prompt: str, json_mode: bool,
-                       temperature: float) -> tuple[str, int, int]:
+                       temperature: float,
+                       custom_keys: dict[str, str] | None = None) -> tuple[str, int, int]:
     gen: dict[str, Any] = {"temperature": temperature}
     if json_mode:
         gen["responseMimeType"] = "application/json"
 
+    key = provider.api_key(custom_keys)
     resp = await client.post(
         f"{provider.resolved_base_url()}/models/{model.id}:generateContent",
-        params={"key": provider.api_key()},
+        params={"key": key},
         json={
             "systemInstruction": {"parts": [{"text": system}]},
             "contents": [{"role": "user", "parts": [{"text": prompt}]}],
@@ -158,7 +162,8 @@ async def _call_gemini(client: httpx.AsyncClient, provider: Provider, model: Mod
 
 async def _call_ollama(client: httpx.AsyncClient, provider: Provider, model: Model,
                        system: str, prompt: str, json_mode: bool,
-                       temperature: float) -> tuple[str, int, int]:
+                       temperature: float,
+                       custom_keys: dict[str, str] | None = None) -> tuple[str, int, int]:
     payload: dict[str, Any] = {
         "model": model.id,
         "system": system,
@@ -170,8 +175,9 @@ async def _call_ollama(client: httpx.AsyncClient, provider: Provider, model: Mod
         payload["format"] = "json"
 
     headers: dict[str, str] = {}
-    if provider.api_key():
-        headers["Authorization"] = f"Bearer {provider.api_key()}"
+    key = provider.api_key(custom_keys)
+    if key:
+        headers["Authorization"] = f"Bearer {key}"
 
     chunks: list[str] = []
     done = False
@@ -208,10 +214,45 @@ async def _call_ollama(client: httpx.AsyncClient, provider: Provider, model: Mod
             int(_estimate_tokens(text)))
 
 
+async def _call_anthropic(client: httpx.AsyncClient, provider: Provider, model: Model,
+                          system: str, prompt: str, json_mode: bool,
+                          temperature: float,
+                          custom_keys: dict[str, str] | None = None) -> tuple[str, int, int]:
+    key = provider.api_key(custom_keys)
+    headers = {
+        "x-api-key": key,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+    }
+    payload: dict[str, Any] = {
+        "model": model.id,
+        "max_tokens": 4096,
+        "temperature": temperature,
+        "messages": [{"role": "user", "content": prompt}],
+    }
+    if system:
+        payload["system"] = system
+    resp = await client.post(
+        f"{provider.resolved_base_url()}/messages",
+        headers=headers,
+        json=payload,
+        timeout=DEFAULT_TIMEOUT,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    content = data.get("content", [])
+    text = "".join(part.get("text", "") for part in content if part.get("type") == "text")
+    usage = data.get("usage", {})
+    return (text,
+            int(usage.get("input_tokens") or _estimate_tokens(system + prompt)),
+            int(usage.get("output_tokens") or _estimate_tokens(text)))
+
+
 _TRANSPORTS = {
     "openai_compatible": _call_openai_compatible,
     "gemini": _call_gemini,
     "ollama": _call_ollama,
+    "anthropic": _call_anthropic,
 }
 
 
@@ -222,14 +263,26 @@ async def complete(
     *,
     system: str = "",
     json_mode: bool = False,
-    tier: str = "free",
+    tier: str | None = "free",
     temperature: float = 0.7,
     study_id: int | None = None,
+    custom_keys: dict[str, str] | None = None,
     session=None,
 ) -> LLMResult:
     """Run a completion against the first provider in the chain that works."""
     registry = get_registry()
-    chain = registry.available_chain("text", tier=tier if tier == "free" else None)
+    effective_tier = None if custom_keys else (tier if tier == "free" else None)
+    chain = registry.available_chain("text", tier=effective_tier, custom_keys=custom_keys)
+    if custom_keys and chain:
+        pref = str(custom_keys.get("preferred_provider", "")).lower()
+        if pref and pref != "auto":
+            chain = sorted(chain, key=lambda p: 0 if (pref in p.name.lower() or pref in p.kind.lower()) else 1)
+        elif custom_keys.get("openrouter_api_key"):
+            # When user provided their own OpenRouter key, prioritize paid models (gemini-flash, llama-70b, haiku)
+            chain = sorted(chain, key=lambda p: 0 if p.name == "openrouter_paid" else (1 if p.api_key(custom_keys) else 2))
+        else:
+            chain = sorted(chain, key=lambda p: 0 if p.api_key(custom_keys) else 1)
+
     if not chain:
         events.emit("error", "llm", "No text provider available - set a key or run Ollama")
         raise NoProviderAvailable(
@@ -243,42 +296,60 @@ async def complete(
             transport = _TRANSPORTS.get(provider.kind)
             if transport is None:
                 continue
-            model = provider.default_model()
+
+            models_to_try = provider.models or (provider.default_model(),)
             ok = False
-            for attempt in range(1, MAX_ATTEMPTS + 1):
-                try:
-                    text, tin, tout = await transport(
-                        client, provider, model, system, prompt, json_mode, temperature
-                    )
-                    ok = True
-                    break  # success - leave the retry loop
-                except httpx.HTTPStatusError as exc:
-                    code = exc.response.status_code
-                    errors.append(f"{provider.name}: HTTP {code}")
-                    if code in FAILOVER_STATUS and attempt < MAX_ATTEMPTS:
+            successful_model = None
+            for model in models_to_try:
+                for attempt in range(1, MAX_ATTEMPTS + 1):
+                    try:
+                        events.emit("info", "llm", f"Calling {provider.label} ({model.label})")
+                        text, tin, tout = await transport(
+                            client, provider, model, system, prompt, json_mode, temperature, custom_keys=custom_keys
+                        )
+                        ok = True
+                        successful_model = model
+                        break  # success - leave retry loop
+                    except httpx.HTTPStatusError as exc:
+                        code = exc.response.status_code
+                        detail = ""
+                        try:
+                            err_data = exc.response.json().get("error", {})
+                            detail = err_data.get("message") if isinstance(err_data, dict) else str(err_data)
+                        except Exception:
+                            detail = exc.response.text[:120] if exc.response.text else ""
+                        detail_msg = f" ({detail})" if detail else ""
+
+                        errors.append(f"{provider.name}/{model.id}: HTTP {code}{detail_msg}")
+                        if code in FAILOVER_STATUS and attempt < MAX_ATTEMPTS:
+                            events.emit("warn", "llm",
+                                        f"{provider.label} ({model.label}) returned {code}{detail_msg}, retry "
+                                        f"{attempt}/{MAX_ATTEMPTS}")
+                            await asyncio.sleep(RETRY_BACKOFF * attempt)
+                            continue
                         events.emit("warn", "llm",
-                                    f"{provider.label} returned {code}, retry "
-                                    f"{attempt}/{MAX_ATTEMPTS}")
-                        await asyncio.sleep(RETRY_BACKOFF * attempt)
-                        continue
-                    events.emit("warn", "llm",
-                                f"{provider.label} returned {code}, failing over")
-                    errors.append(f"{provider.name}: HTTP {code} (exhausted)")
-                    break  # exhausted this provider -> next provider
-                except (httpx.TimeoutException, httpx.TransportError) as exc:
-                    errors.append(f"{provider.name}: {type(exc).__name__}")
-                    if attempt < MAX_ATTEMPTS:
+                                    f"{provider.label} ({model.label}) returned {code}{detail_msg}, failing over")
+                        errors.append(f"{provider.name}/{model.id}: HTTP {code} (exhausted)")
+                        break  # exhausted this model -> try next model in provider
+                    except (httpx.TimeoutException, httpx.TransportError) as exc:
+                        errors.append(f"{provider.name}/{model.id}: {type(exc).__name__}")
+                        if attempt < MAX_ATTEMPTS:
+                            events.emit("warn", "llm",
+                                        f"{provider.label} unreachable "
+                                        f"({type(exc).__name__}), retry {attempt}/{MAX_ATTEMPTS}")
+                            await asyncio.sleep(RETRY_BACKOFF * attempt)
+                            continue
                         events.emit("warn", "llm",
-                                    f"{provider.label} unreachable "
-                                    f"({type(exc).__name__}), retry {attempt}/{MAX_ATTEMPTS}")
-                        await asyncio.sleep(RETRY_BACKOFF * attempt)
-                        continue
-                    events.emit("warn", "llm",
-                                f"{provider.label} unreachable ({type(exc).__name__}), "
-                                f"failing over")
-                    break  # exhausted this provider -> next provider
-            if not ok:
-                continue  # try the next provider in the chain
+                                    f"{provider.label} unreachable ({type(exc).__name__}), "
+                                    f"failing over")
+                        break  # exhausted this model -> try next model in provider
+                if ok:
+                    break
+
+            if not ok or successful_model is None:
+                continue  # try next provider in chain
+
+            model = successful_model
 
             cost = _cost(provider, tin, tout)
             result = LLMResult(text=text, provider=provider.name, model=model.id,
@@ -289,7 +360,7 @@ async def complete(
                     result.data = extract_json(text)
                 except InvalidJSONResponse:
                     repaired = await _repair_json(client, provider, model, system,
-                                                  prompt, text, temperature)
+                                                  prompt, text, temperature, custom_keys=custom_keys)
                     result.data = repaired.data
                     result.text = repaired.text
                     result.tokens_out += repaired.tokens_out
@@ -307,7 +378,8 @@ async def complete(
 
 async def _repair_json(client: httpx.AsyncClient, provider: Provider, model: Model,
                        system: str, original_prompt: str, broken: str,
-                       temperature: float) -> LLMResult:
+                       temperature: float,
+                       custom_keys: dict[str, str] | None = None) -> LLMResult:
     """One retry with an explicit repair instruction before giving up."""
     events.emit("warn", "llm", "Malformed JSON, attempting one repair retry")
     repair_prompt = (
@@ -317,7 +389,7 @@ async def _repair_json(client: httpx.AsyncClient, provider: Provider, model: Mod
     )
     transport = _TRANSPORTS[provider.kind]
     text, tin, tout = await transport(client, provider, model, system,
-                                      repair_prompt, True, temperature)
+                                      repair_prompt, True, temperature, custom_keys=custom_keys)
     data = extract_json(text)     # raises InvalidJSONResponse if still broken
     events.emit("success", "llm", "JSON repaired on retry")
     return LLMResult(text=text, provider=provider.name, model=model.id,
