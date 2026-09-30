@@ -73,7 +73,40 @@ class StudyOut(BaseModel):
     days: list[DayOut]
 
 
-def _to_out(s: Study) -> StudyOut:
+def _enrich_day_blocks(session: Session | None, s: Study, d: StudyDay) -> dict | None:
+    if not d.blocks_json:
+        return None
+    blocks = dict(d.blocks_json)
+    if "scripture" in blocks and isinstance(blocks["scripture"], list):
+        enriched_scripture = []
+        for item in blocks["scripture"]:
+            if isinstance(item, dict):
+                ref = item.get("ref", "")
+                text = item.get("text", "")
+                tr = (item.get("translation") or s.primary_translation or "KJV").upper()
+                if not text and ref:
+                    try:
+                        parsed = bs.parse_ref(ref)
+                        if parsed:
+                            if session:
+                                rows = bs.get_passage(session, parsed, tr)
+                            else:
+                                with Session(get_engine()) as sess:
+                                    rows = bs.get_passage(sess, parsed, tr)
+                            text = " ".join(v["text"] for v in rows)
+                    except Exception:
+                        pass
+                item_copy = dict(item)
+                item_copy["text"] = text
+                item_copy["translation"] = tr
+                enriched_scripture.append(item_copy)
+            else:
+                enriched_scripture.append(item)
+        blocks["scripture"] = enriched_scripture
+    return blocks
+
+
+def _to_out(s: Study, session: Session | None = None) -> StudyOut:
     return StudyOut(
         id=s.id, topic=s.topic, title=s.title or "",
         minutes_per_day=s.minutes_per_day, total_days=s.total_days,
@@ -84,8 +117,9 @@ def _to_out(s: Study) -> StudyOut:
         days=[DayOut(day_number=d.day_number, title=d.title, theme=d.theme,
                      status=d.status, context_summary=d.context_summary,
                      notes=d.notes, discussions=d.discussions_json,
-                     blocks_json=d.blocks_json) for d in s.days],
+                     blocks_json=_enrich_day_blocks(session, s, d)) for d in s.days],
     )
+
 
 
 @router.post("", status_code=202)
@@ -221,7 +255,7 @@ def list_studies(user: User = Depends(get_current_user),
     rows = session.exec(
         select(Study).where(Study.user_id == user.id).order_by(Study.id.desc())
     ).all()
-    return [_to_out(s) for s in rows]
+    return [_to_out(s, session) for s in rows]
 
 
 @router.get("/{study_id}")
@@ -230,7 +264,7 @@ def get_study(study_id: int, user: User = Depends(get_current_user),
     s = session.get(Study, study_id)
     if s is None or s.user_id != user.id:
         raise HTTPException(404, "study not found")
-    return _to_out(s)
+    return _to_out(s, session)
 
 
 def _delete_study_data(session: Session, study: Study) -> None:

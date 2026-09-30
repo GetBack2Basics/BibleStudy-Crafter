@@ -87,14 +87,11 @@ DB_CONN_NAME="${PROJECT_ID}:${REGION}:${DB_INSTANCE}"
 # 5. Build and Deploy API Backend
 echo "--> [5/7] Building and deploying API backend to Cloud Run..."
 gcloud builds submit api \
-  --config=api/cloudbuild.yaml \
-  --substitutions="_IMAGE=${AR_PREFIX}/api:latest" \
-  --project="${PROJECT_ID}" 2>/dev/null || \
-gcloud builds submit api \
   --tag="${AR_PREFIX}/api:latest" \
+  --file=api/Dockerfile.prod \
   --project="${PROJECT_ID}"
 
-SECRET_KEY_VAL=$(openssl rand -hex 32)
+SECRET_KEY_VAL=$(openssl rand -hex 32 2>/dev/null || python -c "import secrets; print(secrets.token_hex(32))")
 echo -n "${SECRET_KEY_VAL}" | gcloud secrets create biblestudy-secret-key --data-file=- --project="${PROJECT_ID}" 2>/dev/null || true
 
 gcloud run deploy "${APP_NAME}-api" \
@@ -116,6 +113,7 @@ echo "API deployed at: ${API_URL}"
 echo "--> [6/7] Building and deploying Web frontend to Cloud Run..."
 gcloud builds submit web \
   --tag="${AR_PREFIX}/web:latest" \
+  --file=web/Dockerfile.prod \
   --build-arg="VITE_API_URL=${API_URL}" \
   --build-arg="VITE_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}" \
   --project="${PROJECT_ID}"

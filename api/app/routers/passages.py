@@ -107,7 +107,7 @@ def list_passages(study_id: int, day_number: int,
     rows = session.exec(
         select(DayPassage).where(DayPassage.study_day_id == d.id).order_by(DayPassage.order)
     ).all()
-    return [_out(r) for r in rows]
+    return [_out(r, session) for r in rows]
 
 
 @router.post("/{study_id}/days/{day_number}/passages", response_model=PassageOut)
@@ -309,7 +309,11 @@ def delete_verse_note(
     return {verse: bucket["notes"]}
 
 
-def _out(p: DayPassage) -> PassageOut:
-    return PassageOut(id=p.id, ref=p.ref, translation=p.translation, text=p.text,
+def _out(p: DayPassage, session: Session | None = None) -> PassageOut:
+    text = p.text
+    if not text and session:
+        text = _resolve_text(session, p.ref, p.translation)
+    return PassageOut(id=p.id, ref=p.ref, translation=p.translation, text=text,
                       order=p.order, rationale=p.rationale, highlights=p.highlights,
                       source_reflections=p.source_reflections, verse_notes=p.verse_notes)
+

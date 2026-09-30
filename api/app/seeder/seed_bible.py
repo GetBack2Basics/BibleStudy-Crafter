@@ -28,8 +28,9 @@ from app.seeder.parsing import CANON, load_allowlist, parse_chapter
 from app.services import events
 
 API = "https://bible.helloao.org/api"
-THROTTLE = 0.2
+THROTTLE = 0.05
 ALLOWLIST = Path(__file__).parent / "translations.txt"
+
 
 
 def _cache_dir() -> Path:
@@ -113,6 +114,12 @@ def seed_translation(client: httpx.Client, session: Session, code: str, source_i
 
     translation = upsert_translation(session, code, meta)
     ensure_books(session)
+
+    expected = meta.get("totalNumberOfVerses") or 0
+    if not book_filter and translation.verse_count and expected and translation.verse_count >= expected * 0.99:
+        print(f"  {code}: already fully seeded ({translation.verse_count:,} verses), skipping.")
+        return translation.verse_count
+
     cache = _cache_dir() / code
 
     books = fetch_json(client, f"{API}/{source_id}/books.json",

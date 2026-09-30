@@ -3,7 +3,7 @@ FROM python:3.11-slim
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PORT=8000
+    PORT=8080
 
 WORKDIR /app
 
@@ -24,5 +24,5 @@ RUN if [ "$BUILD_STAMP" = "dev" ] || [ -z "$BUILD_STAMP" ]; then \
       echo "$BUILD_STAMP" > /etc/build_stamp; \
     fi
 
-EXPOSE 8000
-CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 2
+EXPOSE 8080
+CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080} --workers 2"]
