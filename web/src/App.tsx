@@ -6,6 +6,10 @@ import ProfileModal from './components/ProfileModal'
 import { api } from './lib/api'
 import { auth, type AuthUser } from './lib/auth'
 import { studies as studyApi, bible, preferences, passages, TRADITIONS, type StudyOut, type DayOut, type DayDraft, type TranslationInfo, type CompareVerse, type PassageOut, type SearchHit, type TTSChoice, ttsDefaultVoices } from './lib/studies'
+import SourceReaderModal, { type AnySource } from './components/SourceReaderModal'
+import QuestionsSection from './components/QuestionsSection'
+import VoicesGuideRenderer from './components/VoicesGuideRenderer'
+import { initAppearance, getStoredTheme, getStoredFontScale, applyTheme, applyFontScale, type ThemeMode } from './lib/theme'
 
 const STATUS_CLS: Record<string, string> = {
   pending: 'text-outline',
@@ -124,6 +128,30 @@ export default function App() {
   const [studiesList, setStudiesList] = useState<StudyOut[]>([])
   const [loadingList, setLoadingList] = useState(false)
   const [studyTitle, setStudyTitle] = useState<{ title: string; dayNum?: number } | null>(null)
+  const [theme, setTheme] = useState<ThemeMode>(() => getStoredTheme())
+  const [fontScale, setFontScale] = useState<number>(() => getStoredFontScale())
+
+  useEffect(() => {
+    initAppearance()
+  }, [])
+
+  const handleDecreaseFont = () => {
+    const newScale = Math.max(0.75, Math.round((fontScale - 0.1) * 100) / 100)
+    setFontScale(newScale)
+    applyFontScale(newScale)
+  }
+
+  const handleIncreaseFont = () => {
+    const newScale = Math.min(1.5, Math.round((fontScale + 0.1) * 100) / 100)
+    setFontScale(newScale)
+    applyFontScale(newScale)
+  }
+
+  const handleToggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark'
+    setTheme(next)
+    applyTheme(next)
+  }
 
   const openProfile = (tab: 'profile' | 'byok' | 'admin' = 'profile') => {
     setProfileTab(tab)
@@ -178,45 +206,65 @@ export default function App() {
     return <AuthScreen onAuthed={() => { setAuthed(true); loadUser() }} />
   }
 
-  const roleLabel = currentUser?.role || (currentUser?.is_admin ? 'ADMIN' : 'MEMBER')
-
   return (
     <OpenProfileCtx.Provider value={openProfile}>
     <SetStudyTitleCtx.Provider value={setStudyTitle}>
     <StudyTitleCtx.Provider value={studyTitle}>
     <div className="min-h-screen bg-background text-on-background">
-      <header className="sticky top-0 z-30 flex flex-wrap items-center gap-4 border-b border-outline-variant/20 bg-surface-container-lowest/80 px-margin-mobile py-3.5 backdrop-blur lg:px-margin-desktop">
-        <Link to="/" className="font-headline-lg text-headline-lg text-primary tracking-tight hover:text-primary-container transition-colors">
+      <header className="sticky top-0 z-30 flex flex-wrap items-center gap-4 border-b border-outline-variant/20 bg-surface-container-lowest/80 px-margin-mobile py-3 backdrop-blur lg:px-margin-desktop">
+        <Link to="/" className="font-study-title text-study-title font-bold text-primary tracking-tight hover:text-primary-container transition-colors">
           {studyTitle?.title ?? 'BibleStudy-Crafter'}{studyTitle && studyTitle.dayNum ? ` · Day ${studyTitle.dayNum}` : ''}
         </Link>
-        <div className="ml-auto flex flex-wrap items-center gap-3">
-          {/* User Account / BYOK Button */}
+        <div className="ml-auto flex flex-wrap items-center gap-2 sm:gap-3">
+          {/* Font scale decrease / increase (small F / big F) */}
+          <div className="flex items-center rounded-full border border-outline-variant/30 bg-surface-container-low p-0.5 shadow-sm">
+            <button
+              type="button"
+              onClick={handleDecreaseFont}
+              title="Decrease font size (small F)"
+              className="flex h-7 w-7 items-center justify-center rounded-full text-on-surface hover:bg-surface-container-high transition-colors font-bold"
+              aria-label="Decrease font size"
+            >
+              <span className="text-[11px] leading-none font-bold">F</span>
+            </button>
+            <div className="h-3.5 w-px bg-outline-variant/30 mx-0.5" />
+            <button
+              type="button"
+              onClick={handleIncreaseFont}
+              title="Increase font size (big F)"
+              className="flex h-7 w-7 items-center justify-center rounded-full text-on-surface hover:bg-surface-container-high transition-colors font-bold"
+              aria-label="Increase font size"
+            >
+              <span className="text-[17px] leading-none font-bold">F</span>
+            </button>
+          </div>
+
+          {/* Theme Quick Toggle */}
           <button
-            onClick={() => openProfile('profile')}
-            className="flex items-center gap-2.5 rounded-full border border-outline-variant/30 bg-surface-container-low px-3 py-1.5 hover:bg-surface-container-high transition-all shadow-sm"
+            type="button"
+            onClick={handleToggleTheme}
+            title={theme === 'dark' ? 'Switch to Light mode' : 'Switch to Dark mode'}
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-outline-variant/30 bg-surface-container-low text-on-surface hover:bg-surface-container-high transition-colors shadow-sm"
+            aria-label="Toggle dark / light theme"
           >
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/20 text-primary font-bold text-xs overflow-hidden">
-              {currentUser?.picture_url ? (
-                <img src={currentUser.picture_url} alt="Avatar" className="h-full w-full object-cover" />
-              ) : (
-                <span>{(currentUser?.display_name || currentUser?.email || 'U')[0].toUpperCase()}</span>
-              )}
-            </div>
-            <div className="text-left hidden sm:block">
-              <div className="text-xs font-semibold text-on-surface truncate max-w-[120px]">
-                {currentUser?.display_name || currentUser?.email?.split('@')[0]}
-              </div>
-              <div className="text-[10px] text-on-surface-variant flex items-center gap-1">
-                <span>{roleLabel}</span>
-                <span>·</span>
-                <span className="text-primary font-medium">Keys & Settings</span>
-              </div>
-            </div>
+            <I name={theme === 'dark' ? 'light_mode' : 'dark_mode'} cls="text-[18px] text-amber-400" />
           </button>
 
-          <button onClick={handleLogout}
-                  className="text-ui-label-sm text-on-surface-variant hover:text-error transition-colors px-2 py-1 rounded-lg">
-            Sign out
+          {/* User Account / Profile Button */}
+          <button
+            type="button"
+            onClick={() => openProfile('profile')}
+            title={`Account Settings (${currentUser?.display_name || currentUser?.email || 'Profile'})`}
+            aria-label="Account Settings and Profile"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-outline-variant/30 bg-surface-container-low hover:bg-surface-container-high transition-all shadow-sm overflow-hidden"
+          >
+            {currentUser?.picture_url ? (
+              <img src={currentUser.picture_url} alt="Avatar" className="h-full w-full object-cover" />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-primary/20 text-primary font-bold text-xs">
+                {(currentUser?.display_name || currentUser?.email || 'U')[0].toUpperCase()}
+              </div>
+            )}
           </button>
         </div>
       </header>
@@ -231,10 +279,15 @@ export default function App() {
 
       <ProfileModal
         isOpen={isProfileOpen}
-        onClose={() => setIsProfileOpen(false)}
+        onClose={() => {
+          setIsProfileOpen(false)
+          setTheme(getStoredTheme())
+          setFontScale(getStoredFontScale())
+        }}
         currentUser={currentUser}
         onUserUpdated={(u) => setCurrentUser(u)}
         initialTab={profileTab}
+        onLogout={handleLogout}
       />
 
       <StatusDock />
@@ -551,7 +604,7 @@ function StudyDetail() {
       </div>
 
       <div>
-        <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">{study.title || study.topic}</h1>
+        <h1 className="font-study-title text-study-title font-bold text-on-surface tracking-tight">{study.title || study.topic}</h1>
         <p className="mt-1 text-ui-label-md text-on-surface-variant">
           {study.total_days} days · {study.minutes_per_day} min/day · {study.tradition} · {study.primary_translation}
         </p>
@@ -638,6 +691,18 @@ function DayCard({ studyId, day, onGenerate, defaultOpen = false }: { studyId: n
       setErr(e instanceof Error ? e.message : String(e))
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleSaveNotes = async (updatedNotes: Record<string, string>) => {
+    const current = draftRef.current
+    if (!current) return
+    setNotes(updatedNotes)
+    try {
+      const updated = await studyApi.updateDay(studyId, day.day_number, current, updatedNotes)
+      setNotes(updated.notes ?? updatedNotes)
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e))
     }
   }
 
@@ -753,13 +818,29 @@ function DayCard({ studyId, day, onGenerate, defaultOpen = false }: { studyId: n
           )}
 
           {draft ? (
-            <DraftEditor draft={draft} studyId={studyId} day={day.day_number} editing={editing} onChange={setDraft} onSelect={handleSelection} notes={notes} onNotesChange={setNotes} />
+            <DraftEditor
+              draft={draft}
+              studyId={studyId}
+              day={day.day_number}
+              editing={editing}
+              onChange={setDraft}
+              onSelect={handleSelection}
+              notes={notes}
+              onNotesChange={setNotes}
+              onSaveNotes={handleSaveNotes}
+            />
           ) : (
             <p className="text-ui-label-sm text-on-surface-variant">
               {day.status === 'generating' ? 'Working…' : 'Not generated yet.'}
             </p>
           )}
-          <Discussions studyId={studyId} day={day} />
+          <Discussions
+            studyId={studyId}
+            day={day}
+            draft={draft}
+            notes={notes}
+            onSaveNotes={handleSaveNotes}
+          />
         </div>
       )}
     </article>
@@ -768,7 +849,7 @@ function DayCard({ studyId, day, onGenerate, defaultOpen = false }: { studyId: n
 
 /* ---------- Read / edit renderer ---------- */
 
-function DraftEditor({ draft, editing, onChange, onSelect, studyId, day, notes, onNotesChange }: {
+function DraftEditor({ draft, editing, onChange, onSelect, studyId, day, notes, onNotesChange, onSaveNotes }: {
   draft: DayDraft
   editing: boolean
   onChange: (d: DayDraft) => void
@@ -777,8 +858,10 @@ function DraftEditor({ draft, editing, onChange, onSelect, studyId, day, notes, 
   day: number
   notes: Record<string, string>
   onNotesChange: (n: Record<string, string>) => void
+  onSaveNotes?: (n: Record<string, string>) => Promise<void> | void
 }) {
   const setField = (patch: Partial<DayDraft>) => onChange({ ...draft, ...patch })
+  const saveNotesHandler = onSaveNotes || onNotesChange
 
   return (
     <div className="space-y-4 text-body-reading text-on-surface">
@@ -824,7 +907,13 @@ function DraftEditor({ draft, editing, onChange, onSelect, studyId, day, notes, 
                 onChange={(e) => onNotesChange({ ...notes, closing_prayer: e.target.value })} />
             </Labeled>
             <Labeled label="Reflection questions">
-              <QuestionsEditor questions={draft.questions ?? []} onChange={(q) => setField({ questions: q })} />
+              <QuestionsSection
+                questions={draft.questions ?? []}
+                notes={notes}
+                onSaveNotes={saveNotesHandler}
+                editing={true}
+                onQuestionsChange={(q) => setField({ questions: q })}
+              />
             </Labeled>
           </div>
         </CollapsibleSection>
@@ -837,7 +926,7 @@ function DraftEditor({ draft, editing, onChange, onSelect, studyId, day, notes, 
           )}
           {notes.opening_prayer && (
             <CollapsibleSection title="Your note · opening prayer" icon="lightbulb" defaultOpen>
-              <p className="rounded bg-surface-container-high p-2 text-ui-label-sm text-on-tertiary-container">{notes.opening_prayer}</p>
+              <p className="rounded-xl bg-surface-container-high p-3 text-ui-label-sm text-on-tertiary-container">{notes.opening_prayer}</p>
             </CollapsibleSection>
           )}
           {draft.commentary && (
@@ -847,14 +936,16 @@ function DraftEditor({ draft, editing, onChange, onSelect, studyId, day, notes, 
           )}
           {notes.commentary && (
             <CollapsibleSection title="Your note · commentary" icon="lightbulb" defaultOpen>
-              <p className="rounded bg-surface-container-high p-2 text-ui-label-sm text-on-tertiary-container">{notes.commentary}</p>
+              <p className="rounded-xl bg-surface-container-high p-3 text-ui-label-sm text-on-tertiary-container">{notes.commentary}</p>
             </CollapsibleSection>
           )}
           {draft.questions && draft.questions.length > 0 && (
             <CollapsibleSection title="Reflection questions" icon="help" defaultOpen>
-              <ul className="list-disc space-y-1 pl-5 text-on-surface">
-                {draft.questions.map((q, i) => <li key={i}>{q}</li>)}
-              </ul>
+              <QuestionsSection
+                questions={draft.questions}
+                notes={notes}
+                onSaveNotes={saveNotesHandler}
+              />
             </CollapsibleSection>
           )}
           {draft.closing_prayer && (
@@ -864,7 +955,12 @@ function DraftEditor({ draft, editing, onChange, onSelect, studyId, day, notes, 
           )}
           {notes.closing_prayer && (
             <CollapsibleSection title="Your note · closing prayer" icon="lightbulb" defaultOpen>
-              <p className="rounded bg-surface-container-high p-2 text-ui-label-sm text-on-tertiary-container">{notes.closing_prayer}</p>
+              <p className="rounded-xl bg-surface-container-high p-3 text-ui-label-sm text-on-tertiary-container">{notes.closing_prayer}</p>
+            </CollapsibleSection>
+          )}
+          {notes.discussions && (
+            <CollapsibleSection title="Your note · external voices & sources" icon="forum" defaultOpen>
+              <p className="rounded-xl bg-surface-container-high p-3 text-ui-label-sm text-on-tertiary-container whitespace-pre-wrap">{notes.discussions}</p>
             </CollapsibleSection>
           )}
         </div>
@@ -960,7 +1056,7 @@ function DayDetail() {
       </div>
 
       <div>
-        <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">
+        <h1 className="font-study-title text-study-title font-bold text-on-surface tracking-tight">
           {study.title || study.topic} — Day {dayNum}
         </h1>
       </div>
@@ -1172,43 +1268,73 @@ function DayTTS({ studyId, day }: { studyId: number; day: DayOut }) {
 
 /* ---------- Discussions: real, cited reading material about the verses ---------- */
 
-type AnySource = {
-  title: string; url: string; snippet?: string; source: string
-  kind?: string; platform?: string | null; engagement?: number | null
-}
-
-function SourceGrid({ sources, empty }: { sources: AnySource[]; empty: string }) {
+function SourceGrid({
+  sources,
+  empty,
+  onOpenSource,
+}: {
+  sources: AnySource[]
+  empty: string
+  onOpenSource: (s: AnySource) => void
+}) {
   if (!sources.length) {
     return <p className="text-ui-label-sm text-on-surface-variant/80">{empty}</p>
   }
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
       {sources.map((s, i) => (
-        <a key={i} href={s.url} target="_blank" rel="noreferrer noopener"
-           className="voice-card hover:text-primary">
+        <button
+          key={i}
+          type="button"
+          onClick={() => onOpenSource(s)}
+          className="voice-card text-left hover:text-primary transition-all group w-full cursor-pointer"
+        >
           <div className="mb-1 flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary-container">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary-container text-on-secondary-container">
               <I name={s.kind === 'social' ? 'forum' : 'menu_book'} cls="text-[14px]" />
             </span>
-            <span className="font-ui-label-sm uppercase tracking-wider text-on-surface-variant">{s.source}</span>
+            <span className="font-ui-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">
+              {s.source}
+            </span>
             {s.platform && (
-              <span className="rounded-full bg-tertiary-container px-2 py-0.5 font-ui-label-xs text-on-tertiary-container">{s.platform}</span>
+              <span className="rounded-full bg-tertiary-container px-2 py-0.5 font-ui-label-xs text-on-tertiary-container">
+                {s.platform}
+              </span>
             )}
             {typeof s.engagement === 'number' && (
               <span className="font-ui-label-xs text-on-surface-variant/70">▲ {s.engagement}</span>
             )}
+            <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity text-primary text-xs flex items-center gap-0.5 font-semibold">
+              Read <I name="visibility" cls="text-[14px]" />
+            </span>
           </div>
-          <div className="font-ui-label-md text-on-surface group-hover:text-primary">{s.title}</div>
-        </a>
+          <div className="font-ui-label-md text-on-surface group-hover:text-primary leading-snug">
+            {s.title}
+          </div>
+        </button>
       ))}
     </div>
   )
 }
 
-function Discussions({ studyId, day }: { studyId: number; day: DayOut }) {
+function Discussions({
+  studyId,
+  day,
+  draft,
+  notes = {},
+  onSaveNotes,
+}: {
+  studyId: number
+  day: DayOut
+  draft?: DayDraft | null
+  notes?: Record<string, string>
+  onSaveNotes?: (n: Record<string, string>) => Promise<void> | void
+}) {
   const [data, setData] = useState<DayOut['discussions']>(day.discussions ?? null)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
+  const [activeSource, setActiveSource] = useState<AnySource | null>(null)
+
   const reload = async () => {
     const dayNum = Number(day?.day_number)
     if (!Number.isInteger(dayNum) || dayNum < 1) {
@@ -1223,52 +1349,104 @@ function Discussions({ studyId, day }: { studyId: number; day: DayOut }) {
     finally { setBusy(false) }
   }
   const d = data
+
+  const combinedSources: AnySource[] = [
+    ...(d?.sources ?? []),
+    ...((!d?.sources?.length)
+      ? [...(d?.official_sources ?? []), ...(d?.social_sources ?? [])]
+      : []),
+  ]
+
+  const handleOpenSource = (s: AnySource) => {
+    setActiveSource(s)
+  }
+
+  const handleSaveModalNote = async (targetKey: string, formattedNoteContent: string) => {
+    const nextNotes = {
+      ...notes,
+      [targetKey]: formattedNoteContent,
+    }
+    if (onSaveNotes) {
+      await onSaveNotes(nextNotes)
+    }
+  }
+
   return (
-    <CollapsibleSection
-      title="Voices on these verses"
-      icon="forum"
-      defaultOpen={false}
-      right={
-        <button onClick={reload} disabled={busy}
-          className="btn-outline disabled:opacity-50 shrink-0">
-          {busy ? 'Fetching…' : (d ? 'Refresh' : 'Find discussions')}
-        </button>
-      }
-      className="mt-6"
-    >
-      {!d && <p className="text-ui-label-sm text-on-surface-variant">Real discussion about these verses, with links back to the sources. Click "Find discussions".</p>}
-      {d && d.status === 'empty' && (
-        <p className="text-ui-label-sm text-on-surface-variant">No external discussion could be fetched right now. Engage the Scripture directly.</p>
-      )}
-      {d && d.status === 'ok' && (
-        <>
-          <p className="mb-3 text-ui-label-sm text-on-surface-variant">
-            Curated from {(d.official_sources?.length ?? 0) + (d.social_sources?.length ?? 0)} real sources
-            (~{d.official_min} min official, ~{d.social_min} min social — about half this day).
-            Includes critical / non-Christian takes where they exist. Every claim links to its source.
-          </p>
-          <div className="mb-4 whitespace-pre-wrap font-body-reading text-on-surface">{d.guide}</div>
+    <>
+      <CollapsibleSection
+        title="Voices on these verses"
+        icon="forum"
+        defaultOpen={false}
+        right={
+          <button onClick={reload} disabled={busy}
+            className="btn-outline disabled:opacity-50 shrink-0">
+            {busy ? 'Fetching…' : (d ? 'Refresh' : 'Find discussions')}
+          </button>
+        }
+        className="mt-6"
+      >
+        {!d && <p className="text-ui-label-sm text-on-surface-variant">Real discussion about these verses, with links back to the sources. Click "Find discussions".</p>}
+        {d && d.status === 'empty' && (
+          <p className="text-ui-label-sm text-on-surface-variant">No external discussion could be fetched right now. Engage the Scripture directly.</p>
+        )}
+        {d && d.status === 'ok' && (
+          <>
+            <p className="mb-3 text-ui-label-sm text-on-surface-variant">
+              Curated from {(d.official_sources?.length ?? 0) + (d.social_sources?.length ?? 0)} real sources
+              (~{d.official_min} min official, ~{d.social_min} min social — about half this day).
+              Includes critical / non-Christian takes where they exist. Every claim links to its source.
+            </p>
 
-          {/* Official commentary sources */}
-          <div className="mb-4">
-            <div className="mb-2 flex items-center gap-2 font-ui-label-sm uppercase tracking-wide text-on-surface-variant">
-              <I name="menu_book" cls="text-[16px]" /> Official commentary
+            <div className="mb-4">
+              <VoicesGuideRenderer
+                guide={d.guide}
+                sources={combinedSources}
+                onOpenSource={handleOpenSource}
+              />
             </div>
-            <SourceGrid sources={d.official_sources ?? []} empty="No official commentary sources were fetched." />
-          </div>
 
-          {/* Social commentary sources */}
-          <div className="border-t border-outline-variant/20 pt-3">
-            <div className="mb-2 flex items-center gap-2 font-ui-label-sm uppercase tracking-wide text-on-surface-variant">
-              <I name="forum" cls="text-[16px]" /> Social commentary
-              <span className="font-ui-label-xs normal-case tracking-normal text-on-surface-variant/70">(Reddit · Quora · X · Facebook)</span>
+            {/* Official commentary sources */}
+            <div className="mb-4">
+              <div className="mb-2 flex items-center gap-2 font-ui-label-sm uppercase tracking-wide text-on-surface-variant">
+                <I name="menu_book" cls="text-[16px]" /> Official commentary
+              </div>
+              <SourceGrid
+                sources={d.official_sources ?? []}
+                empty="No official commentary sources were fetched."
+                onOpenSource={handleOpenSource}
+              />
             </div>
-            <SourceGrid sources={d.social_sources ?? []} empty="No social-media discussion was fetched (Reddit · Quora · X · Facebook)." />
-          </div>
-        </>
+
+            {/* Social commentary sources */}
+            <div className="border-t border-outline-variant/20 pt-3">
+              <div className="mb-2 flex items-center gap-2 font-ui-label-sm uppercase tracking-wide text-on-surface-variant">
+                <I name="forum" cls="text-[16px]" /> Social commentary
+                <span className="font-ui-label-xs normal-case tracking-normal text-on-surface-variant/70">(Reddit · Quora · X · Facebook)</span>
+              </div>
+              <SourceGrid
+                sources={d.social_sources ?? []}
+                empty="No social-media discussion was fetched (Reddit · Quora · X · Facebook)."
+                onOpenSource={handleOpenSource}
+              />
+            </div>
+          </>
+        )}
+        {err && <p className="mt-2 text-ui-label-sm text-error">{err}</p>}
+      </CollapsibleSection>
+
+      {/* Pop-up source reader modal within the site */}
+      {activeSource && (
+        <SourceReaderModal
+          source={activeSource}
+          studyId={studyId}
+          dayNumber={day.day_number}
+          draft={draft}
+          notes={notes}
+          onClose={() => setActiveSource(null)}
+          onSaveNote={handleSaveModalNote}
+        />
       )}
-      {err && <p className="mt-2 text-ui-label-sm text-error">{err}</p>}
-    </CollapsibleSection>
+    </>
   )
 }
 
@@ -1361,24 +1539,6 @@ function VerseExpander({ refText }: { refText: string }) {
   )
 }
 
-function QuestionsEditor({ questions, onChange }: { questions: string[]; onChange: (q: string[]) => void }) {
-
-  const update = (i: number, v: string) => onChange(questions.map((q, j) => (j === i ? v : q)))
-  const add = () => onChange([...questions, ''])
-  const remove = (i: number) => onChange(questions.filter((_, j) => j !== i))
-  return (
-    <div className="space-y-1">
-      {questions.map((q, i) => (
-        <div key={i} className="flex items-start gap-2">
-          <input className="field-underline flex-1"
-                 value={q} onChange={(e) => update(i, e.target.value)} />
-          <button onClick={() => remove(i)} className="btn-ghost px-2">×</button>
-        </div>
-      ))}
-      <button onClick={add} className="text-ui-label-sm text-primary hover:text-primary-container">+ add question</button>
-    </div>
-  )
-}
 
 /* ---------- Scripture passages: version-switchable, reorderable, highlightable ---------- */
 

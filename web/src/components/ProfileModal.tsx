@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { auth, type AuthUser } from '../lib/auth'
 import { keysApi, type KeyStatus, type TestKeyResult } from '../lib/keys'
+import { getStoredTheme, getStoredFontScale, applyTheme, applyFontScale, type ThemeMode } from '../lib/theme'
 
 type Tab = 'profile' | 'byok' | 'admin'
 
@@ -10,6 +11,7 @@ interface ProfileModalProps {
   currentUser: AuthUser | null
   onUserUpdated: (user: AuthUser) => void
   initialTab?: Tab
+  onLogout?: () => void
 }
 
 export default function ProfileModal({
@@ -18,14 +20,31 @@ export default function ProfileModal({
   currentUser,
   onUserUpdated,
   initialTab = 'profile',
+  onLogout,
 }: ProfileModalProps) {
   const [activeTab, setActiveTab] = useState<Tab>(initialTab)
 
   useEffect(() => {
     if (isOpen) {
       setActiveTab(initialTab)
+      setCurrentTheme(getStoredTheme())
+      setCurrentFontScale(getStoredFontScale())
     }
   }, [isOpen, initialTab])
+
+  // Appearance State
+  const [currentTheme, setCurrentTheme] = useState<ThemeMode>(getStoredTheme())
+  const [currentFontScale, setCurrentFontScale] = useState<number>(getStoredFontScale())
+
+  const handleThemeToggle = (t: ThemeMode) => {
+    setCurrentTheme(t)
+    applyTheme(t)
+  }
+
+  const handleFontScaleChange = (scale: number) => {
+    setCurrentFontScale(scale)
+    applyFontScale(scale)
+  }
 
   // Profile Form state
   const [displayName, setDisplayName] = useState('')
@@ -404,6 +423,92 @@ export default function ProfileModal({
               />
             </div>
 
+            {/* Appearance & Reading Style */}
+            <div className="rounded-2xl border border-outline-variant/30 bg-surface-container-low p-4 space-y-4">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary">
+                <span className="material-symbols-outlined text-[18px]">palette</span>
+                Appearance & Reading Style
+              </div>
+
+              {/* Theme Mode Selection */}
+              <div>
+                <label className="block text-xs font-medium text-on-surface-variant mb-2">
+                  Theme Style
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleThemeToggle('light')}
+                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
+                      currentTheme === 'light'
+                        ? 'border-primary bg-primary/10 shadow-sm ring-1 ring-primary'
+                        : 'border-outline-variant/30 bg-surface-container hover:bg-surface-container-high'
+                    }`}
+                  >
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500/20 text-amber-500">
+                      <span className="material-symbols-outlined text-[18px]">light_mode</span>
+                    </span>
+                    <div>
+                      <div className="text-xs font-semibold text-on-surface">Light Style</div>
+                      <div className="text-[10px] text-on-surface-variant">Parchment & Ink</div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleThemeToggle('dark')}
+                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
+                      currentTheme === 'dark'
+                        ? 'border-primary bg-primary/10 shadow-sm ring-1 ring-primary'
+                        : 'border-outline-variant/30 bg-surface-container hover:bg-surface-container-high'
+                    }`}
+                  >
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-500/20 text-indigo-400">
+                      <span className="material-symbols-outlined text-[18px]">dark_mode</span>
+                    </span>
+                    <div>
+                      <div className="text-xs font-semibold text-on-surface">Dark Style</div>
+                      <div className="text-[10px] text-on-surface-variant">Midnight Sanctuary</div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Font Size Scaling */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-medium text-on-surface-variant">
+                    Font Size Scaling
+                  </label>
+                  <span className="text-xs font-semibold text-primary">
+                    {Math.round(currentFontScale * 100)}%
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {[
+                    { label: 'Small (75%)', scale: 0.75 },
+                    { label: 'Compact (85%)', scale: 0.85 },
+                    { label: 'Medium (100%)', scale: 1.0 },
+                    { label: 'Large (115%)', scale: 1.15 },
+                    { label: 'Extra Large (130%)', scale: 1.3 },
+                  ].map((preset) => (
+                    <button
+                      key={preset.scale}
+                      type="button"
+                      onClick={() => handleFontScaleChange(preset.scale)}
+                      className={`px-2.5 py-1 text-xs rounded-lg border transition-all ${
+                        Math.abs(currentFontScale - preset.scale) < 0.04
+                          ? 'bg-primary text-on-primary border-primary font-semibold shadow-xs'
+                          : 'bg-surface-container border-outline-variant/30 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
             <div className="rounded-2xl bg-surface-container-high/40 p-4 border border-outline-variant/20 flex items-center justify-between">
               <div>
                 <span className="text-xs text-on-surface-variant">Account Info:</span>
@@ -418,6 +523,27 @@ export default function ProfileModal({
                 className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-on-primary hover:bg-primary/90 transition-all disabled:opacity-50"
               >
                 {profileSaving ? 'Saving...' : 'Save Profile'}
+              </button>
+            </div>
+
+            {/* Account Sign Out */}
+            <div className="rounded-2xl border border-error/30 bg-error/5 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div>
+                <span className="text-xs font-semibold text-error">Account Session</span>
+                <p className="text-xs text-on-surface-variant mt-0.5">
+                  Signed in as <strong>{currentUser?.email || currentUser?.display_name || 'User'}</strong>
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose()
+                  onLogout?.()
+                }}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-error/40 bg-surface-container-lowest px-4 py-2 text-xs font-semibold text-error hover:bg-error/15 transition-all shadow-xs"
+              >
+                <span className="material-symbols-outlined text-[16px]">logout</span>
+                Sign out
               </button>
             </div>
           </form>

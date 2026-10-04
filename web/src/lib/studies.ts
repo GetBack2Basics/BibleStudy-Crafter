@@ -224,6 +224,30 @@ export const studies = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ study_id: id, day_number: day, voice }),
     }).then(j),
+
+  fetchSourceText: (url: string, studyId?: number, dayNumber?: number): Promise<{ title: string; text: string; source: string; note?: string }> => {
+    const utf8Bytes = new TextEncoder().encode(url)
+    let binary = ''
+    for (let i = 0; i < utf8Bytes.length; i++) {
+      binary += String.fromCharCode(utf8Bytes[i])
+    }
+    const safeB64 = btoa(binary)
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '')
+    const params = new URLSearchParams()
+    if (studyId) params.set('study_id', String(studyId))
+    if (dayNumber) params.set('day_number', String(dayNumber))
+    const qs = params.toString() ? `?${params.toString()}` : ''
+    return api.fetch(`/api/studies/sources/${safeB64}/text${qs}`).then(j)
+  },
+}
+
+export interface SourceTextResult {
+  title: string
+  text: string
+  source: string
+  note?: string
 }
 
 export const TRADITIONS = [

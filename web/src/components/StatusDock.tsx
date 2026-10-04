@@ -17,7 +17,7 @@ const LEVEL_BADGE: Record<LogEvent['level'], string> = {
 
 const hhmmss = (ts: number) => new Date(ts * 1000).toTimeString().slice(0, 8)
 
-/** Bottom-right dock: build stamp (yyyymmddhhmm) + live activity log from page load. */
+/** Bottom-right compact dock: a little "log" button on the bottom right that opens the live activity log */
 export default function StatusDock() {
   const [open, setOpen] = useState(false)
   const [meta, setMeta] = useState<Meta | null>(null)
@@ -45,10 +45,8 @@ export default function StatusDock() {
       es.addEventListener('log', (e) => {
         try {
           const ev: LogEvent = JSON.parse((e as MessageEvent).data)
-          // Only show events that happened after this tab opened
           if (ev.ts >= sessionStartTs.current) {
             setEvents((prev) => {
-              // Deduplicate if event has an id
               if (ev.id && prev.some((p) => p.id === ev.id)) return prev
               return [...prev, ev].slice(-200)
             })
@@ -73,7 +71,6 @@ export default function StatusDock() {
     if (open) bottom.current?.scrollIntoView({ behavior: 'smooth' })
   }, [events, open])
 
-  // Frontend was built at __BUILD_STAMP__; api reports its own. Mismatch = stale tab.
   const stale = !!meta && __BUILD_STAMP__ !== 'dev' && meta.build_stamp !== __BUILD_STAMP__
   const spend = events.reduce((sum, e) => sum + (e.cost_usd ?? 0), 0)
 
@@ -84,58 +81,78 @@ export default function StatusDock() {
   }
 
   return (
-    <div className="fixed bottom-3 right-3 z-50 font-mono text-[11px] shadow-2xl">
+    <div className="fixed bottom-3 right-3 z-50 font-mono text-[11px] shadow-2xl flex flex-col items-end">
       {open && (
-        <div className="w-[460px] max-h-72 overflow-y-auto rounded-t-lg border border-b-0 border-slate-700 bg-slate-900/95 p-2 backdrop-blur">
-          <div className="mb-2 flex items-center justify-between border-b border-slate-800 pb-1 text-slate-400">
-            <span className="font-semibold uppercase tracking-wider text-[10px] text-slate-400">
-              Live Activity Log ({events.length})
-            </span>
+        <div className="mb-2 w-[340px] sm:w-[440px] max-h-80 overflow-y-auto rounded-2xl border border-slate-700 bg-slate-900/95 p-3 backdrop-blur shadow-2xl animate-fade-in">
+          <div className="mb-2 flex items-center justify-between border-b border-slate-800 pb-2 text-slate-400">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] text-slate-500">since page open</span>
+              <span className={live ? 'text-emerald-400' : 'text-rose-400'}>●</span>
+              <span className="font-semibold uppercase tracking-wider text-[10px] text-slate-300">
+                Activity Log ({events.length})
+              </span>
+              {meta?.build_stamp && (
+                <span className="text-[9px] text-slate-500">v{meta.build_stamp}</span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {spend > 0 && <span className="text-amber-300 font-semibold text-[10px]">${spend.toFixed(2)}</span>}
               <button
+                type="button"
                 onClick={clearLog}
                 className="rounded border border-slate-700 bg-slate-800/80 px-1.5 py-0.5 text-[10px] text-slate-300 hover:bg-slate-700 hover:text-white"
                 title="Clear current session log"
               >
                 Clear
               </button>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="text-slate-400 hover:text-white px-1 text-xs"
+                title="Close log"
+              >
+                ✕
+              </button>
             </div>
           </div>
-          {events.length === 0 && <div className="p-3 text-center text-slate-500">No activity in this session yet.</div>}
-          {events.map((e, i) => (
-            <div key={e.id ?? i} className="flex items-start gap-1.5 py-1 leading-snug border-b border-slate-800/40 last:border-0">
-              <span className="shrink-0 text-slate-500 text-[10px]">{hhmmss(e.ts)}</span>
-              <span className={`shrink-0 rounded border px-1 py-px text-[9px] uppercase tracking-wider ${LEVEL_BADGE[e.level] || 'bg-slate-800 text-slate-400 border-slate-700'}`}>
-                {e.scope}
-              </span>
-              <span className={`flex-1 break-words ${LEVEL_CLS[e.level]}`}>{e.message}</span>
-              {!!e.cost_usd && <span className="shrink-0 text-amber-300 font-semibold">${e.cost_usd.toFixed(3)}</span>}
+
+          {events.length === 0 && (
+            <div className="p-4 text-center text-slate-500 text-[10px]">
+              No activity in this session yet.
             </div>
-          ))}
+          )}
+
+          <div className="space-y-1">
+            {events.map((e, i) => (
+              <div key={e.id ?? i} className="flex items-start gap-1.5 py-1 leading-snug border-b border-slate-800/40 last:border-0">
+                <span className="shrink-0 text-slate-500 text-[9px]">{hhmmss(e.ts)}</span>
+                <span className={`shrink-0 rounded border px-1 py-px text-[8px] uppercase tracking-wider ${LEVEL_BADGE[e.level] || 'bg-slate-800 text-slate-400 border-slate-700'}`}>
+                  {e.scope}
+                </span>
+                <span className={`flex-1 break-words ${LEVEL_CLS[e.level]}`}>{e.message}</span>
+                {!!e.cost_usd && <span className="shrink-0 text-amber-300 font-semibold text-[9px]">${e.cost_usd.toFixed(3)}</span>}
+              </div>
+            ))}
+          </div>
           <div ref={bottom} />
         </div>
       )}
 
+      {/* Little "log" button on bottom right */}
       <button
+        type="button"
         onClick={() => setOpen(!open)}
-        className={`flex w-[460px] items-center gap-2 border border-slate-700 bg-slate-900/95 px-3 py-1.5 text-slate-300 backdrop-blur hover:bg-slate-800 ${open ? 'rounded-b-lg' : 'rounded-lg'}`}
-        title={stale ? 'Rebuilt since this tab loaded - reload' : 'Build stamp & Activity Log'}
+        className={`flex items-center gap-1.5 rounded-full border border-slate-700/80 bg-slate-900/90 px-3 py-1 text-xs text-slate-300 shadow-md backdrop-blur transition-all hover:bg-slate-800 hover:text-white hover:border-slate-500 active:scale-95 ${
+          open ? 'ring-1 ring-primary' : ''
+        }`}
+        title={stale ? 'Rebuilt since this tab loaded - reload' : 'Activity Log'}
       >
-        <span className={live ? 'text-emerald-400' : 'text-rose-400'}>●</span>
-        <span className={stale ? 'font-bold text-amber-400' : 'text-slate-400'}>
-          {meta?.build_stamp ?? '············'}{stale && ' ⟳'}
-        </span>
-        <span className="ml-auto flex items-center gap-2 text-slate-500">
-          {events.length > 0 && (
-            <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-300">
-              {events.length} event{events.length === 1 ? '' : 's'}
-            </span>
-          )}
-          {spend > 0 && <span className="text-amber-300 font-semibold">${spend.toFixed(2)}</span>}
-          <span>api {meta ? '✓' : '✗'}</span>
-          <span>{open ? '▾' : '▴'}</span>
-        </span>
+        <span className={`text-[8px] ${live ? 'text-emerald-400' : 'text-rose-400'}`}>●</span>
+        <span className="font-sans font-semibold tracking-wide lowercase">log</span>
+        {events.length > 0 && !open && (
+          <span className="ml-0.5 rounded-full bg-slate-800 px-1.5 py-0.2 text-[9px] text-slate-300 border border-slate-700 font-mono">
+            {events.length}
+          </span>
+        )}
       </button>
     </div>
   )

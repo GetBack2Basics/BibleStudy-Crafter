@@ -2,6 +2,111 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --font-scale: 1.0;
+
+  /* Parchment & Ink (Light Academic Mode) */
+  --color-background: #f8f9ff;
+  --color-on-background: #0b1c30;
+  --color-surface: #f8f9ff;
+  --color-surface-bright: #f8f9ff;
+  --color-surface-dim: #cbdbf5;
+  --color-surface-variant: #d3e4fe;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #eff4ff;
+  --color-surface-container: #e5eeff;
+  --color-surface-container-high: #dce9ff;
+  --color-surface-container-highest: #d3e4fe;
+  --color-on-surface: #0b1c30;
+  --color-on-surface-variant: #43474c;
+  --color-inverse-surface: #213145;
+  --color-inverse-on-surface: #eaf1ff;
+  --color-outline: #74777d;
+  --color-outline-variant: #c4c6cd;
+  --color-surface-tint: #4e6073;
+  --color-primary: #162839;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #2c3e50;
+  --color-on-primary-container: #96a9be;
+  --color-inverse-primary: #b5c8df;
+  --color-primary-fixed: #d1e4fb;
+  --color-primary-fixed-dim: #b5c8df;
+  --color-on-primary-fixed: #091d2e;
+  --color-on-primary-fixed-variant: #36485b;
+  --color-secondary: #5e5f56;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #e4e3d7;
+  --color-on-secondary-container: #64655c;
+  --color-secondary-fixed: #e4e3d7;
+  --color-secondary-fixed-dim: #c7c7bc;
+  --color-on-secondary-fixed: #1b1c15;
+  --color-on-secondary-fixed-variant: #46473f;
+  --color-tertiary: #342400;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #503800;
+  --color-on-tertiary-container: #c7a15a;
+  --color-tertiary-fixed: #ffdea5;
+  --color-tertiary-fixed-dim: #e9c176;
+  --color-on-tertiary-fixed: #261900;
+  --color-on-tertiary-fixed-variant: #5d4201;
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+}
+
+[data-theme='dark'],
+.dark {
+  /* Midnight Sanctuary (Dark Mode) */
+  --color-background: #0b131e;
+  --color-on-background: #e6edf8;
+  --color-surface: #0b131e;
+  --color-surface-bright: #152234;
+  --color-surface-dim: #070d15;
+  --color-surface-variant: #1a293d;
+  --color-surface-container-lowest: #101a28;
+  --color-surface-container-low: #142032;
+  --color-surface-container: #1a2a40;
+  --color-surface-container-high: #22344e;
+  --color-surface-container-highest: #2b4160;
+  --color-on-surface: #e6edf8;
+  --color-on-surface-variant: #a2b4cc;
+  --color-inverse-surface: #e6edf8;
+  --color-inverse-on-surface: #0b131e;
+  --color-outline: #5c728e;
+  --color-outline-variant: #283a50;
+  --color-surface-tint: #9ec1e6;
+  --color-primary: #9ec1e6;
+  --color-on-primary: #081728;
+  --color-primary-container: #223a54;
+  --color-on-primary-container: #d6e7fa;
+  --color-inverse-primary: #162839;
+  --color-primary-fixed: #d1e4fb;
+  --color-primary-fixed-dim: #b5c8df;
+  --color-on-primary-fixed: #091d2e;
+  --color-on-primary-fixed-variant: #36485b;
+  --color-secondary: #c4c5b9;
+  --color-on-secondary: #1b1c15;
+  --color-secondary-container: #34362e;
+  --color-on-secondary-container: #e2e3d5;
+  --color-secondary-fixed: #e4e3d7;
+  --color-secondary-fixed-dim: #c7c7bc;
+  --color-on-secondary-fixed: #1b1c15;
+  --color-on-secondary-fixed-variant: #46473f;
+  --color-tertiary: #f0cb82;
+  --color-on-tertiary: #2e2000;
+  --color-tertiary-container: #4f3b0e;
+  --color-on-tertiary-container: #fedfa4;
+  --color-tertiary-fixed: #ffdea5;
+  --color-tertiary-fixed-dim: #e9c176;
+  --color-on-tertiary-fixed: #261900;
+  --color-on-tertiary-fixed-variant: #5d4201;
+  --color-error: #ffb4ab;
+  --color-on-error: #690005;
+  --color-error-container: #93000a;
+  --color-on-error-container: #ffdad6;
+}
+
 @layer base {
   html,
   body {
@@ -10,12 +115,13 @@
   }
   body {
     overscroll-behavior: none;
-    background-color: theme('colors.background');
-    color: theme('colors.on-background');
+    background-color: var(--color-background);
+    color: var(--color-on-background);
     font-family: theme('fontFamily.body-reading');
     -webkit-font-smoothing: antialiased;
     /* Safety net: never allow horizontal scroll / overflow on any screen */
     overflow-x: clip;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
   /* Minimal, serene scrollbar */
   ::-webkit-scrollbar {
@@ -23,7 +129,7 @@
     height: 8px;
   }
   ::-webkit-scrollbar-thumb {
-    background: theme('colors.outline-variant');
+    background: var(--color-outline-variant);
     border-radius: 9999px;
   }
   ::-webkit-scrollbar-track {
@@ -74,26 +180,26 @@
 
   /* Cards */
   .passage-card {
-    @apply relative bg-surface-container-lowest rounded-xl p-6 shadow-[0_4px_20px_rgba(44,62,80,0.03)] transition-all duration-300 overflow-hidden;
+    @apply relative bg-surface-container-lowest rounded-xl p-5 shadow-[0_4px_20px_rgba(44,62,80,0.04)] transition-all duration-300 overflow-hidden;
   }
   .passage-card:hover {
-    @apply shadow-[0_8px_30px_rgba(44,62,80,0.06)];
+    @apply shadow-[0_8px_30px_rgba(44,62,80,0.08)];
   }
   .passage-card::before {
     content: '';
     @apply absolute left-0 top-0 bottom-0 w-1 bg-transparent transition-colors;
   }
   .passage-card:hover::before {
-    background-color: theme('colors.on-tertiary-container');
+    background-color: var(--color-on-tertiary-container);
   }
 
   .voice-card {
-    @apply block bg-surface-container-lowest rounded-xl p-5 shadow-[0_2px_10px_rgba(44,62,80,0.03)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(44,62,80,0.06)];
+    @apply block bg-surface-container-lowest rounded-xl p-4 shadow-[0_2px_10px_rgba(44,62,80,0.04)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(44,62,80,0.08)];
   }
 
   /* The "Lens" chip — primary navigation for study perspectives */
   .lens-btn {
-    @apply flex flex-col items-center justify-center p-6 rounded-2xl bg-surface-container-lowest text-on-surface shadow-sm transition-all active:scale-95;
+    @apply flex flex-col items-center justify-center p-5 rounded-2xl bg-surface-container-lowest text-on-surface shadow-sm transition-all active:scale-95;
   }
   .lens-btn[data-active='true'] {
     @apply bg-primary text-on-primary shadow-md;
@@ -101,23 +207,23 @@
 
   /* Underlined "notebook" input */
   .field-underline {
-    @apply w-full bg-transparent border-0 border-b border-outline-variant py-4 text-body-reading text-on-surface placeholder:text-outline/50 focus:border-primary focus:outline-none transition-colors resize-y;
+    @apply w-full bg-transparent border-0 border-b border-outline-variant py-3 text-body-reading text-on-surface placeholder:text-outline placeholder:opacity-50 focus:border-primary focus:outline-none transition-colors resize-y;
   }
 
   /* Buttons */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 bg-primary text-on-primary font-ui-label-lg rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all active:translate-y-0 disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-1.5 bg-primary text-on-primary font-ui-label-lg rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all active:translate-y-0 disabled:opacity-50;
   }
   .btn-outline {
-    @apply inline-flex items-center justify-center gap-2 rounded-md border border-primary-container text-primary-container font-ui-label-md px-3 py-1.5 hover:bg-surface-container-high transition-colors;
+    @apply inline-flex items-center justify-center gap-1.5 rounded-md border border-primary-container text-primary font-ui-label-md px-3 py-1.5 hover:bg-surface-container-high transition-colors;
   }
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors font-ui-label-md;
+    @apply inline-flex items-center justify-center gap-1.5 rounded-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors font-ui-label-md;
   }
 
   /* Step badge used in the create wizard */
   .step-badge {
-    @apply w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary font-ui-label-lg shadow-sm;
+    @apply w-8 h-8 rounded-full bg-primary flex items-center justify-center text-on-primary font-ui-label-lg shadow-sm;
   }
 
   .material-symbols-outlined {
