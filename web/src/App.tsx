@@ -9,6 +9,7 @@ import { studies as studyApi, bible, preferences, passages, TRADITIONS, type Stu
 import SourceReaderModal, { type AnySource } from './components/SourceReaderModal'
 import QuestionsSection from './components/QuestionsSection'
 import VoicesGuideRenderer from './components/VoicesGuideRenderer'
+import CommentarySection from './components/CommentarySection'
 import { initAppearance, getStoredTheme, getStoredFontScale, applyTheme, applyFontScale, type ThemeMode } from './lib/theme'
 
 const STATUS_CLS: Record<string, string> = {
@@ -825,6 +826,7 @@ function DayCard({ studyId, day, onGenerate, defaultOpen = false }: { studyId: n
               editing={editing}
               onChange={setDraft}
               onSelect={handleSelection}
+              onSelectText={(txt) => setSelectedText(txt)}
               notes={notes}
               onNotesChange={setNotes}
               onSaveNotes={handleSaveNotes}
@@ -849,11 +851,12 @@ function DayCard({ studyId, day, onGenerate, defaultOpen = false }: { studyId: n
 
 /* ---------- Read / edit renderer ---------- */
 
-function DraftEditor({ draft, editing, onChange, onSelect, studyId, day, notes, onNotesChange, onSaveNotes }: {
+function DraftEditor({ draft, editing, onChange, onSelect, onSelectText, studyId, day, notes, onNotesChange, onSaveNotes }: {
   draft: DayDraft
   editing: boolean
   onChange: (d: DayDraft) => void
   onSelect: (el: HTMLTextAreaElement | null) => void
+  onSelectText?: (text: string) => void
   studyId: number
   day: number
   notes: Record<string, string>
@@ -883,11 +886,14 @@ function DraftEditor({ draft, editing, onChange, onSelect, studyId, day, notes, 
                 placeholder="What stood out to you?"
                 onChange={(e) => onNotesChange({ ...notes, opening_prayer: e.target.value })} />
             </Labeled>
-            <Labeled label="Commentary (select text, then Revise with AI)">
-              <textarea className="field-underline"
-                rows={6} value={draft.commentary ?? ''}
-                onChange={(e) => setField({ commentary: e.target.value })}
-                onMouseUp={(e) => onSelect(e.currentTarget)} />
+            <Labeled label="Commentary">
+              <CommentarySection
+                editable
+                value={draft.commentary ?? ''}
+                commentary={draft.commentary ?? ''}
+                onChange={(val) => setField({ commentary: val })}
+                onMouseUpInEditor={(el) => onSelect(el)}
+              />
             </Labeled>
             <Labeled label="Your note on the commentary">
               <textarea className="field-underline"
@@ -921,7 +927,7 @@ function DraftEditor({ draft, editing, onChange, onSelect, studyId, day, notes, 
         <div className="space-y-4">
           {draft.opening_prayer && (
             <CollapsibleSection title="Opening prayer" icon="volunteer_activism" defaultOpen>
-              <p className="text-on-surface">{draft.opening_prayer}</p>
+              <p className="text-on-surface font-serif italic text-body-reading leading-relaxed">{draft.opening_prayer}</p>
             </CollapsibleSection>
           )}
           {notes.opening_prayer && (
@@ -931,7 +937,10 @@ function DraftEditor({ draft, editing, onChange, onSelect, studyId, day, notes, 
           )}
           {draft.commentary && (
             <CollapsibleSection title="Commentary" icon="menu_book" defaultOpen>
-              <p className="text-on-surface">{draft.commentary}</p>
+              <CommentarySection
+                commentary={draft.commentary}
+                onSelectText={onSelectText}
+              />
             </CollapsibleSection>
           )}
           {notes.commentary && (
@@ -950,7 +959,7 @@ function DraftEditor({ draft, editing, onChange, onSelect, studyId, day, notes, 
           )}
           {draft.closing_prayer && (
             <CollapsibleSection title="Closing prayer" icon="volunteer_activism" defaultOpen>
-              <p className="text-on-surface">{draft.closing_prayer}</p>
+              <p className="text-on-surface font-serif italic text-body-reading leading-relaxed">{draft.closing_prayer}</p>
             </CollapsibleSection>
           )}
           {notes.closing_prayer && (

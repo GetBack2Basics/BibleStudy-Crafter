@@ -163,8 +163,10 @@ Produce a JSON object with exactly these keys (no other text, no markdown):
       prayer, and do not reproduce a whole verse - weave the borrowed phrases
       into what the reader wants to say to God about what these verses reveal.
       Stay inside what the Scripture actually says; do not import outside claims.),
-  "commentary": str (~{commentary_words} words, 2-4 short paragraphs; explain
-      the passage plainly, honest about difficulty),
+  "commentary": str (~{commentary_words} words, 2-4 distinct paragraphs separated
+      by blank lines (\\n\\n); explain the passage plainly, honest about difficulty.
+      Format for high readability: use **bold** for key theological concepts, terms, and
+      themes, and *italics* for Bible verse citations and direct scripture quotes),
   "questions": [str, str, str] (exactly {questions} reflection questions),
   "closing_prayer": str (2-3 sentences; a prayer of RESPONSE that again gathers
       ALL of today's passages together and echoes short phrases from at least

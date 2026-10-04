@@ -393,7 +393,7 @@ The full current commentary for the day is:
 
 {selection_block}Revise according to this instruction: {instruction}
 
-Return ONLY the revised text (no markdown fences, no commentary about what you changed). If a selection was provided, return only the revised version of that selected passage, keeping its meaning and length similar. If no selection was provided, return the revised full commentary. The revision must stay faithful to the scripture passages above.
+Return ONLY the revised text (no markdown fences, no commentary about what you changed). Maintain readable formatting with distinct paragraphs (separated by blank lines), **bold** key terms and themes, and *italics* for Bible verses, scripture quotes, or citations. If a selection was provided, return only the revised version of that selected passage, keeping its meaning and length similar. If no selection was provided, return the revised full commentary. The revision must stay faithful to the scripture passages above.
 """
 
 SCRIPTURE_BLOCK = "- {ref} ({translation}): {text}"

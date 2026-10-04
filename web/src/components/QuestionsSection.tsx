@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 interface QuestionsSectionProps {
   questions: string[]
@@ -15,36 +15,65 @@ export default function QuestionsSection({
   editing = false,
   onQuestionsChange,
 }: QuestionsSectionProps) {
-  // Local state for answers to allow smooth typing without lag
+  // Local state for answers so user can type freely without parent or polling interrupting
   const [answers, setAnswers] = useState<Record<number, string>>({})
   const [savingIndex, setSavingIndex] = useState<number | null>(null)
   const [savedIndex, setSavedIndex] = useState<number | null>(null)
-  const [savingAll, setSavingAll] = useState(false)
-  const [savedAll, setSavedAll] = useState(false)
 
-  // Initialize and sync answers from notes
+  // Track currently focused textarea index to prevent any external updates while typing
+  const focusedIndexRef = useRef<number | null>(null)
+  // Track dirty (locally modified) indexes
+  const dirtyIndexesRef = useRef<Set<number>>(new Set())
+  // Track last saved string per question index to avoid unnecessary network calls
+  const savedValuesRef = useRef<Record<number, string>>({})
+  // Latest notes reference for constructing updated payload
+  const notesRef = useRef<Record<string, string>>(notes)
+  notesRef.current = notes
+
+  // Sync initial and external notes safely without clobbering in-progress typing
   useEffect(() => {
-    const nextAnswers: Record<number, string> = {}
-    questions.forEach((_, idx) => {
-      const val = notes[`question_${idx}`] ?? notes[`q_${idx}`] ?? ''
-      nextAnswers[idx] = val
+    setAnswers((prevAnswers) => {
+      const nextAnswers = { ...prevAnswers }
+      questions.forEach((_, idx) => {
+        const serverVal = notes[`question_${idx}`] ?? notes[`q_${idx}`] ?? ''
+
+        // If not initialized, or if not dirty and not currently focused, sync from server
+        if (
+          !(idx in nextAnswers) ||
+          (!dirtyIndexesRef.current.has(idx) && focusedIndexRef.current !== idx)
+        ) {
+          nextAnswers[idx] = serverVal
+          savedValuesRef.current[idx] = serverVal
+        }
+      })
+      return nextAnswers
     })
-    setAnswers(nextAnswers)
   }, [questions, notes])
 
   const handleAnswerChange = (index: number, val: string) => {
+    dirtyIndexesRef.current.add(index)
     setAnswers((prev) => ({ ...prev, [index]: val }))
   }
 
   const handleSaveSingleAnswer = async (index: number) => {
     const answerText = (answers[index] ?? '').trim()
+    const lastSaved = (savedValuesRef.current[index] ?? '').trim()
+
+    // If identical to what was already saved on server and not dirty, no need to send duplicate
+    if (answerText === lastSaved && !dirtyIndexesRef.current.has(index)) {
+      return
+    }
+
     const updatedNotes = {
-      ...notes,
+      ...notesRef.current,
       [`question_${index}`]: answerText,
     }
+
     setSavingIndex(index)
     try {
       await onSaveNotes(updatedNotes)
+      savedValuesRef.current[index] = answerText
+      dirtyIndexesRef.current.delete(index)
       setSavedIndex(index)
       setTimeout(() => {
         setSavedIndex((curr) => (curr === index ? null : curr))
@@ -54,25 +83,26 @@ export default function QuestionsSection({
     }
   }
 
-  const handleSaveAll = async () => {
-    const updatedNotes = { ...notes }
-    questions.forEach((_, idx) => {
-      updatedNotes[`question_${idx}`] = (answers[idx] ?? '').trim()
-    })
-    setSavingAll(true)
-    try {
-      await onSaveNotes(updatedNotes)
-      setSavedAll(true)
-      setTimeout(() => setSavedAll(false), 3000)
-    } finally {
-      setSavingAll(false)
+  const handleBlur = (index: number) => {
+    focusedIndexRef.current = null
+    const currentVal = (answers[index] ?? '').trim()
+    const lastSaved = (savedValuesRef.current[index] ?? '').trim()
+
+    // If user modified the answer, save when they click out / click in another box
+    if (currentVal !== lastSaved || dirtyIndexesRef.current.has(index)) {
+      handleSaveSingleAnswer(index)
     }
   }
 
+  const handleFocus = (index: number) => {
+    focusedIndexRef.current = index
+  }
+
   // Count answered questions
-  const answeredCount = questions.filter(
-    (_, idx) => Boolean(answers[idx]?.trim() || notes[`question_${idx}`]?.trim() || notes[`q_${idx}`]?.trim())
-  ).length
+  const answeredCount = questions.filter((_, idx) => {
+    const val = answers[idx] ?? notes[`question_${idx}`] ?? notes[`q_${idx}`] ?? ''
+    return Boolean(val.trim())
+  }).length
 
   if (!questions || questions.length === 0) {
     return (
@@ -82,7 +112,7 @@ export default function QuestionsSection({
     )
   }
 
-  // In full-editing mode of Day Draft, show the question prompt editor + answers
+  // In full-editing mode of Day Draft, show the question prompt editor
   if (editing && onQuestionsChange) {
     const updateQ = (i: number, v: string) =>
       onQuestionsChange(questions.map((q, j) => (j === i ? v : q)))
@@ -128,31 +158,20 @@ export default function QuestionsSection({
     )
   }
 
-  // Interactive study view where user answers each question and saves
+  // Interactive study view where user answers each question
   return (
     <div className="space-y-4">
-      {/* Header bar with progress counter and Save All button */}
-      <div className="flex items-center justify-between gap-2 border-b border-outline-variant/20 pb-2">
+      {/* Header bar with progress counter (Save All removed) */}
+      <div className="flex items-center justify-between gap-2 border-b border-outline-variant/20 pb-2.5">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-on-surface-variant">
-            Progress:
-          </span>
+          <span className="text-xs font-medium text-on-surface-variant">Progress:</span>
           <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
             {answeredCount} of {questions.length} answered
           </span>
         </div>
-
-        <button
-          type="button"
-          onClick={handleSaveAll}
-          disabled={savingAll}
-          className="btn-primary px-3 py-1 text-xs flex items-center gap-1.5 shadow-sm"
-        >
-          <span className="material-symbols-outlined text-[15px]">
-            {savingAll ? 'hourglass_empty' : savedAll ? 'check' : 'save'}
-          </span>
-          {savingAll ? 'Saving…' : savedAll ? 'All Saved ✓' : 'Save All Answers'}
-        </button>
+        <span className="text-xs text-on-surface-variant/70 hidden sm:inline">
+          Saves automatically when you click outside or click Save Answer
+        </span>
       </div>
 
       {/* List of interactive questions */}
@@ -162,6 +181,7 @@ export default function QuestionsSection({
           const isSaved = savedIndex === idx
           const isSaving = savingIndex === idx
           const hasAnswer = Boolean(currentAnswer.trim())
+          const isDirty = dirtyIndexesRef.current.has(idx)
 
           return (
             <div
@@ -176,8 +196,11 @@ export default function QuestionsSection({
                 <p className="font-ui-label-md font-semibold text-on-surface leading-snug flex-1">
                   {q}
                 </p>
-                {hasAnswer && !isSaved && !isSaving && (
-                  <span className="text-xs text-on-surface-variant/60 hidden sm:inline" title="Has written response">
+                {hasAnswer && !isSaved && !isSaving && !isDirty && (
+                  <span
+                    className="text-xs text-on-surface-variant/60 hidden sm:inline"
+                    title="Has saved answer"
+                  >
                     ✍
                   </span>
                 )}
@@ -191,23 +214,18 @@ export default function QuestionsSection({
                   placeholder="Type your reflection or answer to this question…"
                   value={currentAnswer}
                   onChange={(e) => handleAnswerChange(idx, e.target.value)}
-                  onBlur={() => {
-                    // Auto-save on blur if value changed from original note
-                    const orig = notes[`question_${idx}`] ?? notes[`q_${idx}`] ?? ''
-                    if (currentAnswer.trim() !== orig.trim()) {
-                      handleSaveSingleAnswer(idx)
-                    }
-                  }}
+                  onFocus={() => handleFocus(idx)}
+                  onBlur={() => handleBlur(idx)}
                 />
 
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-on-surface-variant/60">
-                    Auto-saves when you leave the box
+                    {isDirty ? 'Unsaved changes' : 'Saved to your notes'}
                   </span>
 
                   <div className="flex items-center gap-2">
                     {isSaved && (
-                      <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full animate-fade-in">
+                      <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full">
                         <span className="material-symbols-outlined text-[13px]">check_circle</span>
                         Saved
                       </span>
@@ -217,7 +235,7 @@ export default function QuestionsSection({
                       type="button"
                       onClick={() => handleSaveSingleAnswer(idx)}
                       disabled={isSaving}
-                      className="btn-outline py-1 px-2.5 text-xs flex items-center gap-1"
+                      className="btn-outline py-1 px-2.5 text-xs flex items-center gap-1 hover:bg-primary hover:text-on-primary transition-colors cursor-pointer"
                     >
                       <span className="material-symbols-outlined text-[14px]">
                         {isSaving ? 'hourglass_empty' : 'save'}
