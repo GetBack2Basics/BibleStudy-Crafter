@@ -50,7 +50,7 @@ def direct_session(client: TestClient) -> Session:
 @pytest.fixture
 def client():
     from app import db as db_mod
-    from app.auth import get_current_user
+    from app.auth import get_current_user, get_current_user_optional
     from app.main import app
 
     engine = _make_engine()
@@ -73,6 +73,7 @@ def client():
 
     app.dependency_overrides[db_mod.get_session] = _get_session
     app.dependency_overrides[get_current_user] = _fake_user
+    app.dependency_overrides[get_current_user_optional] = _fake_user
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()

@@ -1,4 +1,5 @@
 import { api } from './api'
+import { auth } from './auth'
 
 export type StudyStatus = 'pending' | 'generating' | 'ready' | 'failed'
 
@@ -248,6 +249,124 @@ export interface SourceTextResult {
   text: string
   source: string
   note?: string
+}
+
+export interface AssetOut {
+  id: number
+  study_day_id: number
+  kind: 'cover_art' | 'infographic' | 'image' | 'audio' | string
+  provider: string
+  model: string
+  prompt: string
+  style_preset: string
+  media_type: string
+  is_active: boolean
+  status: 'queued' | 'rendering' | 'ready' | 'failed'
+  error?: string | null
+  cost_usd: number
+  meta_json?: any
+  has_content: boolean
+  created_at: string
+}
+
+export interface PresetOut {
+  styles: { id: string; label: string; description: string; prompt_suffix: string }[]
+  moods: { id: string; label: string; description: string; prompt_cue: string }[]
+  aspect_ratios: { id: string; label: string; width: number; height: number; best_for: string }[]
+}
+
+export interface SuggestPromptIn {
+  style_id?: string
+  mood_id?: string
+  custom_guidance?: string
+}
+
+export interface SuggestPromptOut {
+  cover_art_prompt: string
+  infographic_art_prompt: string
+  artistic_rationale: string
+  negative_prompt: string
+  style_id: string
+  mood_id: string
+}
+
+export interface RenderArtIn {
+  kind: 'cover_art' | 'infographic' | 'image'
+  prompt: string
+  style_preset?: string
+  aspect_ratio?: string
+  is_active?: boolean
+}
+
+export interface InfographicPillar {
+  title: string
+  icon: string
+  insight: string
+  scripture_ref: string
+  key_phrase: string
+}
+
+export interface InfographicKeyVerse {
+  ref: string
+  text: string
+}
+
+export interface StructuredInfographicOut {
+  title: string
+  central_thesis: string
+  pillars: InfographicPillar[]
+  key_verse: InfographicKeyVerse
+  practical_walkaway: string
+}
+
+export const assets = {
+  presets: (): Promise<PresetOut> => api.fetch('/api/art/presets').then(j),
+
+  list: (studyId: number, day: number): Promise<AssetOut[]> =>
+    api.fetch(`/api/studies/${studyId}/days/${day}/assets`).then(j),
+
+  suggestPrompt: (studyId: number, day: number, body: SuggestPromptIn): Promise<SuggestPromptOut> =>
+    api.fetch(`/api/studies/${studyId}/days/${day}/art/suggest-prompt`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).then(j),
+
+  renderArt: (studyId: number, day: number, body: RenderArtIn): Promise<{ asset_id: number; status: string; message: string }> =>
+    api.fetch(`/api/studies/${studyId}/days/${day}/art/render`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).then(j),
+
+  structuredInfographic: (studyId: number, day: number): Promise<StructuredInfographicOut> =>
+    api.fetch(`/api/studies/${studyId}/days/${day}/infographic/structured`, {
+      method: 'POST',
+    }).then(j),
+
+  generateSvgInfographic: (studyId: number, day: number): Promise<AssetOut> =>
+    api.fetch(`/api/studies/${studyId}/days/${day}/infographic/svg`, {
+      method: 'POST',
+    }).then(j),
+
+  mediaUrl: (assetId: number, download: boolean = false): string => {
+    const token = auth.accessToken()
+    const params = new URLSearchParams()
+    if (download) params.set('download', '1')
+    if (token) params.set('token', token)
+    const qs = params.toString() ? `?${params.toString()}` : ''
+    return `${api.url}/api/assets/${assetId}${qs}`
+  },
+
+  setActive: (studyId: number, day: number, assetId: number): Promise<AssetOut> =>
+    api.fetch(`/api/studies/${studyId}/days/${day}/assets/${assetId}/active`, {
+      method: 'PUT',
+    }).then(j),
+
+  delete: (studyId: number, day: number, assetId: number): Promise<{ deleted: boolean; asset_id: number }> =>
+    api.fetch(`/api/studies/${studyId}/days/${day}/assets/${assetId}`, {
+      method: 'DELETE',
+    }).then(j),
 }
 
 export const TRADITIONS = [

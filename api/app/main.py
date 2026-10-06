@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_build_stamp, get_settings
-from app.routers import auth, bible, meta, passages, preferences, studies, google_auth, sources, tts, keys
+from app.routers import auth, bible, meta, passages, preferences, studies, google_auth, sources, tts, keys, assets
 
 from app.services import events
 
@@ -48,4 +48,5 @@ app.include_router(passages.router)
 app.include_router(sources.router)
 app.include_router(tts.router)
 app.include_router(keys.router)
+app.include_router(assets.router)
 

@@ -10,6 +10,10 @@ import SourceReaderModal, { type AnySource } from './components/SourceReaderModa
 import QuestionsSection from './components/QuestionsSection'
 import VoicesGuideRenderer from './components/VoicesGuideRenderer'
 import CommentarySection from './components/CommentarySection'
+import DayHeroBanner from './components/DayHeroBanner'
+import InfographicViewer from './components/InfographicViewer'
+import PromptCrafterModal from './components/PromptCrafterModal'
+import { assets as assetApi, type AssetOut } from './lib/studies'
 import { initAppearance, getStoredTheme, getStoredFontScale, applyTheme, applyFontScale, type ThemeMode } from './lib/theme'
 
 const STATUS_CLS: Record<string, string> = {
@@ -670,6 +674,34 @@ function DayCard({ studyId, day, onGenerate, defaultOpen = false }: { studyId: n
   // day-level collapse (default collapsed so long studies stay scannable, or open on detail page)
   const [dayOpen, setDayOpen] = useState(defaultOpen)
 
+  // Visual Assets & Prompt Crafter State
+  const [dayAssets, setDayAssets] = useState<AssetOut[]>([])
+  const [isCrafterOpen, setIsCrafterOpen] = useState(false)
+  const [crafterInitialTab, setCrafterInitialTab] = useState<'presets' | 'assistant' | 'playground' | 'gallery'>('presets')
+
+  const loadDayAssets = async () => {
+    try {
+      const list = await assetApi.list(studyId, day.day_number)
+      setDayAssets(list)
+    } catch {
+      setDayAssets([])
+    }
+  }
+
+  useEffect(() => {
+    if (dayOpen) {
+      loadDayAssets()
+    }
+  }, [dayOpen, studyId, day.day_number])
+
+  const activeCover = dayAssets.find((a) => (a.kind === 'cover_art' || a.kind === 'image') && a.is_active) || null
+  const activeInfographic = dayAssets.find((a) => a.kind === 'infographic' && a.is_active) || null
+
+  const handleOpenCrafter = (tab: 'presets' | 'assistant' | 'playground' | 'gallery' = 'presets') => {
+    setCrafterInitialTab(tab)
+    setIsCrafterOpen(true)
+  }
+
   // keep local draft in sync with the server ONLY when not actively editing,
   // so the 2s poll doesn't clobber in-progress edits
   useEffect(() => { if (!editing) setDraft(day.blocks_json ?? null) }, [day.blocks_json, editing])
@@ -784,6 +816,18 @@ function DayCard({ studyId, day, onGenerate, defaultOpen = false }: { studyId: n
             )
           )}
 
+          {/* Day Hero Cover Art Banner */}
+          <DayHeroBanner
+            studyId={studyId}
+            dayNumber={day.day_number}
+            dayTitle={day.title}
+            dayHeading={draft?.heading}
+            dayTheme={day.theme}
+            scriptureRefs={draft?.scripture?.map((s) => s.ref).filter(Boolean) || []}
+            activeCoverAsset={activeCover}
+            onOpenPromptCrafter={handleOpenCrafter}
+          />
+
           {/* Revise-with-AI panel (mirrors JobHunt_Crafter select-to-revise) */}
           {editing && (
             <div className="mb-3 rounded-2xl border border-outline-variant/30 bg-surface-container-low p-3">
@@ -830,6 +874,9 @@ function DayCard({ studyId, day, onGenerate, defaultOpen = false }: { studyId: n
               notes={notes}
               onNotesChange={setNotes}
               onSaveNotes={handleSaveNotes}
+              activeInfographicAsset={activeInfographic}
+              onOpenPromptCrafter={handleOpenCrafter}
+              onRefreshAssets={loadDayAssets}
             />
           ) : (
             <p className="text-ui-label-sm text-on-surface-variant">
@@ -845,13 +892,38 @@ function DayCard({ studyId, day, onGenerate, defaultOpen = false }: { studyId: n
           />
         </div>
       )}
+
+      {/* Prompt Crafter Studio Modal */}
+      <PromptCrafterModal
+        isOpen={isCrafterOpen}
+        onClose={() => setIsCrafterOpen(false)}
+        studyId={studyId}
+        dayNumber={day.day_number}
+        dayTitle={draft?.heading || day.title || `Day ${day.day_number}`}
+        initialTab={crafterInitialTab}
+        onAssetSelected={loadDayAssets}
+      />
     </article>
   )
 }
 
 /* ---------- Read / edit renderer ---------- */
 
-function DraftEditor({ draft, editing, onChange, onSelect, onSelectText, studyId, day, notes, onNotesChange, onSaveNotes }: {
+function DraftEditor({
+  draft,
+  editing,
+  onChange,
+  onSelect,
+  onSelectText,
+  studyId,
+  day,
+  notes,
+  onNotesChange,
+  onSaveNotes,
+  activeInfographicAsset,
+  onOpenPromptCrafter,
+  onRefreshAssets,
+}: {
   draft: DayDraft
   editing: boolean
   onChange: (d: DayDraft) => void
@@ -862,6 +934,9 @@ function DraftEditor({ draft, editing, onChange, onSelect, onSelectText, studyId
   notes: Record<string, string>
   onNotesChange: (n: Record<string, string>) => void
   onSaveNotes?: (n: Record<string, string>) => Promise<void> | void
+  activeInfographicAsset?: AssetOut | null
+  onOpenPromptCrafter?: (initialTab?: 'presets' | 'assistant' | 'playground' | 'gallery') => void
+  onRefreshAssets?: () => void
 }) {
   const setField = (patch: Partial<DayDraft>) => onChange({ ...draft, ...patch })
   const saveNotesHandler = onSaveNotes || onNotesChange
@@ -946,6 +1021,19 @@ function DraftEditor({ draft, editing, onChange, onSelect, onSelectText, studyId
           {notes.commentary && (
             <CollapsibleSection title="Your note · commentary" icon="lightbulb" defaultOpen>
               <p className="rounded-xl bg-surface-container-high p-3 text-ui-label-sm text-on-tertiary-container">{notes.commentary}</p>
+            </CollapsibleSection>
+          )}
+          {draft.commentary && (
+            <CollapsibleSection title="Key Learnings & Infographic" icon="insights" defaultOpen>
+              <InfographicViewer
+                studyId={studyId}
+                dayNumber={day}
+                dayTheme={draft.heading}
+                hasCommentary={Boolean(draft.commentary)}
+                onOpenPromptCrafter={onOpenPromptCrafter}
+                activeInfographicAsset={activeInfographicAsset}
+                onAssetChanged={onRefreshAssets}
+              />
             </CollapsibleSection>
           )}
           {draft.questions && draft.questions.length > 0 && (
@@ -1190,7 +1278,9 @@ function DayTTS({ studyId, day }: { studyId: number; day: DayOut }) {
       audioRef.current.pause()
       audioRef.current.src = ''
     }
-    const src = `${api.url}/api/tts/asset/${assetId}`
+    const token = auth.accessToken()
+    const qs = token ? `?token=${encodeURIComponent(token)}` : ''
+    const src = `${api.url}/api/tts/asset/${assetId}${qs}`
     const audio = new Audio(src)
     audioRef.current = audio
     audio.addEventListener('error', () => setErr('Playback failed'))

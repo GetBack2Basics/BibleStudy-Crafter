@@ -192,6 +192,28 @@ def get_current_user(
     return user
 
 
+def get_current_user_optional(
+    token: Optional[str] = None,
+    cred: Optional[HTTPAuthorizationCredentials] = Depends(_bearer),
+    session: Session = Depends(get_session),
+) -> Optional[User]:
+    raw_token = None
+    if cred is not None and cred.scheme.lower() == _SCHEME.lower():
+        raw_token = cred.credentials
+    elif token:
+        raw_token = token
+    if not raw_token:
+        return None
+    try:
+        payload = _verify_access_token(raw_token)
+        user = session.get(User, payload.get("uid"))
+        if user is not None and user.is_active:
+            return user
+    except Exception:
+        return None
+    return None
+
+
 def require_admin(user: User = Depends(get_current_user)) -> User:
     """Protect admin-only routes. Prevents any path to self-escalation because
     only an existing admin can reach routes that flip is_admin - and this

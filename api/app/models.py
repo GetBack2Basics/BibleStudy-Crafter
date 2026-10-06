@@ -197,6 +197,9 @@ class Asset(SQLModel, table=True):
     content: bytes = Field(default=b"")
     cost_usd: float = Field(default=0.0)
     status: str = Field(default="queued", max_length=24)
+    style_preset: str = Field(default="", max_length=60)
+    is_active: bool = Field(default=True)
+    meta_json: Optional[dict[str, Any]] = Field(default=None, sa_column=Column(JSON_TYPE))
     error: Optional[str] = Field(default=None, max_length=1000)
     created_at: datetime = Field(default_factory=utcnow)
 

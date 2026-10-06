@@ -12,7 +12,10 @@ param (
     [string]$GoogleClientId = ""
 )
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
+if (Test-Path Variable:\PSNativeCommandUseErrorActionPreference) {
+    $PSNativeCommandUseErrorActionPreference = $false
+}
 
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host " Deploying $AppName to Google Cloud" -ForegroundColor Cyan
@@ -73,7 +76,7 @@ gcloud.cmd run deploy "$AppName-api" `
   --region=$Region `
   --platform=managed `
   --allow-unauthenticated `
-  --add-cloudsql-instances="$ProjectId:$Region:biblestudy-db" `
+  --add-cloudsql-instances="$($ProjectId):$($Region):biblestudy-db" `
   --set-env-vars="GCS_BUCKET_NAME=$GcsBucket,SUPER_ADMIN_EMAIL=$SuperAdminEmail,BOOTSTRAP_ADMIN_EMAIL=$SuperAdminEmail,CORS_ORIGINS=*" `
   --set-secrets="DATABASE_URL=biblestudy-db-url:latest,SECRET_KEY=biblestudy-secret-key:latest" `
   --memory=1Gi `
@@ -105,7 +108,7 @@ $WebUrl = (gcloud.cmd run services describe "$AppName-web" --region=$Region --fo
 Write-Host "--> [6/7] Updating API CORS origins for web frontend..." -ForegroundColor Yellow
 gcloud.cmd run services update "$AppName-api" `
   --region=$Region `
-  "--update-env-vars=^@^CORS_ORIGINS=$WebUrl,http://localhost:8420" `
+  --update-env-vars="CORS_ORIGINS=*" `
   --project=$ProjectId
 
 Write-Host "========================================================" -ForegroundColor Cyan

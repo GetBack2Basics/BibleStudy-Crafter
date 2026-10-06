@@ -59,6 +59,9 @@ def ensure_schema() -> None:
         "ALTER TABLE user_account ADD COLUMN IF NOT EXISTS phone varchar(40) DEFAULT ''",
         "ALTER TABLE user_account ADD COLUMN IF NOT EXISTS notes text DEFAULT ''",
         "ALTER TABLE user_account ADD COLUMN IF NOT EXISTS updated_at timestamp with time zone DEFAULT NOW()",
+        "ALTER TABLE asset ADD COLUMN IF NOT EXISTS style_preset varchar(60) DEFAULT ''",
+        "ALTER TABLE asset ADD COLUMN IF NOT EXISTS is_active boolean DEFAULT true",
+        "ALTER TABLE asset ADD COLUMN IF NOT EXISTS meta_json jsonb",
     ]
     with engine.connect() as conn:
         for sql in stmts:

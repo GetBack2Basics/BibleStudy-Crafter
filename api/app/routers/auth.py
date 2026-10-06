@@ -144,8 +144,10 @@ def register(body: RegisterIn, session: Session = Depends(get_session)) -> Token
 def login(body: LoginIn, session: Session = Depends(get_session)) -> TokenOut:
     email = _normalize_email(body.email)
     user = session.exec(select(User).where(User.email == email)).first()
+    pwd_match = verify_password(body.password or "", user.password_hash) if user else False
+    print(f"[AUTH DEBUG] Login attempt for email='{email}', user_found={user is not None}, password_len={len(body.password or '')}, match={pwd_match}")
     # Always run verify_password to avoid user-enumeration timing differences.
-    if user is None or not verify_password(body.password or "", user.password_hash):
+    if user is None or not pwd_match:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Invalid email or password")
     if not user.is_active:

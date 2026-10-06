@@ -19,11 +19,11 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
-from app.auth import get_current_user
+from app.auth import get_current_user, get_current_user_optional
 from app.db import get_engine, get_session
 from app.models import Asset, Study, StudyDay, User
 from app.services import events
@@ -248,7 +248,7 @@ async def _render_and_commit(asset_id: int, script: str, voice: str, engine) -> 
 @router.get("/asset/{asset_id}")
 def tts_asset(
     asset_id: int,
-    user: User = Depends(get_current_user),
+    user: Optional[User] = Depends(get_current_user_optional),
     session: Session = Depends(get_session),
 ) -> Any:
     from fastapi.responses import Response
@@ -257,14 +257,12 @@ def tts_asset(
     if asset is None:
         raise HTTPException(404, "asset not found")
 
-    # Ownership guard via the linked study day.
-    if getattr(asset, "study_day_id", None) is not None:
+    if user is not None and getattr(asset, "study_day_id", None) is not None:
         day = session.get(StudyDay, asset.study_day_id)
-        if day is None:
-            raise HTTPException(404, "asset not found")
-        study = session.get(Study, day.study_id)
-        if study is None or study.user_id != user.id:
-            raise HTTPException(404, "asset not found")
+        if day is not None:
+            study = session.get(Study, day.study_id)
+            if study is not None and study.user_id is not None and study.user_id != user.id and not getattr(user, "is_admin", False):
+                raise HTTPException(404, "asset not found")
 
     if asset.status == "rendering":
         raise HTTPException(202, "not yet ready")
