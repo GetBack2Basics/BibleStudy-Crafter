@@ -12,6 +12,7 @@ import VoicesGuideRenderer from './components/VoicesGuideRenderer'
 import CommentarySection from './components/CommentarySection'
 import DayHeroBanner from './components/DayHeroBanner'
 import InfographicViewer from './components/InfographicViewer'
+import MoodArtworkSection from './components/MoodArtworkSection'
 import PromptCrafterModal from './components/PromptCrafterModal'
 import { assets as assetApi, type AssetOut } from './lib/studies'
 import { initAppearance, getStoredTheme, getStoredFontScale, applyTheme, applyFontScale, type ThemeMode } from './lib/theme'
@@ -874,6 +875,7 @@ function DayCard({ studyId, day, onGenerate, defaultOpen = false }: { studyId: n
               notes={notes}
               onNotesChange={setNotes}
               onSaveNotes={handleSaveNotes}
+              activeCoverAsset={activeCover}
               activeInfographicAsset={activeInfographic}
               onOpenPromptCrafter={handleOpenCrafter}
               onRefreshAssets={loadDayAssets}
@@ -920,6 +922,7 @@ function DraftEditor({
   notes,
   onNotesChange,
   onSaveNotes,
+  activeCoverAsset,
   activeInfographicAsset,
   onOpenPromptCrafter,
   onRefreshAssets,
@@ -934,6 +937,7 @@ function DraftEditor({
   notes: Record<string, string>
   onNotesChange: (n: Record<string, string>) => void
   onSaveNotes?: (n: Record<string, string>) => Promise<void> | void
+  activeCoverAsset?: AssetOut | null
   activeInfographicAsset?: AssetOut | null
   onOpenPromptCrafter?: (initialTab?: 'presets' | 'assistant' | 'playground' | 'gallery') => void
   onRefreshAssets?: () => void
@@ -946,6 +950,18 @@ function DraftEditor({
       <CollapsibleSection title="Scriptures" icon="auto_stories" defaultOpen>
         <PassageEditor studyId={studyId} day={day} fallbackScripture={draft.scripture} onChanged={() => { /* passage changes are server-side; nothing to sync into draft */ }} />
       </CollapsibleSection>
+
+      {/* Sacred Visual Atmosphere & Mood Artwork directly following Scripture reading */}
+      <MoodArtworkSection
+        studyId={studyId}
+        dayNumber={day}
+        dayTitle={draft.heading}
+        dayTheme={draft.heading}
+        scriptureRefs={draft?.scripture?.map((s) => s.ref).filter(Boolean) || []}
+        activeArtwork={activeCoverAsset}
+        onOpenPromptCrafter={onOpenPromptCrafter}
+        onAssetChanged={onRefreshAssets}
+      />
 
       {editing ? (
         <CollapsibleSection title="Edit content" icon="edit" defaultOpen>
