@@ -32,6 +32,16 @@ export default function ProfileModal({
     }
   }, [isOpen, initialTab])
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown)
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, onClose])
+
   // Appearance State
   const [currentTheme, setCurrentTheme] = useState<ThemeMode>(getStoredTheme())
   const [currentFontScale, setCurrentFontScale] = useState<number>(getStoredFontScale())
@@ -123,8 +133,8 @@ export default function ProfileModal({
     }
   }
 
-  const handleSaveProfile = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSaveProfile = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
     setProfileSaving(true)
     setProfileMsg(null)
     try {
@@ -145,8 +155,8 @@ export default function ProfileModal({
     }
   }
 
-  const handleSaveKeys = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSaveKeys = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
     setByokSaving(true)
     setByokMsg(null)
     const hasKeys = Boolean(
@@ -266,12 +276,15 @@ export default function ProfileModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto animate-fade-in">
-      <div className="relative w-full max-w-3xl rounded-3xl border border-outline-variant/30 bg-surface-container-low p-6 shadow-2xl transition-all">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-outline-variant/20 pb-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 md:p-6 backdrop-blur-sm animate-fade-in"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div className="relative flex max-h-[90vh] w-full max-w-3xl flex-col rounded-3xl border border-outline-variant/30 bg-surface-container-low shadow-2xl overflow-hidden">
+        {/* Pinned Top Header */}
+        <div className="flex items-center justify-between border-b border-outline-variant/20 px-6 py-4 bg-surface-container-lowest shrink-0">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary font-bold text-lg border border-primary/20 overflow-hidden">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary font-bold text-lg border border-primary/20 overflow-hidden">
               {currentUser?.picture_url ? (
                 <img src={currentUser.picture_url} alt="Profile" className="h-full w-full object-cover" />
               ) : (
@@ -289,34 +302,37 @@ export default function ProfileModal({
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="rounded-full p-1.5 text-on-surface-variant hover:bg-surface-container-high transition-colors"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors cursor-pointer"
+            title="Close modal (Esc)"
+            aria-label="Close modal"
           >
             <span className="material-symbols-outlined text-2xl">close</span>
           </button>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="mt-4 flex gap-2 border-b border-outline-variant/20 pb-2">
+        {/* Pinned Tab Bar */}
+        <div className="flex border-b border-outline-variant/20 bg-surface-container-lowest px-6 gap-2 overflow-x-auto shrink-0">
           <button
             type="button"
             onClick={() => setActiveTab('profile')}
-            className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium transition-all ${
+            className={`flex items-center gap-2 border-b-2 py-3 px-3 text-ui-label-sm font-semibold transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'profile'
-                ? 'bg-primary/15 text-primary border border-primary/30 shadow-sm'
-                : 'text-on-surface-variant hover:bg-surface-container-high'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-on-surface-variant hover:text-on-surface'
             }`}
           >
             <span className="material-symbols-outlined text-[18px]">account_circle</span>
-            Profile Details
+            Profile & Style
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('byok')}
-            className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium transition-all ${
+            className={`flex items-center gap-2 border-b-2 py-3 px-3 text-ui-label-sm font-semibold transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'byok'
-                ? 'bg-primary/15 text-primary border border-primary/30 shadow-sm'
-                : 'text-on-surface-variant hover:bg-surface-container-high'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-on-surface-variant hover:text-on-surface'
             }`}
           >
             <span className="material-symbols-outlined text-[18px]">key</span>
@@ -326,10 +342,10 @@ export default function ProfileModal({
             <button
               type="button"
               onClick={() => setActiveTab('admin')}
-              className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium transition-all ${
+              className={`flex items-center gap-2 border-b-2 py-3 px-3 text-ui-label-sm font-semibold transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === 'admin'
-                  ? 'bg-primary/15 text-primary border border-primary/30 shadow-sm'
-                  : 'text-on-surface-variant hover:bg-surface-container-high'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-on-surface-variant hover:text-on-surface'
               }`}
             >
               <span className="material-symbols-outlined text-[18px]">manage_accounts</span>
@@ -338,9 +354,11 @@ export default function ProfileModal({
           )}
         </div>
 
-        {/* Tab 1: Profile Details */}
-        {activeTab === 'profile' && (
-          <form onSubmit={handleSaveProfile} className="mt-5 space-y-4">
+        {/* Scrollable Modal Body */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Tab 1: Profile Details */}
+          {activeTab === 'profile' && (
+            <form onSubmit={handleSaveProfile} className="space-y-4">
             {profileMsg && (
               <div
                 className={`rounded-xl p-3 text-xs flex items-center gap-2 ${
@@ -897,7 +915,61 @@ export default function ProfileModal({
             )}
           </div>
         )}
+        </div>
+
+        {/* Pinned Bottom Action Bar */}
+        <div className="flex items-center justify-between border-t border-outline-variant/20 px-6 py-3.5 bg-surface-container-lowest shrink-0">
+          <div className="flex items-center gap-2 text-xs truncate max-w-[50%]">
+            {activeTab === 'profile' && profileMsg && (
+              <span className={`truncate font-medium ${profileMsg.type === 'success' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                {profileMsg.text}
+              </span>
+            )}
+            {activeTab === 'byok' && byokMsg && (
+              <span className={`truncate font-medium ${byokMsg.type === 'success' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                {byokMsg.text}
+              </span>
+            )}
+            {activeTab === 'admin' && adminMsg && (
+              <span className={`truncate font-medium ${adminMsg.type === 'success' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                {adminMsg.text}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-xl border border-outline-variant/30 bg-surface-container px-4 py-2 text-xs font-semibold text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer"
+            >
+              Close
+            </button>
+            {activeTab === 'profile' && (
+              <button
+                type="button"
+                onClick={() => handleSaveProfile()}
+                disabled={profileSaving}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2 text-xs font-semibold text-on-primary hover:bg-primary/90 transition-all disabled:opacity-50 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[16px]">save</span>
+                {profileSaving ? 'Saving...' : 'Save Profile'}
+              </button>
+            )}
+            {activeTab === 'byok' && (
+              <button
+                type="button"
+                onClick={() => handleSaveKeys()}
+                disabled={byokSaving}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2 text-xs font-semibold text-on-primary hover:bg-primary/90 transition-all disabled:opacity-50 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[16px]">vpn_key</span>
+                {byokSaving ? 'Saving Keys...' : 'Save API Keys'}
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   )
 }
+
