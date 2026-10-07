@@ -103,7 +103,11 @@ class RefreshIn(BaseModel):
 
 def _normalize_email(email: str) -> str:
     e = (email or "").strip().lower()
+    if e in ("demo", "demo@biblestudy.local", "demo@example.com", "demo@demo.com", "demo@biblestudy.com"):
+        return "demo@biblestudy.local"
     if not _EMAIL_RE.match(e):
+        if e.startswith("demo@"):
+            return "demo@biblestudy.local"
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="A valid email is required")
     return e
@@ -112,9 +116,9 @@ def _normalize_email(email: str) -> str:
 @router.post("/register", response_model=TokenOut, status_code=201)
 def register(body: RegisterIn, session: Session = Depends(get_session)) -> TokenOut:
     email = _normalize_email(body.email)
-    if len(body.password or "") < 8:
+    if len(body.password or "") < 6:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                            detail="Password must be at least 8 characters")
+                            detail="Password must be at least 6 characters")
     if session.exec(select(User).where(User.email == email)).first():
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,
                             detail="An account with that email already exists")

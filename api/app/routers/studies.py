@@ -374,6 +374,7 @@ class DayUpdate(BaseModel):
 class DayRevise(BaseModel):
     instruction: str
     selection: str | None = None
+    target_field: str | None = "commentary"
 
 
 REVISE_PROMPT = """You are helping a user revise part of a Bible-study day they wrote.
@@ -396,14 +397,33 @@ The full current commentary for the day is:
 Return ONLY the revised text (no markdown fences, no commentary about what you changed). Maintain readable formatting with distinct paragraphs (separated by blank lines), **bold** key terms and themes, and *italics* for Bible verses, scripture quotes, or citations. If a selection was provided, return only the revised version of that selected passage, keeping its meaning and length similar. If no selection was provided, return the revised full commentary. The revision must stay faithful to the scripture passages above.
 """
 
+PRAYER_REVISE_PROMPT = """You are helping a user revise the {prayer_name} for a Bible-study day they wrote.
+
+The scripture passages chosen for this day (quote their references only - the
+app inserts the actual verse text from its own Bible database; do NOT invent or
+rewrite any verse, but you MUST ground the prayers on these passages):
+---
+{scripture}
+---
+
+The current {prayer_name} is:
+---
+{current_text}
+---
+
+{selection_block}Revise according to this instruction: {instruction}
+
+Return ONLY the revised prayer text (no markdown fences, no conversational preamble or commentary about what you changed). Write in a reverent, thoughtful tone grounded in the scriptures above. If a selection was provided, return only the revised version of that selected portion, keeping its meaning and length similar. If no selection was provided, return the full revised prayer. The revision must stay faithful to the scripture passages above.
+"""
+
 SCRIPTURE_BLOCK = "- {ref} ({translation}): {text}"
 
 
 @router.post("/{study_id}/days/{day_number}/revise")
 async def revise_day_endpoint(study_id: int, day_number: int, body: DayRevise,
                               session: Session = Depends(get_session)) -> dict:
-    """Revise a day's commentary with AI. If `selection` is given, only that
-    passage is revised (JobHunt_Crafter-style select-to-revise)."""
+    """Revise a day's commentary or prayer with AI. If `selection` is given, only that
+    passage is revised (JobHunt_Crafter / CoverLetter-Crafter select-to-revise)."""
     from app.services.llm import NoProviderAvailable, complete
     from app.services.prompts import build_system
     from sqlmodel import select
@@ -415,9 +435,14 @@ async def revise_day_endpoint(study_id: int, day_number: int, body: DayRevise,
     target = next((d for d in s.days if d.day_number == day_number), None)
     if target is None:
         raise HTTPException(400, "day out of range")
-    commentary = (target.blocks_json or {}).get("commentary", "") if target.blocks_json else ""
-    if not commentary:
-        raise HTTPException(400, "day has no commentary to revise yet")
+
+    field_key = body.target_field or "commentary"
+    if field_key not in ("commentary", "opening_prayer", "closing_prayer"):
+        field_key = "commentary"
+
+    current_text = (target.blocks_json or {}).get(field_key, "") if target.blocks_json else ""
+    if not current_text and not body.instruction:
+        raise HTTPException(400, f"day has no {field_key} to revise yet")
 
     # Ground the revision on the day's chosen scripture passages.
     passages = session.exec(
@@ -433,17 +458,44 @@ async def revise_day_endpoint(study_id: int, day_number: int, body: DayRevise,
         f"The user selected this passage to revise:\n---\n{body.selection}\n---\n"
         if body.selection else ""
     )
-    prompt = REVISE_PROMPT.format(
-        scripture=scripture_block, commentary=commentary,
-        selection_block=selection_block, instruction=body.instruction)
+
+    if field_key in ("opening_prayer", "closing_prayer"):
+        prayer_name = "opening prayer" if field_key == "opening_prayer" else "closing prayer"
+        prompt = PRAYER_REVISE_PROMPT.format(
+            prayer_name=prayer_name,
+            scripture=scripture_block,
+            current_text=current_text or "(none)",
+            selection_block=selection_block,
+            instruction=body.instruction
+        )
+    else:
+        prompt = REVISE_PROMPT.format(
+            scripture=scripture_block,
+            commentary=current_text or "(none)",
+            selection_block=selection_block,
+            instruction=body.instruction
+        )
+
     try:
         res = await complete(prompt, system=build_system(tradition=s.tradition),
                              study_id=study_id, session=session)
     except NoProviderAvailable:
         events.emit("error", "llm", "AI Provider unavailable - API key required", study_id=study_id)
         raise HTTPException(status_code=402, detail="KEY_REQUIRED: AI provider is unavailable or quota was exhausted. Please add your API key in Settings/Profile.")
-    revised = res.text.strip()
-    target.blocks_json = {**(target.blocks_json or {}), "commentary": revised}
+    
+    revised_piece = res.text.strip()
+    # Strip accidental wrapping quotes or fences if returned
+    if revised_piece.startswith("```") and revised_piece.endswith("```"):
+        lines = revised_piece.splitlines()
+        if len(lines) >= 2:
+            revised_piece = "\n".join(lines[1:-1]).strip()
+
+    if body.selection and current_text and body.selection in current_text:
+        final_text = current_text.replace(body.selection, revised_piece)
+    else:
+        final_text = revised_piece
+
+    target.blocks_json = {**(target.blocks_json or {}), field_key: final_text}
     
     # Ensure scriptures section includes all verses mentioned in other sections
     text_sources = [
@@ -474,9 +526,14 @@ async def revise_day_endpoint(study_id: int, day_number: int, body: DayRevise,
 
     session.add(target)
     session.commit()
-    events.emit("success", "study", f"Study {study_id} day {day_number} revised")
-    return {"day_number": day_number, "revised": revised,
-            "selection": body.selection}
+    events.emit("success", "study", f"Study {study_id} day {day_number} {field_key} revised")
+    return {
+        "day_number": day_number,
+        "revised": final_text,
+        "selection": body.selection,
+        "target_field": field_key,
+        "blocks_json": target.blocks_json,
+    }
 
 
 @router.put("/{study_id}/days/{day_number}")

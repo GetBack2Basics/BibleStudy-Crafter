@@ -202,37 +202,139 @@ def book_code(number: int) -> str:
     return _NUM_TO_CODE[number]
 
 
+STANDARD_TRANSLATIONS: list[tuple[str, str, str]] = [
+    ("KJV", "eng_kjv", "King James (Authorized) Version"),
+    ("WEB", "ENGWEBP", "World English Bible"),
+    ("BSB", "BSB", "Berean Standard Bible"),
+    ("ASV", "eng_asv", "American Standard Version (1901)"),
+    ("YLT", "eng_ylt", "Young's Literal Translation"),
+    ("DARBY", "eng_dby", "Darby Translation"),
+    ("BBE", "eng_bbe", "Bible in Basic English"),
+    ("GNV", "eng_gnv", "Geneva Bible 1599"),
+    ("ENG_BRE", "eng_bre", "Brenton Septuagint Translation"),
+    ("ENG_BOY", "eng_boy", "Updated Brenton English Septuagint"),
+    ("PEV", "eng_pev", "Plain English Version"),
+    ("F35", "eng_f35", "The New Testament with Commentary"),
+]
+
+_SOURCE_MAP: dict[str, str] = {code: src for code, src, _ in STANDARD_TRANSLATIONS}
+_NAME_MAP: dict[str, str] = {code: name for code, _, name in STANDARD_TRANSLATIONS}
+
+
+def ensure_translations(session) -> None:
+    """Ensure all standard supported translations exist in the Translation table."""
+    from sqlmodel import select
+    from app.models import Translation
+
+    existing = {t.code.upper(): t for t in session.exec(select(Translation)).all()}
+    for code, source_id, name in STANDARD_TRANSLATIONS:
+        if code not in existing:
+            t = Translation(code=code, source_id=source_id, name=name, language="eng")
+            session.add(t)
+    try:
+        session.commit()
+    except Exception:
+        session.rollback()
+
+
+def _fetch_and_cache_chapter(session, translation_id: int, source_id: str, book_number: int, chapter_number: int) -> bool:
+    """On-demand fetch from helloao API and cache in local database."""
+    import httpx
+    from sqlmodel import select
+    from app.models import Verse
+    from app.seeder.parsing import parse_chapter
+
+    code = _NUM_TO_CODE.get(book_number)
+    if not code or not source_id:
+        return False
+    url = f"https://bible.helloao.org/api/{source_id}/{code}/{chapter_number}.json"
+    try:
+        resp = httpx.get(url, timeout=10.0)
+        if resp.status_code != 200:
+            return False
+        data = resp.json()
+        parsed = list(parse_chapter(data))
+        if not parsed:
+            return False
+        existing_verses = {
+            v.verse for v in session.exec(
+                select(Verse).where(
+                    Verse.translation_id == translation_id,
+                    Verse.book_number == book_number,
+                    Verse.chapter == chapter_number,
+                )
+            ).all()
+        }
+        for v in parsed:
+            if v.verse not in existing_verses:
+                session.add(
+                    Verse(
+                        translation_id=translation_id,
+                        book_number=book_number,
+                        chapter=chapter_number,
+                        verse=v.verse,
+                        text=v.text,
+                        words_of_jesus=v.words_of_jesus,
+                    )
+                )
+        session.commit()
+        return True
+    except Exception as exc:
+        print(f"[BIBLE CACHE] On-demand fetch failed for {source_id}/{code}/{chapter_number}: {exc}")
+        return False
+
+
 # ------------------------------------------------------------ passage lookup
 
 def get_passage(session, ref: Reference, translation_code: str) -> list[dict]:
-    """Resolve a reference to verse rows from the LOCAL database.
+    """Resolve a reference to verse rows from the database with on-demand API fallback.
 
-    This is the only path by which scripture text reaches the user. The LLM
-    never supplies verse text - only references, which land here.
+    This ensures every supported translation works seamlessly even if not fully pre-seeded.
     """
     from sqlmodel import select
-
     from app.models import Translation, Verse
 
+    code_upper = (translation_code or "KJV").strip().upper()
     translation = session.exec(
-        select(Translation).where(Translation.code == translation_code.upper())
+        select(Translation).where(Translation.code == code_upper)
     ).first()
-    if translation is None:
+
+    # If translation is unknown / unsupported
+    if translation is None and code_upper not in _SOURCE_MAP:
         raise LookupError(f"translation not loaded: {translation_code}")
 
-    stmt = (
-        select(Verse)
-        .where(Verse.translation_id == translation.id)
-        .where(Verse.book_number == ref.book)
-        .where(Verse.chapter == ref.chapter)
-    )
-    if not ref.is_whole_chapter:
-        stmt = stmt.where(Verse.verse >= ref.verse_start, Verse.verse <= ref.verse_end)
-    stmt = stmt.order_by(Verse.verse)
+    if translation is None:
+        source_id = _SOURCE_MAP.get(code_upper, f"eng_{code_upper.lower()}")
+        name = _NAME_MAP.get(code_upper, code_upper)
+        translation = Translation(code=code_upper, source_id=source_id, name=name, language="eng")
+        session.add(translation)
+        session.commit()
+        session.refresh(translation)
+
+    def _query():
+        stmt = (
+            select(Verse)
+            .where(Verse.translation_id == translation.id)
+            .where(Verse.book_number == ref.book)
+            .where(Verse.chapter == ref.chapter)
+        )
+        if not ref.is_whole_chapter:
+            stmt = stmt.where(Verse.verse >= ref.verse_start, Verse.verse <= ref.verse_end)
+        return session.exec(stmt.order_by(Verse.verse)).all()
+
+    verses = _query()
+
+    # If not in DB, attempt on-demand fetch from helloao
+    if not verses and translation.source_id:
+        if _fetch_and_cache_chapter(session, translation.id, translation.source_id, ref.book, ref.chapter):
+            verses = _query()
+
+    if not verses:
+        raise LookupError(f"no verses found for {ref.ref} in {translation_code}")
 
     return [
         {"verse": v.verse, "text": v.text, "words_of_jesus": v.words_of_jesus}
-        for v in session.exec(stmt).all()
+        for v in verses
     ]
 
 

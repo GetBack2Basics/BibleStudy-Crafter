@@ -8,8 +8,8 @@ import { auth, type AuthUser } from './lib/auth'
 import { studies as studyApi, bible, preferences, passages, TRADITIONS, type StudyOut, type DayOut, type DayDraft, type TranslationInfo, type CompareVerse, type PassageOut, type SearchHit, type TTSChoice, ttsDefaultVoices } from './lib/studies'
 import SourceReaderModal, { type AnySource } from './components/SourceReaderModal'
 import QuestionsSection from './components/QuestionsSection'
-import VoicesGuideRenderer from './components/VoicesGuideRenderer'
 import CommentarySection from './components/CommentarySection'
+import PrayerSection from './components/PrayerSection'
 import DayHeroBanner from './components/DayHeroBanner'
 import InfographicViewer from './components/InfographicViewer'
 import MoodArtworkSection from './components/MoodArtworkSection'
@@ -667,11 +667,6 @@ function DayCard({ studyId, day, onGenerate, defaultOpen = false }: { studyId: n
   const notesRef = useRef<Record<string, string>>(notes)
   notesRef.current = notes
 
-  // select-to-revise (JobHunt_Crafter pattern): capture highlighted text
-  const [selectedText, setSelectedText] = useState('')
-  const [instruction, setInstruction] = useState('')
-  const [revBusy, setRevBusy] = useState(false)
-
   // day-level collapse (default collapsed so long studies stay scannable, or open on detail page)
   const [dayOpen, setDayOpen] = useState(defaultOpen)
 
@@ -740,34 +735,39 @@ function DayCard({ studyId, day, onGenerate, defaultOpen = false }: { studyId: n
     }
   }
 
-  const handleSelection = (el: HTMLTextAreaElement | null) => {
-    if (!el) return
-    const { selectionStart, selectionEnd, value } = el
-    const t = value.slice(selectionStart, selectionEnd).trim()
-    if (t) setSelectedText(t)
+  const [refiningSection, setRefiningSection] = useState<'opening_prayer' | 'commentary' | 'closing_prayer' | null>(null)
+
+  const handleSaveSection = async (section: 'opening_prayer' | 'commentary' | 'closing_prayer', newText: string) => {
+    const current = draftRef.current
+    if (!current) return
+    const updatedDraft = { ...current, [section]: newText }
+    setDraft(updatedDraft)
+    try {
+      const updated = await studyApi.updateDay(studyId, day.day_number, updatedDraft, notesRef.current)
+      setDraft(updated.blocks_json ?? updatedDraft)
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e))
+    }
   }
 
-  const doRevise = async () => {
-    if (!instruction.trim()) return
-    setRevBusy(true)
+  const handleAIRefineSection = async (section: 'opening_prayer' | 'commentary' | 'closing_prayer', inst: string, sel?: string | null) => {
+    setRefiningSection(section)
+    setErr(null)
     try {
-      const res = await studyApi.reviseDay(studyId, day.day_number, instruction, selectedText || null)
+      const res = await studyApi.reviseDay(studyId, day.day_number, inst, sel || null, section)
       const current = draftRef.current
       if (current) {
-        let next = res.revised
-        // if a passage was selected, splice the revision in place of it
-        if (selectedText && current.commentary.includes(selectedText)) {
-          next = current.commentary.replace(selectedText, res.revised)
+        let nextVal = res.revised
+        if (sel && current[section] && current[section].includes(sel)) {
+          nextVal = current[section].replace(sel, res.revised)
         }
-        const updated = await studyApi.updateDay(studyId, day.day_number, { ...current, commentary: next })
+        const updated = await studyApi.updateDay(studyId, day.day_number, { ...current, [section]: nextVal }, notesRef.current)
         setDraft(updated.blocks_json ?? null)
       }
-      setSelectedText('')
-      setInstruction('')
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e))
     } finally {
-      setRevBusy(false)
+      setRefiningSection(null)
     }
   }
 
@@ -829,40 +829,6 @@ function DayCard({ studyId, day, onGenerate, defaultOpen = false }: { studyId: n
             onOpenPromptCrafter={handleOpenCrafter}
           />
 
-          {/* Revise-with-AI panel (mirrors JobHunt_Crafter select-to-revise) */}
-          {editing && (
-            <div className="mb-3 rounded-2xl border border-outline-variant/30 bg-surface-container-low p-3">
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <div className="flex min-w-0 items-center gap-2 text-ui-label-sm font-semibold uppercase tracking-wide text-primary">
-                  <I name="auto_awesome" cls="text-[16px]" /> Revise with AI
-                  {selectedText && (
-                    <span className="rounded-full border border-primary-container bg-primary-container/30 px-2 py-0.5 text-on-primary-container">
-                      Focusing on selection
-                    </span>
-                  )}
-                </div>
-                {selectedText && (
-                  <button onClick={() => setSelectedText('')} className="text-ui-label-sm text-on-surface-variant hover:text-error">× clear</button>
-                )}
-              </div>
-              {selectedText && (
-                <p className="mb-2 text-ui-label-sm italic text-on-surface-variant">Selected: "{selectedText.slice(0, 80)}{selectedText.length > 80 ? '…' : ''}"</p>
-              )}
-              <div className="flex flex-wrap items-center gap-2">
-                <input
-                  className="field-underline min-w-0 flex-1"
-                  placeholder={selectedText ? 'Refining selected section…' : "Ask for changes (e.g. 'make it warmer', 'shorten this')"}
-                  value={instruction} onChange={(e) => setInstruction(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' && instruction.trim()) doRevise() }}
-                />
-                <button onClick={doRevise} disabled={revBusy || !instruction.trim()}
-                  className="btn-primary px-3 py-1.5 disabled:opacity-50">
-                  {revBusy ? 'Revising…' : 'Revise'}
-                </button>
-              </div>
-            </div>
-          )}
-
           {draft ? (
             <DraftEditor
               draft={draft}
@@ -870,8 +836,6 @@ function DayCard({ studyId, day, onGenerate, defaultOpen = false }: { studyId: n
               day={day.day_number}
               editing={editing}
               onChange={setDraft}
-              onSelect={handleSelection}
-              onSelectText={(txt) => setSelectedText(txt)}
               notes={notes}
               onNotesChange={setNotes}
               onSaveNotes={handleSaveNotes}
@@ -879,6 +843,9 @@ function DayCard({ studyId, day, onGenerate, defaultOpen = false }: { studyId: n
               activeInfographicAsset={activeInfographic}
               onOpenPromptCrafter={handleOpenCrafter}
               onRefreshAssets={loadDayAssets}
+              onSaveSection={handleSaveSection}
+              onAIRefineSection={handleAIRefineSection}
+              refiningSection={refiningSection}
             />
           ) : (
             <p className="text-ui-label-sm text-on-surface-variant">
@@ -915,8 +882,6 @@ function DraftEditor({
   draft,
   editing,
   onChange,
-  onSelect,
-  onSelectText,
   studyId,
   day,
   notes,
@@ -926,12 +891,13 @@ function DraftEditor({
   activeInfographicAsset,
   onOpenPromptCrafter,
   onRefreshAssets,
+  onSaveSection,
+  onAIRefineSection,
+  refiningSection,
 }: {
   draft: DayDraft
   editing: boolean
   onChange: (d: DayDraft) => void
-  onSelect: (el: HTMLTextAreaElement | null) => void
-  onSelectText?: (text: string) => void
   studyId: number
   day: number
   notes: Record<string, string>
@@ -941,12 +907,31 @@ function DraftEditor({
   activeInfographicAsset?: AssetOut | null
   onOpenPromptCrafter?: (initialTab?: 'presets' | 'assistant' | 'playground' | 'gallery') => void
   onRefreshAssets?: () => void
+  onSaveSection?: (section: 'opening_prayer' | 'commentary' | 'closing_prayer', newText: string) => Promise<void> | void
+  onAIRefineSection?: (section: 'opening_prayer' | 'commentary' | 'closing_prayer', instruction: string, selection?: string | null) => Promise<void> | void
+  refiningSection?: 'opening_prayer' | 'commentary' | 'closing_prayer' | null
 }) {
   const setField = (patch: Partial<DayDraft>) => onChange({ ...draft, ...patch })
   const saveNotesHandler = onSaveNotes || onNotesChange
 
   return (
     <div className="space-y-4 text-body-reading text-on-surface">
+      {/* Optional Day Heading Edit when editing day overview */}
+      {editing && (
+        <div className="rounded-2xl border border-outline-variant/30 bg-surface-container-low p-4 space-y-3">
+          <Labeled label="Day Heading">
+            <input
+              type="text"
+              className="field-underline w-full rounded-xl border border-outline-variant/40 bg-surface-container-high px-3 py-2 text-ui-label-md font-semibold text-on-surface focus:border-primary focus:outline-none"
+              value={draft.heading ?? ''}
+              onChange={(e) => setField({ heading: e.target.value })}
+              placeholder="e.g. Walking in Grace, The Beatitudes..."
+            />
+          </Labeled>
+        </div>
+      )}
+
+      {/* Scripture Readings */}
       <CollapsibleSection title="Scriptures" icon="auto_stories" defaultOpen>
         <PassageEditor studyId={studyId} day={day} fallbackScripture={draft.scripture} onChanged={() => { /* passage changes are server-side; nothing to sync into draft */ }} />
       </CollapsibleSection>
@@ -963,120 +948,110 @@ function DraftEditor({
         onAssetChanged={onRefreshAssets}
       />
 
-      {editing ? (
-        <CollapsibleSection title="Edit content" icon="edit" defaultOpen>
-          <div className="space-y-4">
-            <Labeled label="Opening prayer">
-              <textarea className="field-underline"
-                rows={2} value={draft.opening_prayer ?? ''}
-                onChange={(e) => setField({ opening_prayer: e.target.value })} />
-            </Labeled>
-            <Labeled label="Your note on this opening prayer">
-              <textarea className="field-underline"
-                rows={2} value={notes.opening_prayer ?? ''}
-                placeholder="What stood out to you?"
-                onChange={(e) => onNotesChange({ ...notes, opening_prayer: e.target.value })} />
-            </Labeled>
-            <Labeled label="Commentary">
-              <CommentarySection
-                editable
-                value={draft.commentary ?? ''}
-                commentary={draft.commentary ?? ''}
-                onChange={(val) => setField({ commentary: val })}
-                onMouseUpInEditor={(el) => onSelect(el)}
-              />
-            </Labeled>
-            <Labeled label="Your note on the commentary">
-              <textarea className="field-underline"
-                rows={2} value={notes.commentary ?? ''}
-                placeholder="Your reflection / takeaway"
-                onChange={(e) => onNotesChange({ ...notes, commentary: e.target.value })} />
-            </Labeled>
-            <Labeled label="Closing prayer">
-              <textarea className="field-underline"
-                rows={2} value={draft.closing_prayer ?? ''}
-                onChange={(e) => setField({ closing_prayer: e.target.value })} />
-            </Labeled>
-            <Labeled label="Your note on this closing prayer">
-              <textarea className="field-underline"
-                rows={2} value={notes.closing_prayer ?? ''}
-                placeholder="What stood out to you?"
-                onChange={(e) => onNotesChange({ ...notes, closing_prayer: e.target.value })} />
-            </Labeled>
-            <Labeled label="Reflection questions">
-              <QuestionsSection
-                questions={draft.questions ?? []}
-                notes={notes}
-                onSaveNotes={saveNotesHandler}
-                editing={true}
-                onQuestionsChange={(q) => setField({ questions: q })}
-              />
-            </Labeled>
-          </div>
+      {/* 1. Opening Prayer Section (CoverLetter-Crafter Edit, Save & AI Update Pattern) */}
+      <PrayerSection
+        title="Opening prayer"
+        icon="volunteer_activism"
+        prayer={draft.opening_prayer ?? ''}
+        note={notes.opening_prayer}
+        onSavePrayer={async (text) => {
+          if (onSaveSection) {
+            await onSaveSection('opening_prayer', text)
+          } else {
+            setField({ opening_prayer: text })
+          }
+        }}
+        onSaveNote={async (noteVal) => {
+          const nextNotes = { ...notes, opening_prayer: noteVal }
+          if (saveNotesHandler) await saveNotesHandler(nextNotes)
+        }}
+        onAIRefine={async (inst, sel) => {
+          if (onAIRefineSection) {
+            await onAIRefineSection('opening_prayer', inst, sel)
+          }
+        }}
+        isAIRefining={refiningSection === 'opening_prayer'}
+      />
+
+      {/* 2. Commentary Section (CoverLetter-Crafter Edit, Save & AI Update Pattern) */}
+      <CommentarySection
+        commentary={draft.commentary ?? ''}
+        note={notes.commentary}
+        onSave={async (text) => {
+          if (onSaveSection) {
+            await onSaveSection('commentary', text)
+          } else {
+            setField({ commentary: text })
+          }
+        }}
+        onSaveNote={async (noteVal) => {
+          const nextNotes = { ...notes, commentary: noteVal }
+          if (saveNotesHandler) await saveNotesHandler(nextNotes)
+        }}
+        onAIRefine={async (inst, sel) => {
+          if (onAIRefineSection) {
+            await onAIRefineSection('commentary', inst, sel)
+          }
+        }}
+        isAIRefining={refiningSection === 'commentary'}
+      />
+
+      {/* Key Learnings & Infographic */}
+      {draft.commentary && (
+        <CollapsibleSection title="Key Learnings & Infographic" icon="insights" defaultOpen>
+          <InfographicViewer
+            studyId={studyId}
+            dayNumber={day}
+            dayTheme={draft.heading}
+            hasCommentary={Boolean(draft.commentary)}
+            onOpenPromptCrafter={onOpenPromptCrafter}
+            activeInfographicAsset={activeInfographicAsset}
+            onAssetChanged={onRefreshAssets}
+          />
         </CollapsibleSection>
-      ) : (
-        <div className="space-y-4">
-          {draft.opening_prayer && (
-            <CollapsibleSection title="Opening prayer" icon="volunteer_activism" defaultOpen>
-              <p className="text-on-surface font-serif italic text-body-reading leading-relaxed">{draft.opening_prayer}</p>
-            </CollapsibleSection>
-          )}
-          {notes.opening_prayer && (
-            <CollapsibleSection title="Your note · opening prayer" icon="lightbulb" defaultOpen>
-              <p className="rounded-xl bg-surface-container-high p-3 text-ui-label-sm text-on-tertiary-container">{notes.opening_prayer}</p>
-            </CollapsibleSection>
-          )}
-          {draft.commentary && (
-            <CollapsibleSection title="Commentary" icon="menu_book" defaultOpen>
-              <CommentarySection
-                commentary={draft.commentary}
-                onSelectText={onSelectText}
-              />
-            </CollapsibleSection>
-          )}
-          {notes.commentary && (
-            <CollapsibleSection title="Your note · commentary" icon="lightbulb" defaultOpen>
-              <p className="rounded-xl bg-surface-container-high p-3 text-ui-label-sm text-on-tertiary-container">{notes.commentary}</p>
-            </CollapsibleSection>
-          )}
-          {draft.commentary && (
-            <CollapsibleSection title="Key Learnings & Infographic" icon="insights" defaultOpen>
-              <InfographicViewer
-                studyId={studyId}
-                dayNumber={day}
-                dayTheme={draft.heading}
-                hasCommentary={Boolean(draft.commentary)}
-                onOpenPromptCrafter={onOpenPromptCrafter}
-                activeInfographicAsset={activeInfographicAsset}
-                onAssetChanged={onRefreshAssets}
-              />
-            </CollapsibleSection>
-          )}
-          {draft.questions && draft.questions.length > 0 && (
-            <CollapsibleSection title="Reflection questions" icon="help" defaultOpen>
-              <QuestionsSection
-                questions={draft.questions}
-                notes={notes}
-                onSaveNotes={saveNotesHandler}
-              />
-            </CollapsibleSection>
-          )}
-          {draft.closing_prayer && (
-            <CollapsibleSection title="Closing prayer" icon="volunteer_activism" defaultOpen>
-              <p className="text-on-surface font-serif italic text-body-reading leading-relaxed">{draft.closing_prayer}</p>
-            </CollapsibleSection>
-          )}
-          {notes.closing_prayer && (
-            <CollapsibleSection title="Your note · closing prayer" icon="lightbulb" defaultOpen>
-              <p className="rounded-xl bg-surface-container-high p-3 text-ui-label-sm text-on-tertiary-container">{notes.closing_prayer}</p>
-            </CollapsibleSection>
-          )}
-          {notes.discussions && (
-            <CollapsibleSection title="Your note · external voices & sources" icon="forum" defaultOpen>
-              <p className="rounded-xl bg-surface-container-high p-3 text-ui-label-sm text-on-tertiary-container whitespace-pre-wrap">{notes.discussions}</p>
-            </CollapsibleSection>
-          )}
-        </div>
+      )}
+
+      {/* Reflection Questions */}
+      <CollapsibleSection title="Reflection questions" icon="help" defaultOpen>
+        <QuestionsSection
+          questions={draft.questions ?? []}
+          notes={notes}
+          onSaveNotes={saveNotesHandler}
+          editing={editing}
+          onQuestionsChange={(q) => setField({ questions: q })}
+        />
+      </CollapsibleSection>
+
+      {/* 3. Closing Prayer Section (CoverLetter-Crafter Edit, Save & AI Update Pattern) */}
+      <PrayerSection
+        title="Closing prayer"
+        icon="volunteer_activism"
+        prayer={draft.closing_prayer ?? ''}
+        note={notes.closing_prayer}
+        onSavePrayer={async (text) => {
+          if (onSaveSection) {
+            await onSaveSection('closing_prayer', text)
+          } else {
+            setField({ closing_prayer: text })
+          }
+        }}
+        onSaveNote={async (noteVal) => {
+          const nextNotes = { ...notes, closing_prayer: noteVal }
+          if (saveNotesHandler) await saveNotesHandler(nextNotes)
+        }}
+        onAIRefine={async (inst, sel) => {
+          if (onAIRefineSection) {
+            await onAIRefineSection('closing_prayer', inst, sel)
+          }
+        }}
+        isAIRefining={refiningSection === 'closing_prayer'}
+      />
+
+      {/* External Discussions / Source Notes */}
+      {notes.discussions && (
+        <CollapsibleSection title="Your note · external voices & sources" icon="forum" defaultOpen>
+          <p className="rounded-xl bg-surface-container-high p-3 text-ui-label-sm text-on-tertiary-container whitespace-pre-wrap">{notes.discussions}</p>
+        </CollapsibleSection>
       )}
     </div>
   )
@@ -1465,13 +1440,6 @@ function Discussions({
   }
   const d = data
 
-  const combinedSources: AnySource[] = [
-    ...(d?.sources ?? []),
-    ...((!d?.sources?.length)
-      ? [...(d?.official_sources ?? []), ...(d?.social_sources ?? [])]
-      : []),
-  ]
-
   const handleOpenSource = (s: AnySource) => {
     setActiveSource(s)
   }
@@ -1492,38 +1460,52 @@ function Discussions({
         title="Voices on these verses"
         icon="forum"
         defaultOpen={false}
-        right={
-          <button onClick={reload} disabled={busy}
-            className="btn-outline disabled:opacity-50 shrink-0">
-            {busy ? 'Fetching…' : (d ? 'Refresh' : 'Find discussions')}
-          </button>
-        }
         className="mt-6"
       >
-        {!d && <p className="text-ui-label-sm text-on-surface-variant">Real discussion about these verses, with links back to the sources. Click "Find discussions".</p>}
+        {!d && (
+          <div className="flex flex-col gap-3">
+            <p className="text-ui-label-sm text-on-surface-variant">Real discussion about these verses, with links back to the sources. Click "Find discussions".</p>
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={reload}
+                disabled={busy}
+                className="btn-outline flex items-center gap-1.5 text-ui-label-sm disabled:opacity-50"
+              >
+                <I name="forum" cls="text-[16px]" />
+                {busy ? 'Fetching…' : 'Find discussions'}
+              </button>
+            </div>
+          </div>
+        )}
         {d && d.status === 'empty' && (
-          <p className="text-ui-label-sm text-on-surface-variant">No external discussion could be fetched right now. Engage the Scripture directly.</p>
+          <div className="flex flex-col gap-3">
+            <p className="text-ui-label-sm text-on-surface-variant">No external discussion could be fetched right now. Engage the Scripture directly.</p>
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={reload}
+                disabled={busy}
+                className="btn-outline flex items-center gap-1.5 text-ui-label-sm disabled:opacity-50"
+              >
+                <I name="refresh" cls="text-[16px]" />
+                {busy ? 'Regenerating…' : 'Regenerate'}
+              </button>
+            </div>
+          </div>
         )}
         {d && d.status === 'ok' && (
           <>
-            <p className="mb-3 text-ui-label-sm text-on-surface-variant">
+            <p className="mb-4 text-ui-label-sm text-on-surface-variant">
               Curated from {(d.official_sources?.length ?? 0) + (d.social_sources?.length ?? 0)} real sources
-              (~{d.official_min} min official, ~{d.social_min} min social — about half this day).
-              Includes critical / non-Christian takes where they exist. Every claim links to its source.
+              (~{d.official_min} min official, ~{d.social_min} min social).
+              Every discussion links directly to its source.
             </p>
 
-            <div className="mb-4">
-              <VoicesGuideRenderer
-                guide={d.guide}
-                sources={combinedSources}
-                onOpenSource={handleOpenSource}
-              />
-            </div>
-
             {/* Official commentary sources */}
-            <div className="mb-4">
-              <div className="mb-2 flex items-center gap-2 font-ui-label-sm uppercase tracking-wide text-on-surface-variant">
-                <I name="menu_book" cls="text-[16px]" /> Official commentary
+            <div className="mb-5">
+              <div className="mb-2.5 flex items-center gap-2 font-ui-label-sm uppercase tracking-wide text-on-surface-variant font-semibold">
+                <I name="menu_book" cls="text-[16px] text-primary" /> Official Commentary
               </div>
               <SourceGrid
                 sources={d.official_sources ?? []}
@@ -1533,16 +1515,29 @@ function Discussions({
             </div>
 
             {/* Social commentary sources */}
-            <div className="border-t border-outline-variant/20 pt-3">
-              <div className="mb-2 flex items-center gap-2 font-ui-label-sm uppercase tracking-wide text-on-surface-variant">
-                <I name="forum" cls="text-[16px]" /> Social commentary
-                <span className="font-ui-label-xs normal-case tracking-normal text-on-surface-variant/70">(Reddit · Quora · X · Facebook)</span>
+            <div className="border-t border-outline-variant/20 pt-4">
+              <div className="mb-2.5 flex items-center gap-2 font-ui-label-sm uppercase tracking-wide text-on-surface-variant font-semibold">
+                <I name="forum" cls="text-[16px] text-primary" /> Social Commentary
+                <span className="font-ui-label-xs normal-case tracking-normal text-on-surface-variant/70 font-normal">(Reddit · Quora · X · Facebook)</span>
               </div>
               <SourceGrid
                 sources={d.social_sources ?? []}
                 empty="No social-media discussion was fetched (Reddit · Quora · X · Facebook)."
                 onOpenSource={handleOpenSource}
               />
+            </div>
+
+            {/* Regenerate button positioned on bottom right */}
+            <div className="mt-5 flex justify-end border-t border-outline-variant/10 pt-3">
+              <button
+                type="button"
+                onClick={reload}
+                disabled={busy}
+                className="btn-outline flex items-center gap-1.5 text-ui-label-sm disabled:opacity-50"
+              >
+                <I name="refresh" cls="text-[16px]" />
+                {busy ? 'Regenerating…' : 'Regenerate'}
+              </button>
             </div>
           </>
         )}
@@ -1630,22 +1625,24 @@ function VerseExpander({ refText }: { refText: string }) {
               <div className="text-on-surface">{v.text}</div>
             </div>
           ))}
-          <div className="flex flex-wrap items-center gap-2 pt-1">
-            <span className="text-ui-label-sm text-on-surface-variant">Switch version:</span>
-            <select
-              className="field-underline inline-block w-auto"
-              value=""
-              onChange={(e) => { if (e.target.value) switchVersion(e.target.value) }}
-            >
-              <option value="">Choose…</option>
-              {all.map((t) => (
-                <option key={t.code} value={t.code}>
-                  {t.code} — {t.name}
-                </option>
-              ))}
-            </select>
-            <span className="text-ui-label-sm text-on-surface-variant">
-              showing your top {prefs.length}: {prefs.join(', ')}
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-outline-variant/15">
+            <div className="flex items-center gap-2">
+              <span className="text-ui-label-xs text-on-surface-variant">Switch version:</span>
+              <select
+                className="text-[11px] font-mono py-0.5 px-2 rounded-md border border-outline-variant/30 bg-surface-container text-on-surface focus:outline-none focus:ring-1 focus:ring-primary shadow-xs transition-colors cursor-pointer"
+                value=""
+                onChange={(e) => { if (e.target.value) switchVersion(e.target.value) }}
+              >
+                <option value="">Choose…</option>
+                {all.map((t) => (
+                  <option key={t.code} value={t.code}>
+                    {t.code} — {t.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <span className="text-ui-label-xs text-on-surface-variant/80">
+              Top: {prefs.join(', ')}
             </span>
           </div>
         </div>
@@ -1804,31 +1801,41 @@ function PassageEditor({ studyId, day, fallbackScripture, onChanged }: {
 
       {/* Render active passages */}
       {list.map((p, i) => (
-        <div key={p.id} className="passage-card">
-          <div className="mb-2 flex flex-wrap items-center gap-2">
+        <div key={p.id} className="passage-card relative group/card">
+          <div className="mb-2 flex items-center justify-between gap-2">
             <VerseExpander refText={p.ref} />
-            <select
-              className="field-underline inline-block w-auto min-w-0"
-              value={p.translation}
-              onChange={(e) => switchVersion(p.id, e.target.value)}
-            >
-              {all.map((t) => <option key={t.code} value={t.code}>{t.code} — {t.name}</option>)}
-            </select>
-            <div className="ml-auto flex items-center gap-1">
+            <div className="flex items-center gap-1">
               <button onClick={() => reorder(p.id, -1)} disabled={i === 0}
-                className="btn-ghost px-1.5 disabled:opacity-30"><I name="arrow_upward" cls="text-[16px]" /></button>
+                className="btn-ghost px-1.5 disabled:opacity-30" title="Move Up"><I name="arrow_upward" cls="text-[16px]" /></button>
               <button onClick={() => reorder(p.id, 1)} disabled={i === list.length - 1}
-                className="btn-ghost px-1.5 disabled:opacity-30"><I name="arrow_downward" cls="text-[16px]" /></button>
+                className="btn-ghost px-1.5 disabled:opacity-30" title="Move Down"><I name="arrow_downward" cls="text-[16px]" /></button>
               <button onClick={() => remove(p.id)}
-                className="btn-ghost px-1.5 text-error"><I name="close" cls="text-[16px]" /></button>
+                className="btn-ghost px-1.5 text-error" title="Remove Passage"><I name="close" cls="text-[16px]" /></button>
             </div>
           </div>
-          <textarea readOnly
-            className="w-full rounded-xl border border-outline-variant/20 bg-surface-container-lowest px-3 py-2 font-body-reading text-on-surface outline-none"
-            rows={Math.max(2, Math.ceil(p.text.length / 70))}
-            value={p.text}
-            onMouseUp={(e) => captureHighlight(p, e.currentTarget)}
-          />
+          <div className="relative">
+            <textarea readOnly
+              className="w-full rounded-xl border border-outline-variant/20 bg-surface-container-lowest px-3.5 py-2.5 pb-8 font-body-reading text-on-surface outline-none focus:border-primary/40 transition-colors"
+              rows={Math.max(2, Math.ceil(p.text.length / 70))}
+              value={p.text}
+              onMouseUp={(e) => captureHighlight(p, e.currentTarget)}
+            />
+            {/* Version dropdown: small, sleek, on the bottom right of each verse */}
+            <div className="absolute right-2.5 bottom-2.5 flex items-center gap-1 z-10">
+              <select
+                className="text-[11px] font-mono font-medium py-0.5 px-2 rounded-md border border-outline-variant/30 bg-surface-container-high/90 hover:bg-surface-container-highest text-on-surface focus:outline-none focus:ring-1 focus:ring-primary shadow-xs transition-colors cursor-pointer"
+                value={p.translation}
+                onChange={(e) => switchVersion(p.id, e.target.value)}
+                title="Choose Bible Version"
+              >
+                {all.map((t) => (
+                  <option key={t.code} value={t.code}>
+                    {t.code} — {t.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
           {p.rationale && <div className="mt-1 text-ui-label-sm italic text-on-surface-variant">Why: {p.rationale}</div>}
           {p.highlights && p.highlights.length > 0 && (
             <div className="mt-2 space-y-1">

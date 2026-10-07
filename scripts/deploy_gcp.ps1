@@ -64,15 +64,17 @@ if (-not $bucketExists) {
       --project=$ProjectId
 }
 
-# 4. Build and Deploy API Backend
-Write-Host "--> [4/7] Building and deploying API backend to Cloud Run..." -ForegroundColor Yellow
-gcloud.cmd builds submit api `
-  --config=api/cloudbuild.yaml `
-  --substitutions="_IMAGE=$ArPrefix/api:latest" `
+# 4. Build Unified App (Frontend + Backend in One Image)
+Write-Host "--> [4/5] Building unified application container with Cloud Build..." -ForegroundColor Yellow
+gcloud.cmd builds submit . `
+  --config=cloudbuild.yaml `
+  --substitutions="_IMAGE=$ArPrefix/app:latest" `
   --project=$ProjectId
 
-gcloud.cmd run deploy "$AppName-api" `
-  --image="$ArPrefix/api:latest" `
+# 5. Deploy Unified Application to Cloud Run (Single URL)
+Write-Host "--> [5/5] Deploying unified application to Cloud Run..." -ForegroundColor Yellow
+gcloud.cmd run deploy "$AppName" `
+  --image="$ArPrefix/app:latest" `
   --region=$Region `
   --platform=managed `
   --allow-unauthenticated `
@@ -83,36 +85,10 @@ gcloud.cmd run deploy "$AppName-api" `
   --cpu=1 `
   --project=$ProjectId
 
-$ApiUrl = (gcloud.cmd run services describe "$AppName-api" --region=$Region --format="value(status.url)" --project=$ProjectId).Trim()
-Write-Host "API deployed at: $ApiUrl" -ForegroundColor Green
-
-# 5. Build and Deploy Web Frontend
-Write-Host "--> [5/7] Building and deploying Web frontend to Cloud Run..." -ForegroundColor Yellow
-gcloud.cmd builds submit web `
-  --config=web/cloudbuild.yaml `
-  "--substitutions=_IMAGE=$ArPrefix/web:latest,_VITE_API_URL=$ApiUrl,_VITE_GOOGLE_CLIENT_ID=$GoogleClientId" `
-  --project=$ProjectId
-
-gcloud.cmd run deploy "$AppName-web" `
-  --image="$ArPrefix/web:latest" `
-  --region=$Region `
-  --platform=managed `
-  --allow-unauthenticated `
-  --memory=512Mi `
-  --cpu=1 `
-  --project=$ProjectId
-
-$WebUrl = (gcloud.cmd run services describe "$AppName-web" --region=$Region --format="value(status.url)" --project=$ProjectId).Trim()
-
-# 6. Update API CORS for Web Domain
-Write-Host "--> [6/7] Updating API CORS origins for web frontend..." -ForegroundColor Yellow
-gcloud.cmd run services update "$AppName-api" `
-  --region=$Region `
-  --update-env-vars="CORS_ORIGINS=*" `
-  --project=$ProjectId
+$AppUrl = (gcloud.cmd run services describe "$AppName" --region=$Region --format="value(status.url)" --project=$ProjectId).Trim()
 
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host " Deployment Complete!" -ForegroundColor Green
-Write-Host " Web Application: $WebUrl" -ForegroundColor Green
-Write-Host " API Backend:     $ApiUrl" -ForegroundColor Green
+Write-Host " Application URL (Single URL): $AppUrl" -ForegroundColor Green
 Write-Host "========================================================" -ForegroundColor Cyan
+

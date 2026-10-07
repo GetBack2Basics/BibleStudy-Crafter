@@ -204,11 +204,11 @@ export const studies = {
     }).then(j)
   },
 
-  reviseDay: (id: number, day: number, instruction: string, selection?: string | null): Promise<{ day_number: number; revised: string; selection: string | null }> =>
+  reviseDay: (id: number, day: number, instruction: string, selection?: string | null, target_field?: 'commentary' | 'opening_prayer' | 'closing_prayer' | string): Promise<{ day_number: number; revised: string; selection: string | null; target_field?: string; blocks_json?: DayDraft }> =>
     api.fetch(`/api/studies/${id}/days/${day}/revise`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ instruction, selection: selection ?? null }),
+      body: JSON.stringify({ instruction, selection: selection ?? null, target_field: target_field ?? 'commentary' }),
     }).then(j),
 
   refreshDiscussions: (id: number, day: number): Promise<{ day_number: number; discussions: DayOut['discussions'] }> =>

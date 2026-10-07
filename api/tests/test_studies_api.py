@@ -139,6 +139,46 @@ def test_revise_day_with_selection(client):
     assert r2.json()["selection"] == "the Lord's authority"
 
 
+def test_revise_prayers(client):
+    """Test AI revision specifically targeting opening_prayer and closing_prayer."""
+    with patch("app.services.planner.complete", _smart_stub):
+        sid = client.post("/api/studies",
+                          json={"topic": "Prayer revise", "total_days": 1,
+                                "minutes_per_day": 15}).json()["study_id"]
+        import time
+        for _ in range(50):
+            if client.get(f"/api/studies/{sid}").json()["status"] == "ready":
+                break
+            time.sleep(0.1)
+
+    async def _revise_stub(*a, **k):
+        from app.services.llm import LLMResult
+        prompt_text = a[0] if a else ""
+        if "opening prayer" in prompt_text.lower():
+            return LLMResult(text="Revised opening prayer text.", provider="ollama",
+                             model="m", tokens_in=1, tokens_out=1, data={})
+        return LLMResult(text="Revised closing prayer text.", provider="ollama",
+                         model="m", tokens_in=1, tokens_out=1, data={})
+
+    # Revise opening prayer
+    with patch("app.services.llm.complete", _revise_stub):
+        r1 = client.post(f"/api/studies/{sid}/days/1/revise",
+                         json={"instruction": "More reverent", "target_field": "opening_prayer"})
+    assert r1.status_code == 200
+    assert r1.json()["target_field"] == "opening_prayer"
+    assert r1.json()["revised"] == "Revised opening prayer text."
+    assert client.get(f"/api/studies/{sid}").json()["days"][0]["blocks_json"]["opening_prayer"] == "Revised opening prayer text."
+
+    # Revise closing prayer
+    with patch("app.services.llm.complete", _revise_stub):
+        r2 = client.post(f"/api/studies/{sid}/days/1/revise",
+                         json={"instruction": "Focus on thanksgiving", "target_field": "closing_prayer"})
+    assert r2.status_code == 200
+    assert r2.json()["target_field"] == "closing_prayer"
+    assert r2.json()["revised"] == "Revised closing prayer text."
+    assert client.get(f"/api/studies/{sid}").json()["days"][0]["blocks_json"]["closing_prayer"] == "Revised closing prayer text."
+
+
 def test_revise_grounds_on_chosen_passages(client):
     """Regression: revise prompt must include the day's DayPassage refs+text."""
     captured = {}

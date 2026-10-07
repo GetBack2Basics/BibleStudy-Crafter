@@ -1,0 +1,41 @@
+# Multi-stage Dockerfile for unified single-URL deployment of BibleStudy-Crafter
+
+# Stage 1: Build React/Vite Frontend
+FROM node:22-alpine AS web-builder
+WORKDIR /app
+COPY web/package*.json ./
+RUN npm ci
+COPY web/ ./
+ARG VITE_GOOGLE_CLIENT_ID=""
+ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
+ENV VITE_API_URL=""
+RUN npm run build
+
+# Stage 2: Python FastAPI Runtime
+FROM python:3.11-slim
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PORT=8080
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      ffmpeg curl \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY api/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt \
+    && pip install --no-cache-dir google-cloud-storage
+
+ARG BUILD_STAMP=prod
+COPY api/ ./
+COPY --from=web-builder /app/dist /app/static
+
+RUN if [ "$BUILD_STAMP" = "dev" ] || [ -z "$BUILD_STAMP" ]; then \
+      date -u +%Y%m%d%H%M > /etc/build_stamp; \
+    else \
+      echo "$BUILD_STAMP" > /etc/build_stamp; \
+    fi
+
+EXPOSE 8080
+CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080} --workers 2"]

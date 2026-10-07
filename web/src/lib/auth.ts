@@ -181,5 +181,7 @@ export const auth = {
 }
 
 function apiUrl(): string {
-  return import.meta.env.VITE_API_URL ?? 'http://localhost:8421'
+  return (import.meta.env.VITE_API_URL !== undefined && import.meta.env.VITE_API_URL !== '')
+    ? import.meta.env.VITE_API_URL
+    : (typeof window !== 'undefined' && window.location.port === '5173' ? 'http://localhost:8421' : '')
 }

@@ -44,8 +44,8 @@ _bearer = HTTPBearer(auto_error=False)
 
 def hash_password(password: str) -> str:
     """Return a scrypt hash string. Raises ValueError on a weak password."""
-    if not password or len(password) < 8:
-        raise ValueError("password must be at least 8 characters")
+    if not password or len(password) < 6:
+        raise ValueError("password must be at least 6 characters")
     salt = secrets.token_bytes(16)
     n, r, p = 16384, 8, 1
     dk = hashlib.scrypt(password.encode("utf-8"), salt=salt, n=n, r=r, p=p,

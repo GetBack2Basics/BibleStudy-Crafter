@@ -111,3 +111,108 @@ def test_self_escalation_to_admin_blocked(anon_client):
     assert prom.status_code == 403
     me = anon_client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})
     assert me.json()["is_admin"] is False
+
+
+def test_demo_account_login_and_normalization(anon_client):
+    from app.db import ensure_demo_account
+    ensure_demo_account()
+
+    # Login with 'demo'
+    r1 = anon_client.post("/api/auth/login", json={"email": "demo", "password": "demo123"})
+    assert r1.status_code == 200, r1.text
+    data1 = r1.json()
+    assert data1["user"]["email"] == "demo@biblestudy.local"
+    assert "access_token" in data1
+
+    # Login with 'demo@example.com'
+    r2 = anon_client.post("/api/auth/login", json={"email": "demo@example.com", "password": "demo123"})
+    assert r2.status_code == 200, r2.text
+    data2 = r2.json()
+    assert data2["user"]["email"] == "demo@biblestudy.local"
+
+
+def test_demo_account_copies_coreagc_study(anon_client):
+    from app.db import get_engine, ensure_demo_account
+    from sqlmodel import Session, select
+    from app.models import User, Study, StudyDay, DayPassage, Asset
+    from app.auth import hash_password
+
+    # Setup coreagc user and a study with a day, passage, and asset
+    with Session(get_engine()) as session:
+        core_user = session.exec(select(User).where(User.email == "coreagc@gmail.com")).first()
+        if not core_user:
+            core_user = User(
+                email="coreagc@gmail.com",
+                display_name="Corea",
+                password_hash=hash_password("corea123"),
+                role="SUPER_ADMIN",
+                is_admin=True,
+            )
+            session.add(core_user)
+            session.commit()
+            session.refresh(core_user)
+
+        study = Study(
+            user_id=core_user.id,
+            topic="Faith and Hope",
+            title="Faith and Hope Study",
+            minutes_per_day=10,
+            total_days=1,
+            tradition="non_denominational",
+            status="ready",
+        )
+        session.add(study)
+        session.commit()
+        session.refresh(study)
+        orig_study_id = study.id
+
+        day = StudyDay(
+            study_id=study.id,
+            day_number=1,
+            title="Day 1 - The Foundation",
+            theme="Faith",
+            status="ready",
+        )
+        session.add(day)
+        session.commit()
+        session.refresh(day)
+
+        passage = DayPassage(
+            study_day_id=day.id,
+            ref="Hebrews 11:1",
+            translation="KJV",
+            text="Now faith is the substance of things hoped for...",
+            order=1,
+        )
+        session.add(passage)
+
+        asset = Asset(
+            user_id=core_user.id,
+            study_day_id=day.id,
+            kind="infographic",
+            provider="local",
+            model="test",
+            status="ready",
+        )
+        session.add(asset)
+        session.commit()
+
+    # Now ensure demo account runs
+    ensure_demo_account()
+
+    # Demo logs in and gets their studies
+    r = anon_client.post("/api/auth/login", json={"email": "demo", "password": "demo123"})
+    assert r.status_code == 200
+    token = r.json()["access_token"]
+    demo_id = r.json()["user"]["id"]
+
+    studies_res = anon_client.get("/api/studies", headers={"Authorization": f"Bearer {token}"})
+    assert studies_res.status_code == 200
+    studies = studies_res.json()
+    assert len(studies) >= 1
+    demo_study = next((s for s in studies if s["topic"] == "Faith and Hope"), None)
+    assert demo_study is not None
+    assert demo_study["title"] == "Faith and Hope Study"
+    assert demo_study["id"] != orig_study_id
+
+

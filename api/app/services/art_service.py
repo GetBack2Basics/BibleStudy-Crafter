@@ -130,7 +130,7 @@ CRITICAL POLICY ENFORCEMENT:
 Respond with ONLY valid JSON:
 {{
   "cover_art_prompt": str (a rich 2-3 sentence prompt optimized for a 16:9 header banner),
-  "infographic_art_prompt": str (a 2-3 sentence prompt for a visual poster / key learnings illustration),
+  "infographic_art_prompt": str (a structured prompt following this template: "Create an infographic titled '<Title>' based on <Passage> narrative. Structure the visual into 4 distinct sections: 1. Core Promise / Theological Anchor (defining original terms and divine purpose), 2. Progression / Journey (concentric ripple, sequential, or comparative flow), 3. Catalyst / Turning Point (visual highlights, key events, outcomes), 4. Modern Application (principles for contemporary believers). Style & Layout: Clean, professional editorial layout with high visual contrast, clear section cards, and bold infographic icons."),
   "artistic_rationale": str (1-2 sentences explaining how this visual concept reflects the passage and mood),
   "negative_prompt": str (elements to avoid, e.g. text, watermarks, modern objects, distorted faces)
 }}"""

@@ -147,12 +147,25 @@ export default function AuthScreen({ onAuthed }: { onAuthed: () => void }) {
           )}
 
           <div>
-            <label className="block text-xs font-medium text-on-surface-variant mb-1">Email Address</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-medium text-on-surface-variant">Email Address</label>
+              {mode === 'login' && (
+                <button
+                  type="button"
+                  onClick={() => { setEmail('demo'); setPassword('demo123'); setError(null); }}
+                  className="text-[11px] text-primary hover:underline font-medium cursor-pointer"
+                >
+                  Use Demo Account
+                </button>
+              )}
+            </div>
             <input
-              type="email"
+              type="text"
               required
+              autoCapitalize="none"
+              autoCorrect="off"
               className="w-full rounded-xl border border-outline-variant/30 bg-surface-container-low px-3.5 py-2.5 text-sm text-on-surface outline-none focus:border-primary transition-colors"
-              placeholder="user@example.com"
+              placeholder="user@example.com or demo"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
@@ -163,7 +176,7 @@ export default function AuthScreen({ onAuthed }: { onAuthed: () => void }) {
             <input
               type="password"
               required
-              minLength={8}
+              minLength={6}
               className="w-full rounded-xl border border-outline-variant/30 bg-surface-container-low px-3.5 py-2.5 text-sm text-on-surface outline-none focus:border-primary transition-colors"
               placeholder="••••••••"
               value={password}
@@ -181,7 +194,7 @@ export default function AuthScreen({ onAuthed }: { onAuthed: () => void }) {
           <button
             type="submit"
             disabled={busy || googleBusy}
-            className="w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary hover:bg-primary/90 transition-all shadow-md disabled:opacity-50"
+            className="w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary hover:bg-primary/90 transition-all shadow-md disabled:opacity-50 cursor-pointer"
           >
             {busy || googleBusy ? 'Authenticating…' : mode === 'login' ? 'Sign In' : 'Create Account'}
           </button>

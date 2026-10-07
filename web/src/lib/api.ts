@@ -1,6 +1,8 @@
 import { auth } from './auth'
 
-const API = import.meta.env.VITE_API_URL ?? 'http://localhost:8421'
+const API = (import.meta.env.VITE_API_URL !== undefined && import.meta.env.VITE_API_URL !== '')
+  ? import.meta.env.VITE_API_URL
+  : (typeof window !== 'undefined' && window.location.port === '5173' ? 'http://localhost:8421' : '')
 
 export type LogEvent = {
   id?: number
