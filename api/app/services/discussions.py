@@ -142,6 +142,15 @@ _SOCIAL_HOSTS = {
     "www.facebook.com": "facebook",
     "m.facebook.com": "facebook",
     "fb.com": "facebook",
+    "youtube.com": "youtube",
+    "www.youtube.com": "youtube",
+    "m.youtube.com": "youtube",
+    "youtu.be": "youtube",
+    "hermeneutics.stackexchange.com": "stackexchange",
+    "christianity.stackexchange.com": "stackexchange",
+    "stackexchange.com": "stackexchange",
+    "christianforums.com": "forum",
+    "www.christianforums.com": "forum",
 }
 
 
@@ -565,7 +574,10 @@ def _official_queries(refs: list[str], topic: str) -> list[str]:
 
 _SOCIAL_SITES = (
     ("reddit.com", "reddit"),
+    ("youtube.com", "youtube"),
     ("quora.com", "quora"),
+    ("hermeneutics.stackexchange.com", "stackexchange"),
+    ("christianity.stackexchange.com", "stackexchange"),
     ("x.com", "x"),
     ("facebook.com", "facebook"),
 )
@@ -585,14 +597,7 @@ def _search_safe_ref(ref: str) -> str:
 
 
 def _social_queries(refs: list[str], topic: str) -> list[tuple[str, str]]:
-    """`site:`-scoped queries, one per platform per seed.
-
-    Returns (query, platform) pairs. Two lessons are baked in here:
-      * hyphenated verse ranges must be stripped (see _search_safe_ref), and
-      * `site:` scoping is what actually pins a query to a platform - the older
-        "<seed> reddit" phrasing returned generic Bible pages with no social
-        host in them at all.
-    """
+    """`site:`-scoped queries and targeted social keywords, one per platform per seed."""
     seeds = [_search_safe_ref(r) for r in refs[:2]]
     if topic:
         seeds.append(topic.strip())
@@ -605,7 +610,13 @@ def _social_queries(refs: list[str], topic: str) -> list[tuple[str, str]]:
             if q not in seen:
                 seen.add(q)
                 out.append((q, plat))
-    return out[:12]
+        # Also add direct community discussion queries
+        for term, plat in (("reddit discussion", "reddit"), ("youtube sermon debate", "youtube"), ("forum discussion", "forum")):
+            q = f"{seed} {term}"
+            if q not in seen:
+                seen.add(q)
+                out.append((q, plat))
+    return out[:16]
 
 
 async def fetch_official(refs: list[str], topic: str) -> list[Source]:
@@ -635,9 +646,9 @@ def _social_host_ok(url: str) -> str | None:
         return None
     if net.startswith("www."):
         net = net[4:]
-    for host, plat in (("reddit.com", "reddit"), ("quora.com", "quora"),
-                       ("x.com", "x"), ("twitter.com", "x"),
-                       ("facebook.com", "facebook")):
+    if net in _SOCIAL_HOSTS:
+        return _SOCIAL_HOSTS[net]
+    for host, plat in _SOCIAL_HOSTS.items():
         if net == host or net.endswith("." + host):
             return plat
     return None
