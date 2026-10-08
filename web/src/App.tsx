@@ -5,7 +5,8 @@ import AuthScreen from './components/AuthScreen'
 import ProfileModal from './components/ProfileModal'
 import { api } from './lib/api'
 import { auth, type AuthUser } from './lib/auth'
-import { studies as studyApi, bible, preferences, passages, TRADITIONS, type StudyOut, type DayOut, type DayDraft, type TranslationInfo, type CompareVerse, type PassageOut, type SearchHit, type TTSChoice, ttsDefaultVoices } from './lib/studies'
+import { studies as studyApi, bible, preferences, passages, TRADITIONS, voicePreferences, type StudyOut, type DayOut, type DayDraft, type TranslationInfo, type CompareVerse, type PassageOut, type SearchHit, type TTSChoice, ttsDefaultVoices } from './lib/studies'
+
 import SourceReaderModal, { type AnySource } from './components/SourceReaderModal'
 import QuestionsSection from './components/QuestionsSection'
 import CommentarySection from './components/CommentarySection'
@@ -755,14 +756,13 @@ function DayCard({ studyId, day, onGenerate, defaultOpen = false }: { studyId: n
     setErr(null)
     try {
       const res = await studyApi.reviseDay(studyId, day.day_number, inst, sel || null, section)
-      const current = draftRef.current
-      if (current) {
-        let nextVal = res.revised
-        if (sel && current[section] && current[section].includes(sel)) {
-          nextVal = current[section].replace(sel, res.revised)
+      if (res.blocks_json) {
+        setDraft(res.blocks_json)
+      } else {
+        const current = draftRef.current
+        if (current) {
+          setDraft({ ...current, [section]: res.revised })
         }
-        const updated = await studyApi.updateDay(studyId, day.day_number, { ...current, [section]: nextVal }, notesRef.current)
-        setDraft(updated.blocks_json ?? null)
       }
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e))
@@ -1367,27 +1367,33 @@ function SourceGrid({
   empty: string
   onOpenSource: (s: AnySource) => void
 }) {
-  const displaySources = sources.slice(0, 8)
-  if (!displaySources.length) {
+  if (!sources.length) {
     return <p className="text-ui-label-sm text-on-surface-variant/80">{empty}</p>
   }
   return (
-    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-      {displaySources.map((s, i) => {
+    <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2">
+      {sources.map((s, i) => {
         const summary = (s.snippet || '').trim()
+        const borderColor =
+          s.sentiment === 'negative'
+            ? 'border-l-4 border-l-red-500 hover:border-l-red-400'
+            : s.sentiment === 'positive'
+              ? 'border-l-4 border-l-emerald-500 hover:border-l-emerald-400'
+              : 'border-l-4 border-l-amber-400 hover:border-l-amber-300'
+
         return (
           <button
             key={i}
             type="button"
             onClick={() => onOpenSource(s)}
-            className="voice-card text-left hover:text-primary transition-all group w-full cursor-pointer flex flex-col justify-between p-4"
+            className={`voice-card text-left transition-all group w-full cursor-pointer flex flex-col justify-between p-4 rounded-2xl bg-surface-container-low border border-outline-variant/20 hover:shadow-md hover:bg-surface-container ${borderColor}`}
           >
             <div className="w-full">
-              <h4 className="font-ui-label-md font-semibold text-on-surface group-hover:text-primary leading-snug line-clamp-2">
+              <h4 className="font-ui-label-md font-bold text-on-surface group-hover:text-primary leading-snug line-clamp-2">
                 {s.title}
               </h4>
               {summary && (
-                <p className="mt-2 text-xs text-on-surface-variant/90 line-clamp-4 leading-relaxed font-body-reading">
+                <p className="mt-2 text-xs text-on-surface-variant/90 line-clamp-3 leading-relaxed font-body-reading">
                   {summary}
                 </p>
               )}
@@ -1416,6 +1422,9 @@ function Discussions({
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const [activeSource, setActiveSource] = useState<AnySource | null>(null)
+  const [counts, setCounts] = useState(voicePreferences.getCounts())
+
+  const totalVoices = counts.negative + counts.neutral + counts.positive
 
   const reload = async () => {
     const dayNum = Number(day?.day_number)
@@ -1425,7 +1434,11 @@ function Discussions({
     }
     setBusy(true); setErr(null)
     try {
-      const res = await studyApi.refreshDiscussions(studyId, dayNum)
+      const res = await studyApi.refreshDiscussions(studyId, dayNum, {
+        negative_count: counts.negative,
+        neutral_count: counts.neutral,
+        positive_count: counts.positive,
+      })
       setData(res.discussions)
     } catch (e) { setErr(e instanceof Error ? e.message : String(e)) }
     finally { setBusy(false) }
@@ -1454,89 +1467,115 @@ function Discussions({
         defaultOpen={false}
         className="mt-6"
       >
-        {!d && (
-          <div className="flex flex-col gap-3">
-            <p className="text-ui-label-sm text-on-surface-variant">Real discussion about these verses, with links back to the sources. Click "Find discussions".</p>
-            <div className="flex justify-end">
+        {/* Sentiment Quota Adjuster Bar */}
+        <div className="mb-4 rounded-2xl bg-surface-container-low border border-outline-variant/20 p-3.5 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="text-xs font-semibold text-on-surface-variant flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[16px] text-primary">tune</span>
+              Voices Mix:
+            </span>
+
+            {/* Negative Stepper */}
+            <div className="flex items-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/10 px-2.5 py-1 text-xs text-red-700 dark:text-red-400">
+              <span className="font-semibold">Negative:</span>
               <button
                 type="button"
-                onClick={reload}
-                disabled={busy}
-                className="btn-outline flex items-center gap-1.5 text-ui-label-sm disabled:opacity-50"
+                onClick={() => setCounts({ ...counts, negative: Math.max(0, counts.negative - 1) })}
+                className="hover:bg-red-500/20 rounded px-1 text-xs font-bold cursor-pointer"
               >
-                <I name="forum" cls="text-[16px]" />
-                {busy ? 'Fetching…' : 'Find discussions'}
+                -
+              </button>
+              <span className="font-bold min-w-[14px] text-center">{counts.negative}</span>
+              <button
+                type="button"
+                onClick={() => setCounts({ ...counts, negative: counts.negative + 1 })}
+                className="hover:bg-red-500/20 rounded px-1 text-xs font-bold cursor-pointer"
+              >
+                +
               </button>
             </div>
+
+            {/* Neutral Stepper */}
+            <div className="flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs text-amber-700 dark:text-amber-400">
+              <span className="font-semibold">Neutral:</span>
+              <button
+                type="button"
+                onClick={() => setCounts({ ...counts, neutral: Math.max(0, counts.neutral - 1) })}
+                className="hover:bg-amber-500/20 rounded px-1 text-xs font-bold cursor-pointer"
+              >
+                -
+              </button>
+              <span className="font-bold min-w-[14px] text-center">{counts.neutral}</span>
+              <button
+                type="button"
+                onClick={() => setCounts({ ...counts, neutral: counts.neutral + 1 })}
+                className="hover:bg-amber-500/20 rounded px-1 text-xs font-bold cursor-pointer"
+              >
+                +
+              </button>
+            </div>
+
+            {/* Positive Stepper */}
+            <div className="flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs text-emerald-700 dark:text-emerald-400">
+              <span className="font-semibold">Positive:</span>
+              <button
+                type="button"
+                onClick={() => setCounts({ ...counts, positive: Math.max(0, counts.positive - 1) })}
+                className="hover:bg-emerald-500/20 rounded px-1 text-xs font-bold cursor-pointer"
+              >
+                -
+              </button>
+              <span className="font-bold min-w-[14px] text-center">{counts.positive}</span>
+              <button
+                type="button"
+                onClick={() => setCounts({ ...counts, positive: counts.positive + 1 })}
+                className="hover:bg-emerald-500/20 rounded px-1 text-xs font-bold cursor-pointer"
+              >
+                +
+              </button>
+            </div>
+
+            <span className="text-xs text-on-surface-variant/80 font-medium">
+              (Total: <strong className="text-on-surface">{totalVoices}</strong>)
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={reload}
+            disabled={busy}
+            className="btn-outline flex items-center gap-1.5 text-xs py-1.5 px-3 rounded-xl disabled:opacity-50 cursor-pointer"
+          >
+            <I name="refresh" cls="text-[15px]" />
+            {busy ? 'Fetching…' : d ? 'Regenerate Mix' : 'Find Discussions'}
+          </button>
+        </div>
+
+        {!d && (
+          <div className="flex flex-col gap-3 py-2">
+            <p className="text-ui-label-sm text-on-surface-variant">Real discussion about these verses classified by BERT sentiment. Click "Find Discussions" to load.</p>
           </div>
         )}
         {d && d.status === 'empty' && (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 py-2">
             <p className="text-ui-label-sm text-on-surface-variant">No external discussion could be fetched right now. Engage the Scripture directly.</p>
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={reload}
-                disabled={busy}
-                className="btn-outline flex items-center gap-1.5 text-ui-label-sm disabled:opacity-50"
-              >
-                <I name="refresh" cls="text-[16px]" />
-                {busy ? 'Regenerating…' : 'Regenerate'}
-              </button>
-            </div>
           </div>
         )}
         {d && d.status === 'ok' && (
           <>
-            <p className="mb-4 text-ui-label-sm text-on-surface-variant">
-              Curated from {Math.min(8, d.official_sources?.length ?? 0) + Math.min(8, d.social_sources?.length ?? 0)} real sources
-              (~{d.official_min} min official, ~{d.social_min} min social).
-              Every discussion links directly to its source.
-            </p>
-
-            {/* Official commentary sources */}
-            <div className="mb-5">
-              <div className="mb-2.5 flex items-center gap-2 font-ui-label-sm uppercase tracking-wide text-on-surface-variant font-semibold">
-                <I name="menu_book" cls="text-[16px] text-primary" /> Official Commentary
-              </div>
-              <SourceGrid
-                sources={d.official_sources ?? []}
-                empty="No official commentary sources were fetched."
-                onOpenSource={handleOpenSource}
-              />
-            </div>
-
-            {/* Social commentary sources */}
-            <div className="border-t border-outline-variant/20 pt-4">
-              <div className="mb-2.5 flex items-center gap-2 font-ui-label-sm uppercase tracking-wide text-on-surface-variant font-semibold">
-                <I name="forum" cls="text-[16px] text-primary" /> Social Commentary
-                <span className="font-ui-label-xs normal-case tracking-normal text-on-surface-variant/70 font-normal">(Reddit · Quora · X · Facebook)</span>
-              </div>
-              <SourceGrid
-                sources={d.social_sources ?? []}
-                empty="No social-media discussion was fetched (Reddit · Quora · X · Facebook)."
-                onOpenSource={handleOpenSource}
-              />
-            </div>
-
-            {/* Regenerate button positioned on bottom right */}
-            <div className="mt-5 flex justify-end border-t border-outline-variant/10 pt-3">
-              <button
-                type="button"
-                onClick={reload}
-                disabled={busy}
-                className="btn-outline flex items-center gap-1.5 text-ui-label-sm disabled:opacity-50"
-              >
-                <I name="refresh" cls="text-[16px]" />
-                {busy ? 'Regenerating…' : 'Regenerate'}
-              </button>
-            </div>
+            {/* Unified Sources Grid */}
+            <SourceGrid
+              sources={d.sources ?? []}
+              empty="No external discussion sources found."
+              onOpenSource={handleOpenSource}
+            />
           </>
         )}
         {err && <p className="mt-2 text-ui-label-sm text-error">{err}</p>}
       </CollapsibleSection>
 
       {/* Pop-up source reader modal within the site */}
+
       {activeSource && (
         <SourceReaderModal
           source={activeSource}

@@ -349,8 +349,15 @@ async def generate_day_endpoint(study_id: int, day_number: int,
     return {"day_number": day_number, "status": "ready", "draft": draft}
 
 
+class DiscussionsRequest(BaseModel):
+    negative_count: int = Field(4, ge=0, le=20)
+    neutral_count: int = Field(2, ge=0, le=20)
+    positive_count: int = Field(2, ge=0, le=20)
+
+
 @router.post("/{study_id}/days/{day_number}/discussions")
 async def regenerate_discussions(study_id: int, day_number: int,
+                                 req: DiscussionsRequest | None = None,
                                  user: User = Depends(get_current_user),
                                  session: Session = Depends(get_session)) -> dict:
     """(Re)fetch real, cited discussion material for a day's verses."""
@@ -359,11 +366,21 @@ async def regenerate_discussions(study_id: int, day_number: int,
         raise HTTPException(404, "study not found")
     if day_number < 1 or day_number > s.total_days:
         raise HTTPException(400, "day out of range")
-    result = await build_day_discussions(s, day_number, session=session,
-                                         study_id=study_id)
+    
+    neg = req.negative_count if req else 4
+    neu = req.neutral_count if req else 2
+    pos = req.positive_count if req else 2
+
+    result = await build_day_discussions(
+        s, day_number, session=session,
+        study_id=study_id,
+        negative_count=neg,
+        neutral_count=neu,
+        positive_count=pos)
     if result is None:
         raise HTTPException(400, "day has no verses or topic to discuss")
     return {"day_number": day_number, "discussions": result}
+
 
 
 class DayUpdate(BaseModel):
@@ -377,43 +394,31 @@ class DayRevise(BaseModel):
     target_field: str | None = "commentary"
 
 
-REVISE_PROMPT = """You are helping a user revise part of a Bible-study day they wrote.
+REVISE_PROMPT = """You are helping a user revise the {section_title} of a Bible study.
 
-The scripture passages chosen for this day (quote their references only - the
-app inserts the actual verse text from its own Bible database; do NOT invent or
-rewrite any verse, but you MUST ground the commentary and prayers on these
-passages):
----
+STUDY CONTEXT:
+- Overall Topic: {study_topic}
+- Theological Tradition: {tradition}
+- Day {day_number}: {day_heading}
+
+CHOSEN SCRIPTURE PASSAGES FOR TODAY:
 {scripture}
----
 
-The full current commentary for the day is:
----
-{commentary}
----
+PAGE CONTENT CONTEXT:
+{page_context}
 
-{selection_block}Revise according to this instruction: {instruction}
-
-Return ONLY the revised text (no markdown fences, no commentary about what you changed). Maintain readable formatting with distinct paragraphs (separated by blank lines), **bold** key terms and themes, and *italics* for Bible verses, scripture quotes, or citations. If a selection was provided, return only the revised version of that selected passage, keeping its meaning and length similar. If no selection was provided, return the revised full commentary. The revision must stay faithful to the scripture passages above.
-"""
-
-PRAYER_REVISE_PROMPT = """You are helping a user revise the {prayer_name} for a Bible-study day they wrote.
-
-The scripture passages chosen for this day (quote their references only - the
-app inserts the actual verse text from its own Bible database; do NOT invent or
-rewrite any verse, but you MUST ground the prayers on these passages):
----
-{scripture}
----
-
-The current {prayer_name} is:
+CURRENT {section_title_upper} TEXT:
 ---
 {current_text}
 ---
 
-{selection_block}Revise according to this instruction: {instruction}
+{selection_block}
+USER REFINEMENT INSTRUCTION:
+"{instruction}"
 
-Return ONLY the revised prayer text (no markdown fences, no conversational preamble or commentary about what you changed). Write in a reverent, thoughtful tone grounded in the scriptures above. If a selection was provided, return only the revised version of that selected portion, keeping its meaning and length similar. If no selection was provided, return the full revised prayer. The revision must stay faithful to the scripture passages above.
+CRITICAL INSTRUCTIONS:
+{specific_rules}
+Return ONLY the revised text with no markdown code fences, no preamble, and no conversational meta-commentary about what was changed.
 """
 
 SCRIPTURE_BLOCK = "- {ref} ({translation}): {text}"
@@ -423,7 +428,7 @@ SCRIPTURE_BLOCK = "- {ref} ({translation}): {text}"
 async def revise_day_endpoint(study_id: int, day_number: int, body: DayRevise,
                               session: Session = Depends(get_session)) -> dict:
     """Revise a day's commentary or prayer with AI. If `selection` is given, only that
-    passage is revised (JobHunt_Crafter / CoverLetter-Crafter select-to-revise)."""
+    passage is updated based on user prompt using existing text + page text context (CoverLetter-Crafter pattern)."""
     from app.services.llm import NoProviderAvailable, complete
     from app.services.prompts import build_system
     from sqlmodel import select
@@ -454,27 +459,77 @@ async def revise_day_endpoint(study_id: int, day_number: int, body: DayRevise,
         for p in passages
     ) or "(no passages selected for this day)"
 
-    selection_block = (
-        f"The user selected this passage to revise:\n---\n{body.selection}\n---\n"
-        if body.selection else ""
-    )
+    blocks = target.blocks_json or {}
+    context_parts = []
+    if blocks.get("heading"):
+        context_parts.append(f"- Day Heading: {blocks.get('heading')}")
+    if field_key != "opening_prayer" and blocks.get("opening_prayer"):
+        context_parts.append(f"- Opening Prayer: {blocks.get('opening_prayer')}")
+    if field_key != "commentary" and blocks.get("commentary"):
+        comm_prev = str(blocks.get('commentary'))[:300] + ("..." if len(str(blocks.get('commentary'))) > 300 else "")
+        context_parts.append(f"- Commentary Context: {comm_prev}")
+    if blocks.get("questions"):
+        context_parts.append(f"- Reflection Questions: {', '.join(str(q) for q in blocks.get('questions', []))}")
+    if field_key != "closing_prayer" and blocks.get("closing_prayer"):
+        context_parts.append(f"- Closing Prayer: {blocks.get('closing_prayer')}")
+    
+    page_context = "\n".join(context_parts) if context_parts else "(Day content being crafted)"
 
-    if field_key in ("opening_prayer", "closing_prayer"):
-        prayer_name = "opening prayer" if field_key == "opening_prayer" else "closing prayer"
-        prompt = PRAYER_REVISE_PROMPT.format(
-            prayer_name=prayer_name,
-            scripture=scripture_block,
-            current_text=current_text or "(none)",
-            selection_block=selection_block,
-            instruction=body.instruction
+    section_titles = {
+        "commentary": "Commentary",
+        "opening_prayer": "Opening Prayer",
+        "closing_prayer": "Closing Prayer"
+    }
+    sec_title = section_titles.get(field_key, "Commentary")
+
+    if body.selection:
+        selection_block = (
+            f"TARGET EXCERPT SELECTED BY USER TO UPDATE:\n"
+            f"---\n{body.selection}\n---\n"
         )
+        if field_key in ("opening_prayer", "closing_prayer"):
+            specific_rules = (
+                f"1. The user has highlighted the specific excerpt above from the {sec_title}. "
+                f"Revise and update that excerpt based on the user's instruction and the scriptures.\n"
+                f"2. Write in a reverent, thoughtful tone grounded in the scriptures.\n"
+                f"3. Return the revised excerpt that replaces the highlighted portion (or the complete updated prayer with the revision incorporated seamlessly)."
+            )
+        else:
+            specific_rules = (
+                f"1. The user has highlighted the specific excerpt above from the {sec_title}. "
+                f"Revise and update that excerpt based on the user's instruction, using the whole commentary and scriptures as context.\n"
+                f"2. Maintain readable formatting with distinct paragraphs (separated by blank lines), **bold** key terms, and *italics* for Bible verses and scripture citations.\n"
+                f"3. Return the revised text that replaces the highlighted portion (or the complete updated commentary with the revision incorporated seamlessly)."
+            )
     else:
-        prompt = REVISE_PROMPT.format(
-            scripture=scripture_block,
-            commentary=current_text or "(none)",
-            selection_block=selection_block,
-            instruction=body.instruction
-        )
+        selection_block = "The user has requested a revision of the entire section."
+        if field_key in ("opening_prayer", "closing_prayer"):
+            specific_rules = (
+                f"1. Rewrite and improve the entire {sec_title} according to the user's instruction and the scriptures above.\n"
+                f"2. Write in a reverent, thoughtful tone grounded in the scriptures.\n"
+                f"3. Return the complete updated {sec_title}."
+            )
+        else:
+            specific_rules = (
+                f"1. Rewrite and improve the entire {sec_title} according to the user's instruction and the scriptures above.\n"
+                f"2. Maintain readable formatting with distinct paragraphs (separated by blank lines), **bold** key terms, and *italics* for Bible verses and scripture citations.\n"
+                f"3. Return the complete updated {sec_title}."
+            )
+
+    prompt = REVISE_PROMPT.format(
+        section_title=sec_title,
+        section_title_upper=sec_title.upper(),
+        study_topic=s.title or s.topic,
+        tradition=s.tradition or "Universal Christian",
+        day_number=day_number,
+        day_heading=blocks.get("heading") or target.title or f"Day {day_number}",
+        scripture=scripture_block,
+        page_context=page_context,
+        current_text=current_text or "(none)",
+        selection_block=selection_block,
+        instruction=body.instruction,
+        specific_rules=specific_rules
+    )
 
     try:
         res = await complete(prompt, system=build_system(tradition=s.tradition),
@@ -484,14 +539,21 @@ async def revise_day_endpoint(study_id: int, day_number: int, body: DayRevise,
         raise HTTPException(status_code=402, detail="KEY_REQUIRED: AI provider is unavailable or quota was exhausted. Please add your API key in Settings/Profile.")
     
     revised_piece = res.text.strip()
-    # Strip accidental wrapping quotes or fences if returned
+    # Strip accidental wrapping quotes or markdown fences if returned
     if revised_piece.startswith("```") and revised_piece.endswith("```"):
         lines = revised_piece.splitlines()
         if len(lines) >= 2:
             revised_piece = "\n".join(lines[1:-1]).strip()
 
-    if body.selection and current_text and body.selection in current_text:
-        final_text = current_text.replace(body.selection, revised_piece)
+    if body.selection and current_text:
+        if body.selection in revised_piece:
+            # Model returned full text containing the revision
+            final_text = revised_piece
+        elif len(revised_piece) < len(current_text) * 0.75 and body.selection in current_text:
+            # Model returned only the updated replacement for the selected excerpt
+            final_text = current_text.replace(body.selection, revised_piece, 1)
+        else:
+            final_text = revised_piece
     else:
         final_text = revised_piece
 

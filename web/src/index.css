@@ -135,6 +135,16 @@
   ::-webkit-scrollbar-track {
     background: transparent;
   }
+
+  /* High-contrast, crystal-clear text selection highlighting */
+  ::selection {
+    background-color: #2563eb !important;
+    color: #ffffff !important;
+  }
+  ::-moz-selection {
+    background-color: #2563eb !important;
+    color: #ffffff !important;
+  }
 }
 
 @layer components {

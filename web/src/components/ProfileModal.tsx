@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react'
 import { auth, type AuthUser } from '../lib/auth'
 import { keysApi, type KeyStatus, type TestKeyResult } from '../lib/keys'
 import { getStoredTheme, getStoredFontScale, applyTheme, applyFontScale, type ThemeMode } from '../lib/theme'
+import { voicePreferences } from '../lib/studies'
 
-type Tab = 'profile' | 'byok' | 'admin'
+type Tab = 'profile' | 'study_settings' | 'byok' | 'admin'
+
 
 interface ProfileModalProps {
   isOpen: boolean
@@ -84,6 +86,11 @@ export default function ProfileModal({
   const [loadingUsers, setLoadingUsers] = useState(false)
   const [adminMsg, setAdminMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
+  // Study & Voices Settings State
+  const [summaryLength, setSummaryLength] = useState<number>(voicePreferences.getSummaryLength())
+  const [voiceCounts, setVoiceCounts] = useState(voicePreferences.getCounts())
+  const [studyMsg, setStudyMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+
   const isAdmin = currentUser?.is_admin || currentUser?.role === 'SUPER_ADMIN' || currentUser?.role === 'ADMIN'
 
   useEffect(() => {
@@ -99,11 +106,26 @@ export default function ProfileModal({
   useEffect(() => {
     if (isOpen) {
       loadKeyStatus()
+      setSummaryLength(voicePreferences.getSummaryLength())
+      setVoiceCounts(voicePreferences.getCounts())
       if (isAdmin && activeTab === 'admin') {
         loadAdminUsers()
       }
     }
   }, [isOpen, activeTab, isAdmin])
+
+  const handleSaveStudySettings = (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      voicePreferences.setSummaryLength(summaryLength)
+      voicePreferences.setCounts(voiceCounts)
+      setStudyMsg({ type: 'success', text: 'Study & voices preferences saved successfully!' })
+      setTimeout(() => setStudyMsg(null), 3000)
+    } catch (err: any) {
+      setStudyMsg({ type: 'error', text: err.message || 'Failed to save study settings' })
+    }
+  }
+
 
   const loadKeyStatus = async () => {
     try {
@@ -328,6 +350,18 @@ export default function ProfileModal({
           </button>
           <button
             type="button"
+            onClick={() => setActiveTab('study_settings')}
+            className={`flex items-center gap-2 border-b-2 py-3 px-3 text-ui-label-sm font-semibold transition-all cursor-pointer whitespace-nowrap ${
+              activeTab === 'study_settings'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-on-surface-variant hover:text-on-surface'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[18px]">tune</span>
+            Study & Voices
+          </button>
+          <button
+            type="button"
             onClick={() => setActiveTab('byok')}
             className={`flex items-center gap-2 border-b-2 py-3 px-3 text-ui-label-sm font-semibold transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'byok'
@@ -338,6 +372,7 @@ export default function ProfileModal({
             <span className="material-symbols-outlined text-[18px]">key</span>
             API Keys & BYOK
           </button>
+
           {isAdmin && (
             <button
               type="button"
@@ -567,7 +602,154 @@ export default function ProfileModal({
           </form>
         )}
 
-        {/* Tab 2: BYOK & API Keys */}
+        {/* Tab 2: Study & Voices Settings */}
+        {activeTab === 'study_settings' && (
+          <form onSubmit={handleSaveStudySettings} className="mt-5 space-y-5">
+            {studyMsg && (
+              <div
+                className={`rounded-xl p-3 text-xs flex items-center gap-2 ${
+                  studyMsg.type === 'success'
+                    ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'
+                    : 'bg-rose-500/10 text-rose-300 border border-rose-500/30'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[18px]">
+                  {studyMsg.type === 'success' ? 'check_circle' : 'error'}
+                </span>
+                {studyMsg.text}
+              </div>
+            )}
+
+            {/* Voices Sentiment Quotas Card */}
+            <div className="rounded-2xl border border-outline-variant/30 bg-surface-container p-5 space-y-4 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-headline-sm text-sm font-bold text-on-surface flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[18px] text-primary">psychology</span>
+                    Voices Sentiment Mix (Default: 4 Negative, 2 Neutral, 2 Positive)
+                  </h3>
+                  <p className="text-xs text-on-surface-variant mt-0.5">
+                    Configure default balance for BERT-analyzed external commentary and discussion sources.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setVoiceCounts({ negative: 4, neutral: 2, positive: 2 })}
+                  className="btn-ghost px-2.5 py-1 text-xs text-primary hover:underline cursor-pointer"
+                >
+                  Reset 4+2+2
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-3 flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-semibold text-red-600 dark:text-red-400 flex items-center gap-1">
+                      <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" /> Negative (Red)
+                    </span>
+                    <span className="text-xs font-bold text-on-surface">{voiceCounts.negative}</span>
+                  </div>
+                  <input
+                    type="number"
+                    min={0}
+                    max={20}
+                    value={voiceCounts.negative}
+                    onChange={(e) => setVoiceCounts({ ...voiceCounts, negative: Math.max(0, parseInt(e.target.value, 10) || 0) })}
+                    className="w-full rounded-lg bg-surface-container-lowest border border-outline-variant/30 px-3 py-1.5 text-xs text-on-surface focus:border-red-500 focus:outline-none"
+                  />
+                  <span className="text-[11px] text-on-surface-variant/80 mt-1.5">Critical, skeptical & objections</span>
+                </div>
+
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                      <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" /> Neutral (Yellow)
+                    </span>
+                    <span className="text-xs font-bold text-on-surface">{voiceCounts.neutral}</span>
+                  </div>
+                  <input
+                    type="number"
+                    min={0}
+                    max={20}
+                    value={voiceCounts.neutral}
+                    onChange={(e) => setVoiceCounts({ ...voiceCounts, neutral: Math.max(0, parseInt(e.target.value, 10) || 0) })}
+                    className="w-full rounded-lg bg-surface-container-lowest border border-outline-variant/30 px-3 py-1.5 text-xs text-on-surface focus:border-amber-400 focus:outline-none"
+                  />
+                  <span className="text-[11px] text-on-surface-variant/80 mt-1.5">Historical, linguistic & academic</span>
+                </div>
+
+                <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3 flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" /> Positive (Green)
+                    </span>
+                    <span className="text-xs font-bold text-on-surface">{voiceCounts.positive}</span>
+                  </div>
+                  <input
+                    type="number"
+                    min={0}
+                    max={20}
+                    value={voiceCounts.positive}
+                    onChange={(e) => setVoiceCounts({ ...voiceCounts, positive: Math.max(0, parseInt(e.target.value, 10) || 0) })}
+                    className="w-full rounded-lg bg-surface-container-lowest border border-outline-variant/30 px-3 py-1.5 text-xs text-on-surface focus:border-emerald-500 focus:outline-none"
+                  />
+                  <span className="text-[11px] text-on-surface-variant/80 mt-1.5">Devotional, encouraging & practical</span>
+                </div>
+              </div>
+
+              <div className="text-xs text-on-surface-variant/90 pt-1 flex items-center justify-between border-t border-outline-variant/20">
+                <span>Total voices requested per day:</span>
+                <strong className="text-sm text-primary font-bold">{voiceCounts.negative + voiceCounts.neutral + voiceCounts.positive} voices</strong>
+              </div>
+            </div>
+
+            {/* Detail Card Summary Length Slider */}
+            <div className="rounded-2xl border border-outline-variant/30 bg-surface-container p-5 space-y-3 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-headline-sm text-sm font-bold text-on-surface flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[18px] text-primary">subject</span>
+                    Detail Card Summary Length
+                  </h3>
+                  <p className="text-xs text-on-surface-variant mt-0.5">
+                    Controls maximum characters previewed in the source reader modal before full article.
+                  </p>
+                </div>
+                <span className="rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-bold text-primary">
+                  {summaryLength} characters
+                </span>
+              </div>
+
+              <div className="space-y-2 pt-2">
+                <input
+                  type="range"
+                  min={200}
+                  max={2000}
+                  step={50}
+                  value={summaryLength}
+                  onChange={(e) => setSummaryLength(parseInt(e.target.value, 10))}
+                  className="w-full h-2 rounded-lg bg-surface-container-highest appearance-none cursor-pointer accent-primary"
+                />
+                <div className="flex justify-between text-[11px] text-on-surface-variant">
+                  <span>200 chars (Brief)</span>
+                  <span className="font-semibold text-primary">800 chars (Default)</span>
+                  <span>2000 chars (Extended)</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl bg-surface-container-high/40 p-4 border border-outline-variant/20 flex items-center justify-end">
+              <button
+                type="submit"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-on-primary hover:bg-primary/90 transition-all cursor-pointer shadow-sm"
+              >
+                Save Study Preferences
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Tab 3: BYOK & API Keys */}
         {activeTab === 'byok' && (
           <form onSubmit={handleSaveKeys} className="mt-5 space-y-4">
             {byokMsg && (

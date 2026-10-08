@@ -19,6 +19,18 @@ export type DayDraft = {
   closing_prayer: string
 }
 
+export type DiscussionSource = {
+  title: string
+  url: string
+  snippet: string
+  source: string
+  kind?: string
+  platform?: string | null
+  engagement?: number | null
+  sentiment?: 'negative' | 'neutral' | 'positive'
+  confidence?: number
+}
+
 export interface DayOut {
   day_number: number
   title: string
@@ -34,9 +46,9 @@ export interface DayOut {
     official_min: number
     social_min: number
     status: string
-    official_sources: { title: string; url: string; snippet: string; source: string; kind: string; platform?: string | null; engagement?: number | null }[]
-    social_sources: { title: string; url: string; snippet: string; source: string; kind: string; platform?: string | null; engagement?: number | null }[]
-    sources: { title: string; url: string; snippet: string; source: string; kind?: string; platform?: string | null; engagement?: number | null }[]
+    official_sources: DiscussionSource[]
+    social_sources: DiscussionSource[]
+    sources: DiscussionSource[]
     guide: string
   } | null
   blocks_json?: DayDraft | null
@@ -211,10 +223,17 @@ export const studies = {
       body: JSON.stringify({ instruction, selection: selection ?? null, target_field: target_field ?? 'commentary' }),
     }).then(j),
 
-  refreshDiscussions: (id: number, day: number): Promise<{ day_number: number; discussions: DayOut['discussions'] }> =>
+  refreshDiscussions: (
+    id: number,
+    day: number,
+    counts?: { negative_count?: number; neutral_count?: number; positive_count?: number }
+  ): Promise<{ day_number: number; discussions: DayOut['discussions'] }> =>
     api.fetch(`/api/studies/${id}/days/${day}/discussions`, {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: counts ? JSON.stringify(counts) : undefined,
     }).then(j),
+
 
   ttsVoices: (): Promise<{ voices: TTSChoice[]; count: number }> =>
     api.fetch(`/api/tts/voices`).then(j),
@@ -374,3 +393,55 @@ export const TRADITIONS = [
   'reformed', 'baptist', 'methodist', 'pentecostal', 'dispensational',
   'covenant', 'liberation',
 ]
+
+export const voicePreferences = {
+  getSummaryLength: (): number => {
+    try {
+      const val = localStorage.getItem('study_voice_summary_length')
+      if (val) {
+        const parsed = parseInt(val, 10)
+        if (!isNaN(parsed) && parsed >= 200 && parsed <= 3000) return parsed
+      }
+    } catch {
+      // ignore
+    }
+    return 800
+  },
+  setSummaryLength: (len: number): void => {
+    try {
+      localStorage.setItem('study_voice_summary_length', String(len))
+    } catch {
+      // ignore
+    }
+  },
+  getCounts: (): { negative: number; neutral: number; positive: number } => {
+    try {
+      const val = localStorage.getItem('study_voice_counts')
+      if (val) {
+        const parsed = JSON.parse(val)
+        if (
+          typeof parsed.negative === 'number' &&
+          typeof parsed.neutral === 'number' &&
+          typeof parsed.positive === 'number'
+        ) {
+          return {
+            negative: Math.max(0, parsed.negative),
+            neutral: Math.max(0, parsed.neutral),
+            positive: Math.max(0, parsed.positive),
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return { negative: 4, neutral: 2, positive: 2 }
+  },
+  setCounts: (counts: { negative: number; neutral: number; positive: number }): void => {
+    try {
+      localStorage.setItem('study_voice_counts', JSON.stringify(counts))
+    } catch {
+      // ignore
+    }
+  },
+}
+

@@ -216,12 +216,27 @@ export default function PrayerSection({
           {isEditing ? (
             <div className="space-y-2">
               <textarea
-                className="field-underline w-full rounded-xl border border-outline-variant/40 bg-surface-container-high p-4 font-serif italic text-body-reading text-on-surface leading-relaxed focus:border-primary focus:outline-none transition-colors"
+                className="field-underline w-full rounded-xl border border-outline-variant/40 bg-surface-container-high p-4 font-serif italic text-body-reading text-on-surface leading-relaxed focus:border-primary focus:outline-none transition-colors cursor-text select-text"
                 rows={4}
                 value={editText}
                 placeholder={`Write or edit ${title.toLowerCase()} here...`}
                 onChange={(e) => setEditText(e.target.value)}
                 onKeyDown={handleKeyDownInEditor}
+                onSelect={(e) => {
+                  const target = e.currentTarget
+                  const sel = target.value.slice(target.selectionStart, target.selectionEnd).trim()
+                  if (sel) setSelectedText(sel)
+                }}
+                onMouseUp={(e) => {
+                  const target = e.currentTarget
+                  const sel = target.value.slice(target.selectionStart, target.selectionEnd).trim()
+                  if (sel) setSelectedText(sel)
+                }}
+                onKeyUp={(e) => {
+                  const target = e.currentTarget
+                  const sel = target.value.slice(target.selectionStart, target.selectionEnd).trim()
+                  if (sel) setSelectedText(sel)
+                }}
                 autoFocus
               />
               <div className="flex flex-wrap items-center justify-between gap-2 text-ui-label-xs text-on-surface-variant/70 px-1">
@@ -231,8 +246,10 @@ export default function PrayerSection({
             </div>
           ) : (
             <div
-              className="relative group rounded-xl p-4 bg-surface-container/60 border border-outline-variant/15 text-on-surface font-serif italic text-body-reading leading-relaxed selection:bg-primary/20"
+              className="relative group rounded-xl p-4 bg-surface-container/60 border border-outline-variant/15 text-on-surface font-serif italic text-body-reading leading-relaxed select-text cursor-text"
+              tabIndex={0}
               onMouseUp={handleMouseUp}
+              onKeyUp={handleMouseUp}
             >
               <div className="flex items-start gap-3">
                 <span className="material-symbols-outlined text-[22px] text-primary/60 shrink-0 mt-0.5 select-none">

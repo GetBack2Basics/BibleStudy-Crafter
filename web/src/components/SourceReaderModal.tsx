@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { studies, type DayDraft, type SourceTextResult } from '../lib/studies'
+import { studies, voicePreferences, type DayDraft, type SourceTextResult } from '../lib/studies'
 
 export type AnySource = {
   title: string
@@ -9,7 +9,10 @@ export type AnySource = {
   kind?: string
   platform?: string | null
   engagement?: number | null
+  sentiment?: 'negative' | 'neutral' | 'positive'
+  confidence?: number
 }
+
 
 interface SourceReaderModalProps {
   source: AnySource | null
@@ -135,7 +138,7 @@ export default function SourceReaderModal({
         {/* Header */}
         <div className="flex items-start justify-between gap-3 px-6 py-4 border-b border-outline-variant/20 bg-surface-container-lowest">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
               <span className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary-container text-on-secondary-container">
                 <span className="material-symbols-outlined text-[15px]">
                   {source.kind === 'social' ? 'forum' : 'menu_book'}
@@ -144,6 +147,17 @@ export default function SourceReaderModal({
               <span className="font-ui-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">
                 {source.source}
               </span>
+              {typeof source.confidence === 'number' && (
+                <span className={`rounded-full px-2 py-0.5 font-ui-label-xs font-semibold ${
+                  source.sentiment === 'negative'
+                    ? 'bg-red-500/15 text-red-700 dark:text-red-400 border border-red-500/30'
+                    : source.sentiment === 'positive'
+                      ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30'
+                      : 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30'
+                }`}>
+                  {Math.round(source.confidence * 100)}% Confidence
+                </span>
+              )}
               {source.platform && (
                 <span className="rounded-full bg-tertiary-container px-2 py-0.5 font-ui-label-xs text-on-tertiary-container">
                   {source.platform}
@@ -184,24 +198,27 @@ export default function SourceReaderModal({
 
         {/* Scrollable Content Area */}
         <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
-          {/* Search Result Snippet */}
+          {/* Summary Snippet with configurable max length */}
           {source.snippet && (
             <div className="rounded-2xl border border-secondary/20 bg-secondary/5 p-4">
-              <div className="mb-1 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-secondary">
-                <span>Summary / Citation Snippet</span>
+              <div className="mb-1.5 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-secondary">
+                <span>Summary (~{voicePreferences.getSummaryLength()} chars limit)</span>
                 <button
                   type="button"
                   onClick={handleUseSnippet}
-                  className="text-[11px] lowercase tracking-normal text-primary hover:underline"
+                  className="text-[11px] lowercase tracking-normal text-primary hover:underline cursor-pointer"
                 >
-                  Quote this snippet
+                  Quote this summary
                 </button>
               </div>
-              <p className="font-body-reading text-sm text-on-surface italic leading-relaxed">
-                "{source.snippet}"
+              <p className="font-body-reading text-sm text-on-surface italic leading-relaxed whitespace-pre-line">
+                "{source.snippet.length > voicePreferences.getSummaryLength()
+                  ? source.snippet.slice(0, voicePreferences.getSummaryLength()) + '…'
+                  : source.snippet}"
               </p>
             </div>
           )}
+
 
           {/* Full Page Content / Loader */}
           <div className="space-y-2">

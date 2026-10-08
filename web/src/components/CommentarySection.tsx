@@ -198,8 +198,10 @@ export default function CommentarySection({
         </div>
 
         <div
-          className="commentary-body space-y-4 font-body-reading text-body-reading leading-relaxed text-on-surface selection:bg-primary/20 selection:text-on-surface"
+          className="commentary-body space-y-4 font-body-reading text-body-reading leading-relaxed text-on-surface select-text cursor-text"
+          tabIndex={0}
           onMouseUp={handleMouseUp}
+          onKeyUp={handleMouseUp}
         >
           <CommentaryContent text={commentary} />
         </div>
@@ -296,7 +298,7 @@ export default function CommentarySection({
           {isEditing ? (
             <div className="space-y-2">
               <textarea
-                className="field-underline w-full rounded-xl border border-outline-variant/40 bg-surface-container-high p-4 font-body-reading text-body-reading text-on-surface leading-relaxed focus:border-primary focus:outline-none transition-colors"
+                className="field-underline w-full rounded-xl border border-outline-variant/40 bg-surface-container-high p-4 font-body-reading text-body-reading text-on-surface leading-relaxed focus:border-primary focus:outline-none transition-colors cursor-text select-text"
                 rows={10}
                 value={editText}
                 placeholder="Write or edit commentary here... Use **bold** for key words, *italics* for verses, and blank lines between paragraphs."
@@ -305,7 +307,32 @@ export default function CommentarySection({
                   onChange?.(e.target.value)
                 }}
                 onKeyDown={handleKeyDownInEditor}
-                onMouseUp={(e) => onMouseUpInEditor?.(e.currentTarget)}
+                onSelect={(e) => {
+                  const target = e.currentTarget
+                  const sel = target.value.slice(target.selectionStart, target.selectionEnd).trim()
+                  if (sel) {
+                    setSelectedText(sel)
+                    onSelectText?.(sel)
+                  }
+                }}
+                onMouseUp={(e) => {
+                  const target = e.currentTarget
+                  const sel = target.value.slice(target.selectionStart, target.selectionEnd).trim()
+                  if (sel) {
+                    setSelectedText(sel)
+                    onSelectText?.(sel)
+                  }
+                  onMouseUpInEditor?.(target)
+                }}
+                onKeyUp={(e) => {
+                  const target = e.currentTarget
+                  const sel = target.value.slice(target.selectionStart, target.selectionEnd).trim()
+                  if (sel) {
+                    setSelectedText(sel)
+                    onSelectText?.(sel)
+                  }
+                  onMouseUpInEditor?.(target)
+                }}
                 autoFocus
               />
               <div className="flex flex-wrap items-center justify-between gap-2 text-ui-label-xs text-on-surface-variant/70 px-1">
@@ -315,8 +342,10 @@ export default function CommentarySection({
             </div>
           ) : (
             <div
-              className="commentary-body space-y-4 font-body-reading text-body-reading leading-relaxed text-on-surface selection:bg-primary/20 selection:text-on-surface"
+              className="commentary-body space-y-4 font-body-reading text-body-reading leading-relaxed text-on-surface select-text cursor-text"
+              tabIndex={0}
               onMouseUp={handleMouseUp}
+              onKeyUp={handleMouseUp}
             >
               {commentary ? (
                 <CommentaryContent text={commentary} />

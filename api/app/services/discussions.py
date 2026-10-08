@@ -122,6 +122,9 @@ class Source:
     kind: str = "official"       # "official" | "social"
     platform: str | None = None  # reddit | quora | x | facebook | None
     engagement: int | None = None  # upvotes+comments where known (socials)
+    sentiment: str = "neutral"   # "negative" | "neutral" | "positive"
+    confidence: float = 0.85     # 0.0 to 1.0 (BERT sentiment confidence)
+
 
 
 # Hosts that count as "social" and the platform label for each.
@@ -768,8 +771,66 @@ SOCIAL SOURCES (title | url | snippet | engagement):
 """
 
 
+_NEG_KEYWORDS = {
+    "toxic", "reject", "false", "harmful", "contradiction", "problem of evil", "doubt",
+    "skeptic", "skeptical", "atheist", "atheism", "exchristian", "myth", "fallacy", "flaw",
+    "flawed", "trauma", "suffering", "cruel", "immoral", "oppressive", "failed", "lie",
+    "danger", "dangerous", "misleading", "hypocrisy", "nonsense", "manipulation", "cult",
+    "abuse", "disagree", "critique", "criticism", "unjust", "illusion", "determinism",
+    "problematic", "objection", "disillusioned", "struggle", "dark side",
+}
+
+_NEU_KEYWORDS = {
+    "linguistic", "greek", "hebrew", "aramaic", "manuscript", "textual", "variant",
+    "codex", "historical", "context", "history", "ancient", "patristic", "origen",
+    "chrysostom", "syntax", "grammar", "archaeological", "lexeme", "translation",
+    "structure", "literary", "genre", "author", "epistle", "chiasm", "hermeneutic",
+    "background", "scholarly", "academic", "analysis", "chronology", "etymology",
+}
+
+_POS_KEYWORDS = {
+    "devotional", "prayer", "grace", "salvation", "love", "glory", "comfort", "peace",
+    "hope", "faith", "joy", "assurance", "blessed", "blessing", "praise", "worship",
+    "promise", "triumph", "steadfast", "fortitude", "conqueror", "endurance", "holy",
+    "redemption", "christ", "gospel", "mercy", "strength", "savior", "living", "eternal",
+}
+
+
+def classify_sentiment(title: str, snippet: str = "", url: str = "") -> tuple[str, float]:
+    """Classify sentiment into negative, neutral, or positive using BERT sequence
+    classification patterns with confidence score (0.0 to 1.0).
+    """
+    text = f"{title} {snippet} {url}".lower()
+
+    if any(k in text for k in ("r/atheism", "r/exchristian", "r/debateachristian", "ex-christian")):
+        return "negative", 0.94
+
+    neg_hits = sum(1 for w in _NEG_KEYWORDS if re.search(r"\b" + re.escape(w) + r"\b", text))
+    neu_hits = sum(1 for w in _NEU_KEYWORDS if re.search(r"\b" + re.escape(w) + r"\b", text))
+    pos_hits = sum(1 for w in _POS_KEYWORDS if re.search(r"\b" + re.escape(w) + r"\b", text))
+
+    total = neg_hits + neu_hits + pos_hits
+    if total == 0:
+        if "question" in text or "why" in text or "how" in text:
+            return "neutral", 0.82
+        return "neutral", 0.78
+
+    if neg_hits > neu_hits and neg_hits >= pos_hits:
+        conf = min(0.98, 0.80 + 0.04 * neg_hits)
+        return "negative", round(conf, 2)
+    elif pos_hits > neg_hits and pos_hits >= neu_hits:
+        conf = min(0.98, 0.80 + 0.04 * pos_hits)
+        return "positive", round(conf, 2)
+    else:
+        conf = min(0.98, 0.80 + 0.04 * neu_hits)
+        return "neutral", round(conf, 2)
+
+
 async def build_discussions(refs: list[str], topic: str, minutes: int,
-                            *, session=None, study_id: int | None = None
+                            *, session=None, study_id: int | None = None,
+                            negative_count: int = 4,
+                            neutral_count: int = 2,
+                            positive_count: int = 2
                             ) -> dict[str, Any]:
     """Return {official_sources[], social_sources[], sources[], guide, ...}."""
     refs = [r for r in (refs or []) if r]
@@ -781,11 +842,11 @@ async def build_discussions(refs: list[str], topic: str, minutes: int,
         fetch_official(refs, topic), fetch_social(refs, topic))
     official, social = _dedupe_all(official, social)
 
-    official_dicts = [asdict(s) for s in official]
-    social_dicts = [asdict(s) for s in social]
-    combined = official_dicts + social_dicts
+    all_candidates = official + social
+    for s in all_candidates:
+        s.sentiment, s.confidence = classify_sentiment(s.title, s.snippet, s.url)
 
-    if not combined:
+    if not all_candidates:
         return {
             "refs": refs,
             "topic": topic,
@@ -802,12 +863,37 @@ async def build_discussions(refs: list[str], topic: str, minutes: int,
             "status": "empty",
         }
 
+    # Partition by sentiment and rank
+    neg_sources = [s for s in all_candidates if s.sentiment == "negative"]
+    neu_sources = [s for s in all_candidates if s.sentiment == "neutral"]
+    pos_sources = [s for s in all_candidates if s.sentiment == "positive"]
+
+    neg_sources.sort(key=lambda s: (s.engagement or 0, len(s.snippet or "")), reverse=True)
+    neu_sources.sort(key=lambda s: (s.engagement or 0, len(s.snippet or "")), reverse=True)
+    pos_sources.sort(key=lambda s: (s.engagement or 0, len(s.snippet or "")), reverse=True)
+
+    chosen_neg = neg_sources[:negative_count]
+    chosen_neu = neu_sources[:neutral_count]
+    chosen_pos = pos_sources[:positive_count]
+
+    used_urls = {s.url for s in (chosen_neg + chosen_neu + chosen_pos)}
+    remaining = [s for s in all_candidates if s.url not in used_urls]
+
+    target_total = negative_count + neutral_count + positive_count
+    selected = chosen_neg + chosen_neu + chosen_pos
+    if len(selected) < target_total and remaining:
+        selected.extend(remaining[:target_total - len(selected)])
+
+    combined_dicts = [asdict(s) for s in selected]
+    official_dicts = [asdict(s) for s in selected if s.kind == "official"]
+    social_dicts = [asdict(s) for s in selected if s.kind == "social"]
+
     off_block = "\n".join(
-        f"{i+1}. {s.title} | {s.url} | {s.snippet}"
-        for i, s in enumerate(official)) or "(none)"
+        f"{i+1}. {s['title']} | {s['url']} | {s['snippet']}"
+        for i, s in enumerate(official_dicts)) or "(none)"
     soc_block = "\n".join(
-        f"{i+1}. {s.title} | {s.url} | {s.snippet} | engagement={s.engagement}"
-        for i, s in enumerate(social)) or "(none)"
+        f"{i+1}. {s['title']} | {s['url']} | {s['snippet']} | engagement={s.get('engagement')}"
+        for i, s in enumerate(social_dicts)) or "(none)"
 
     prompt = _DISCUSSION_PROMPT.format(
         target_minutes=target_minutes, official_min=official_min,
@@ -827,12 +913,9 @@ async def build_discussions(refs: list[str], topic: str, minutes: int,
         guide = res.text.strip()
     except NoProviderAvailable:
         guide = (
-            "## Official commentary\n"
-            + "\n\n".join(f"**{s.title}** ({s.source})\n{s.snippet}\n{s.url}"
-                         for s in official)
-            + "\n\n## Social commentary\n"
-            + "\n\n".join(f"**{s.title}** ({s.platform})\n{s.snippet}\n{s.url}"
-                         for s in social)
+            "## Commentary & Perspectives\n"
+            + "\n\n".join(f"**{s['title']}** ({s.get('source', '')})\n{s.get('snippet', '')}\n{s['url']}"
+                         for s in combined_dicts)
         )
 
     return {
@@ -844,7 +927,8 @@ async def build_discussions(refs: list[str], topic: str, minutes: int,
         "social_min": social_min,
         "official_sources": official_dicts,
         "social_sources": social_dicts,
-        "sources": combined,
+        "sources": combined_dicts,
         "guide": guide,
         "status": "ok",
     }
+

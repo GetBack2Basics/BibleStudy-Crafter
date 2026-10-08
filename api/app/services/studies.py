@@ -113,7 +113,10 @@ def day_verse_refs(day: "StudyDay") -> list[str]:
 
 
 async def build_day_discussions(study: Study, day_number: int, *, session: Session,
-                                study_id: int | None = None) -> dict[str, Any] | None:
+                                study_id: int | None = None,
+                                negative_count: int = 4,
+                                neutral_count: int = 2,
+                                positive_count: int = 2) -> dict[str, Any] | None:
     """Fetch real, cited discussions for a day's verses and persist them.
 
     Fire-and-forget after a day is ready; never raises into the caller.
@@ -131,7 +134,10 @@ async def build_day_discussions(study: Study, day_number: int, *, session: Sessi
     try:
         result = await disc.build_discussions(
             refs, topic, study.minutes_per_day,
-            session=session, study_id=study_id)
+            session=session, study_id=study_id,
+            negative_count=negative_count,
+            neutral_count=neutral_count,
+            positive_count=positive_count)
     except Exception as exc:               # noqa: BLE001 - discussions are best-effort
         events.emit("warn", "discussions", f"day {day_number} discussions failed: {exc}")
         return None
@@ -143,6 +149,7 @@ async def build_day_discussions(study: Study, day_number: int, *, session: Sessi
                 f"{len(result.get('sources', []))} cited discussions",
                 study_id=study_id)
     return result
+
 
 
 # ------------------------------------------------------------------------- history
