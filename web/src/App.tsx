@@ -1367,42 +1367,50 @@ function SourceGrid({
   empty: string
   onOpenSource: (s: AnySource) => void
 }) {
-  if (!sources.length) {
+  const displaySources = sources.slice(0, 8)
+  if (!displaySources.length) {
     return <p className="text-ui-label-sm text-on-surface-variant/80">{empty}</p>
   }
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-      {sources.map((s, i) => (
-        <button
-          key={i}
-          type="button"
-          onClick={() => onOpenSource(s)}
-          className="voice-card text-left hover:text-primary transition-all group w-full cursor-pointer"
-        >
-          <div className="mb-1 flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary-container text-on-secondary-container">
-              <I name={s.kind === 'social' ? 'forum' : 'menu_book'} cls="text-[14px]" />
-            </span>
-            <span className="font-ui-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">
-              {s.source}
-            </span>
-            {s.platform && (
-              <span className="rounded-full bg-tertiary-container px-2 py-0.5 font-ui-label-xs text-on-tertiary-container">
-                {s.platform}
-              </span>
-            )}
-            {typeof s.engagement === 'number' && (
-              <span className="font-ui-label-xs text-on-surface-variant/70">▲ {s.engagement}</span>
-            )}
-            <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity text-primary text-xs flex items-center gap-0.5 font-semibold">
-              Read <I name="visibility" cls="text-[14px]" />
-            </span>
-          </div>
-          <div className="font-ui-label-md text-on-surface group-hover:text-primary leading-snug">
-            {s.title}
-          </div>
-        </button>
-      ))}
+      {displaySources.map((s, i) => {
+        const summary = (s.snippet || '').trim()
+        return (
+          <button
+            key={i}
+            type="button"
+            onClick={() => onOpenSource(s)}
+            className="voice-card text-left hover:text-primary transition-all group w-full cursor-pointer flex flex-col justify-between"
+          >
+            <div className="w-full">
+              <div className="mb-2 flex items-center gap-2">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-secondary-container text-on-secondary-container">
+                  <I name={s.kind === 'social' ? 'forum' : 'menu_book'} cls="text-[14px]" />
+                </span>
+                {s.platform && (
+                  <span className="rounded-full bg-tertiary-container px-2 py-0.5 font-ui-label-xs text-on-tertiary-container uppercase">
+                    {s.platform}
+                  </span>
+                )}
+                {typeof s.engagement === 'number' && s.engagement > 0 && (
+                  <span className="font-ui-label-xs text-on-surface-variant/70">▲ {s.engagement}</span>
+                )}
+                <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity text-primary text-xs flex items-center gap-0.5 font-semibold">
+                  Read article <I name="open_in_new" cls="text-[14px]" />
+                </span>
+              </div>
+              <div className="font-ui-label-md font-semibold text-on-surface group-hover:text-primary leading-snug">
+                {s.title}
+              </div>
+              {summary && (
+                <p className="mt-2 text-xs text-on-surface-variant/90 line-clamp-4 leading-relaxed font-body-reading">
+                  {summary}
+                </p>
+              )}
+            </div>
+          </button>
+        )
+      })}
     </div>
   )
 }
@@ -1497,7 +1505,7 @@ function Discussions({
         {d && d.status === 'ok' && (
           <>
             <p className="mb-4 text-ui-label-sm text-on-surface-variant">
-              Curated from {(d.official_sources?.length ?? 0) + (d.social_sources?.length ?? 0)} real sources
+              Curated from {Math.min(8, d.official_sources?.length ?? 0) + Math.min(8, d.social_sources?.length ?? 0)} real sources
               (~{d.official_min} min official, ~{d.social_min} min social).
               Every discussion links directly to its source.
             </p>

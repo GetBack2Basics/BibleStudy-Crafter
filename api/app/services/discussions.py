@@ -59,7 +59,7 @@ _REDDIT_HEADERS = {
 }
 _TIMEOUT = 12.0
 _PER_QUERY = 6          # results kept per web-search query
-_MAX_SOURCES = 18       # hard cap per track fed to / returned from the LLM
+_MAX_SOURCES = 8        # hard cap per track (8 official, 8 social)
 
 # Engine politeness. Mojeek (the only engine that reliably honours `site:` and
 # does not rewrite the query) answers 403 to concurrent bursts: 12 parallel
