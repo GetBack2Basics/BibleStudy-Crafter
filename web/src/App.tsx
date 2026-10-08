@@ -1380,28 +1380,12 @@ function SourceGrid({
             key={i}
             type="button"
             onClick={() => onOpenSource(s)}
-            className="voice-card text-left hover:text-primary transition-all group w-full cursor-pointer flex flex-col justify-between"
+            className="voice-card text-left hover:text-primary transition-all group w-full cursor-pointer flex flex-col justify-between p-4"
           >
             <div className="w-full">
-              <div className="mb-2 flex items-center gap-2">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-secondary-container text-on-secondary-container">
-                  <I name={s.kind === 'social' ? 'forum' : 'menu_book'} cls="text-[14px]" />
-                </span>
-                {s.platform && (
-                  <span className="rounded-full bg-tertiary-container px-2 py-0.5 font-ui-label-xs text-on-tertiary-container uppercase">
-                    {s.platform}
-                  </span>
-                )}
-                {typeof s.engagement === 'number' && s.engagement > 0 && (
-                  <span className="font-ui-label-xs text-on-surface-variant/70">▲ {s.engagement}</span>
-                )}
-                <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity text-primary text-xs flex items-center gap-0.5 font-semibold">
-                  Read article <I name="open_in_new" cls="text-[14px]" />
-                </span>
-              </div>
-              <div className="font-ui-label-md font-semibold text-on-surface group-hover:text-primary leading-snug">
+              <h4 className="font-ui-label-md font-semibold text-on-surface group-hover:text-primary leading-snug line-clamp-2">
                 {s.title}
-              </div>
+              </h4>
               {summary && (
                 <p className="mt-2 text-xs text-on-surface-variant/90 line-clamp-4 leading-relaxed font-body-reading">
                   {summary}
