@@ -110,22 +110,23 @@ function CollapsibleSection({ title, icon, defaultOpen = true, children, right, 
   const toggle = () => setOpen((o) => !o)
   return (
     <section className={`rounded-2xl border border-outline-variant/20 bg-surface-container-low shadow-ambient ${className}`}>
-      <div className="flex items-center gap-2 rounded-2xl px-4 py-3 transition-colors hover:bg-surface-container-high">
+      <div className="flex items-center gap-2 rounded-2xl px-4 py-3 transition-colors hover:bg-surface-container-high border-b border-outline-variant/10">
         <button type="button" onClick={toggle} aria-expanded={open}
-                className="flex min-w-0 flex-1 items-center gap-2 text-left">
-          {icon && <I name={icon} cls="text-[18px] text-primary shrink-0" />}
-          <span className="min-w-0 flex-1 truncate text-ui-label-md text-on-surface">{title}</span>
+                className="flex min-w-0 flex-1 items-center gap-2 text-left cursor-pointer hover:opacity-80 transition-opacity">
+          {icon && <span className="material-symbols-outlined text-[20px] text-primary shrink-0">{icon}</span>}
+          <span className="min-w-0 flex-1 truncate font-ui-label-md text-on-surface font-semibold">{title}</span>
         </button>
         {right}
         <button type="button" onClick={toggle} aria-expanded={open} aria-label={open ? 'Collapse' : 'Expand'}
-                className="shrink-0 text-on-surface-variant transition-transform">
-          <I name={open ? 'expand_less' : 'expand_more'} cls="text-[22px]" />
+                className="shrink-0 text-on-surface-variant transition-transform cursor-pointer p-1 rounded-full hover:bg-surface-container-high">
+          <span className="material-symbols-outlined text-[20px]">{open ? 'expand_less' : 'expand_more'}</span>
         </button>
       </div>
-      {open && <div className="px-4 pb-4">{children}</div>}
+      {open && <div className="p-4">{children}</div>}
     </section>
   )
 }
+
 
 export default function App() {
   const [authed, setAuthed] = useState<boolean>(() => auth.accessToken() !== null)
@@ -1049,10 +1050,11 @@ function DraftEditor({
 
       {/* External Discussions / Source Notes */}
       {notes.discussions && (
-        <CollapsibleSection title="Your note · external voices & sources" icon="forum" defaultOpen>
-          <p className="rounded-xl bg-surface-container-high p-3 text-ui-label-sm text-on-tertiary-container whitespace-pre-wrap">{notes.discussions}</p>
+        <CollapsibleSection title="Notes" icon="edit_note" defaultOpen>
+          <p className="rounded-xl bg-surface-container-high p-3 text-ui-label-sm text-on-surface whitespace-pre-wrap">{notes.discussions}</p>
         </CollapsibleSection>
       )}
+
     </div>
   )
 }
@@ -1462,11 +1464,12 @@ function Discussions({
   return (
     <>
       <CollapsibleSection
-        title="Voices on these verses"
+        title="Voices on verses"
         icon="forum"
         defaultOpen={false}
         className="mt-6"
       >
+
         {/* Sentiment Quota Adjuster Bar */}
         <div className="mb-4 rounded-2xl bg-surface-container-low border border-outline-variant/20 p-3.5 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3 flex-wrap">

@@ -773,11 +773,17 @@ SOCIAL SOURCES (title | url | snippet | engagement):
 
 _NEG_KEYWORDS = {
     "toxic", "reject", "false", "harmful", "contradiction", "problem of evil", "doubt",
-    "skeptic", "skeptical", "atheist", "atheism", "exchristian", "myth", "fallacy", "flaw",
-    "flawed", "trauma", "suffering", "cruel", "immoral", "oppressive", "failed", "lie",
-    "danger", "dangerous", "misleading", "hypocrisy", "nonsense", "manipulation", "cult",
-    "abuse", "disagree", "critique", "criticism", "unjust", "illusion", "determinism",
-    "problematic", "objection", "disillusioned", "struggle", "dark side",
+    "skeptic", "skeptical", "skepticism", "atheist", "atheism", "exchristian", "myth",
+    "fallacy", "flaw", "flawed", "trauma", "suffering", "cruel", "immoral", "oppressive",
+    "failed", "lie", "danger", "dangerous", "misleading", "hypocrisy", "nonsense",
+    "manipulation", "cult", "abuse", "disagree", "critique", "criticism", "unjust",
+    "illusion", "determinism", "problematic", "objection", "disillusioned", "struggle",
+    "dark side", "debate", "deconstruct", "deconstruction", "agnostic", "unbelief",
+    "anti-christian", "mythology", "contradict", "troubling", "disturbing", "immorality",
+    "unbiblical", "misinterpreted", "inaccurate", "inerrancy", "mythological", "folklore",
+    "superstition", "dogma", "indoctrination", "challenge", "hard passage", "dark passage",
+    "theodicy", "counterargument", "why i left", "deconstructing", "problem with",
+    "rejection", "unconvincing", "unreasonable", "disputed", "injustice",
 }
 
 _NEU_KEYWORDS = {
@@ -786,6 +792,7 @@ _NEU_KEYWORDS = {
     "chrysostom", "syntax", "grammar", "archaeological", "lexeme", "translation",
     "structure", "literary", "genre", "author", "epistle", "chiasm", "hermeneutic",
     "background", "scholarly", "academic", "analysis", "chronology", "etymology",
+    "commentary", "meaning", "interpretation", "exegesis", "overview",
 }
 
 _POS_KEYWORDS = {
@@ -802,8 +809,11 @@ def classify_sentiment(title: str, snippet: str = "", url: str = "") -> tuple[st
     """
     text = f"{title} {snippet} {url}".lower()
 
-    if any(k in text for k in ("r/atheism", "r/exchristian", "r/debateachristian", "ex-christian")):
-        return "negative", 0.94
+    if any(k in text for k in (
+        "r/atheism", "r/exchristian", "r/debateachristian", "r/debateanatheist",
+        "r/debatereligion", "ex-christian", "infidels.org", "evilbible"
+    )):
+        return "negative", 0.95
 
     neg_hits = sum(1 for w in _NEG_KEYWORDS if re.search(r"\b" + re.escape(w) + r"\b", text))
     neu_hits = sum(1 for w in _NEU_KEYWORDS if re.search(r"\b" + re.escape(w) + r"\b", text))
@@ -816,14 +826,79 @@ def classify_sentiment(title: str, snippet: str = "", url: str = "") -> tuple[st
         return "neutral", 0.78
 
     if neg_hits > neu_hits and neg_hits >= pos_hits:
-        conf = min(0.98, 0.80 + 0.04 * neg_hits)
+        conf = min(0.98, 0.82 + 0.04 * neg_hits)
         return "negative", round(conf, 2)
     elif pos_hits > neg_hits and pos_hits >= neu_hits:
-        conf = min(0.98, 0.80 + 0.04 * pos_hits)
+        conf = min(0.98, 0.82 + 0.04 * pos_hits)
         return "positive", round(conf, 2)
     else:
         conf = min(0.98, 0.80 + 0.04 * neu_hits)
         return "neutral", round(conf, 2)
+
+
+async def _fetch_targeted_negative(refs: list[str], topic: str, needed: int = 4) -> list[Source]:
+    """Iterate targeted critical, debate, and skeptical searches on Reddit and web
+    until we gather enough negative candidate sources to meet the quota.
+    """
+    seeds = [_search_safe_ref(r) for r in refs[:2]]
+    if topic:
+        seeds.append(topic.strip())
+    seeds = [s for s in seeds if s]
+
+    reddit_queries = []
+    web_queries = []
+    for seed in seeds:
+        reddit_queries.extend([
+            f"{seed} contradiction OR problem OR critique",
+            f"{seed} atheist OR exchristian OR objection",
+            f"{seed} toxic OR trauma OR disagreement",
+            f"{seed} why I reject OR doubt OR debate",
+            f"{seed} problem of evil OR difficult passage",
+        ])
+        web_queries.extend([
+            f"{seed} contradiction OR critique site:reddit.com",
+            f"{seed} objection OR problem site:reddit.com",
+            f"{seed} why I reject OR critique site:quora.com",
+            f"{seed} atheist critique OR skepticism OR controversy",
+            f"{seed} problem of evil OR biblical critique",
+            f"{seed} moral objection OR historical criticism",
+        ])
+
+    candidates: list[Source] = []
+    seen: set[str] = set()
+
+    # 1. Targeted Reddit searches
+    for q in reddit_queries:
+        res = await _fetch_reddit(q, limit=8)
+        for s in res:
+            if s.url not in seen:
+                seen.add(s.url)
+                s.sentiment, s.confidence = classify_sentiment(s.title, s.snippet, s.url)
+                if s.sentiment == "negative":
+                    candidates.append(s)
+        if len(candidates) >= needed:
+            return candidates
+
+    # 2. Targeted Web searches (Brave / Mojeek / Bing / DDG)
+    for q in web_queries:
+        res = await search(q, per_query=6)
+        for s in res:
+            if s.url not in seen:
+                seen.add(s.url)
+                if len(s.snippet or "") < 150:
+                    try:
+                        text = await _fetch_page_text(s.url, max_chars=1200)
+                        if text:
+                            s.snippet = text
+                    except Exception:
+                        pass
+                s.sentiment, s.confidence = classify_sentiment(s.title, s.snippet, s.url)
+                if s.sentiment == "negative":
+                    candidates.append(s)
+        if len(candidates) >= needed:
+            return candidates
+
+    return candidates
 
 
 async def build_discussions(refs: list[str], topic: str, minutes: int,
@@ -845,6 +920,15 @@ async def build_discussions(refs: list[str], topic: str, minutes: int,
     all_candidates = official + social
     for s in all_candidates:
         s.sentiment, s.confidence = classify_sentiment(s.title, s.snippet, s.url)
+
+    # Active Quota Search: If negative sources are below target, iteratively search for more
+    neg_candidates = [s for s in all_candidates if s.sentiment == "negative"]
+    if len(neg_candidates) < negative_count and (refs or topic):
+        needed = negative_count - len(neg_candidates)
+        more_neg = await _fetch_targeted_negative(refs, topic, needed=needed)
+        for s in more_neg:
+            if s.url not in {x.url for x in all_candidates}:
+                all_candidates.append(s)
 
     if not all_candidates:
         return {
@@ -883,6 +967,7 @@ async def build_discussions(refs: list[str], topic: str, minutes: int,
     selected = chosen_neg + chosen_neu + chosen_pos
     if len(selected) < target_total and remaining:
         selected.extend(remaining[:target_total - len(selected)])
+
 
     combined_dicts = [asdict(s) for s in selected]
     official_dicts = [asdict(s) for s in selected if s.kind == "official"]
