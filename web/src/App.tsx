@@ -17,6 +17,7 @@ import MoodArtworkSection from './components/MoodArtworkSection'
 import PromptCrafterModal from './components/PromptCrafterModal'
 import { assets as assetApi, type AssetOut } from './lib/studies'
 import { initAppearance, getStoredTheme, getStoredFontScale, applyTheme, applyFontScale, type ThemeMode } from './lib/theme'
+import { keysApi } from './lib/keys'
 
 const STATUS_CLS: Record<string, string> = {
   pending: 'text-outline',
@@ -46,11 +47,57 @@ export function isKeyError(errText?: string | null): boolean {
   )
 }
 
-export function ApiKeyAlert({ error, className = '' }: { error?: string | null; className?: string }) {
+export function ApiKeyAlert({ error, className = '', onDismiss }: { error?: string | null; className?: string; onDismiss?: () => void }) {
   const openProfile = useContext(OpenProfileCtx)
+  const [hasKey, setHasKey] = useState<boolean>(() => {
+    return localStorage.getItem('has_custom_api_key') === 'true'
+  })
+  const [dismissed, setDismissed] = useState(false)
+
+  useEffect(() => {
+    let mounted = true
+    const checkStatus = async () => {
+      try {
+        const s = await keysApi.getStatus()
+        const userHasKey = Boolean(s.use_custom_keys || s.has_gemini || s.has_openrouter || s.has_anthropic)
+        if (mounted) {
+          setHasKey(userHasKey)
+          localStorage.setItem('has_custom_api_key', userHasKey ? 'true' : 'false')
+        }
+      } catch {
+        // ignore
+      }
+    }
+    checkStatus()
+
+    const onUpdated = () => {
+      checkStatus()
+    }
+    window.addEventListener('apikey_updated', onUpdated)
+    return () => {
+      mounted = false
+      window.removeEventListener('apikey_updated', onUpdated)
+    }
+  }, [])
+
+  if (hasKey || dismissed) {
+    return null
+  }
+
   return (
-    <div className={`rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 shadow-ambient ${className}`}>
-      <div className="flex items-start gap-3">
+    <div className={`relative rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 shadow-ambient ${className}`}>
+      <button
+        type="button"
+        onClick={() => {
+          setDismissed(true)
+          if (onDismiss) onDismiss()
+        }}
+        className="absolute top-3 right-3 text-on-surface-variant hover:text-on-surface p-1 rounded-full hover:bg-surface-container-high transition-colors cursor-pointer"
+        title="Dismiss alert"
+      >
+        <I name="close" cls="text-[16px]" />
+      </button>
+      <div className="flex items-start gap-3 pr-6">
         <span className="material-symbols-outlined text-2xl text-amber-400 shrink-0">key</span>
         <div className="flex-1 min-w-0">
           <h3 className="font-headline-sm text-sm font-bold text-amber-300">
@@ -64,7 +111,7 @@ export function ApiKeyAlert({ error, className = '' }: { error?: string | null; 
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <button
               onClick={() => openProfile('byok')}
-              className="btn-primary text-xs py-1.5 px-3.5 flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow"
+              className="btn-primary text-xs py-1.5 px-3.5 flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow cursor-pointer"
             >
               <I name="key" cls="text-[16px]" /> Add API Key (Free)
             </button>

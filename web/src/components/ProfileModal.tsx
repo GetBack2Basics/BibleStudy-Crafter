@@ -204,6 +204,9 @@ export default function ProfileModal({
       })
       setKeyStatus(updated)
       setUseCustomKeys(updated.use_custom_keys)
+      const hasAnyKey = Boolean(updated.use_custom_keys || updated.has_gemini || updated.has_openrouter || updated.has_anthropic)
+      localStorage.setItem('has_custom_api_key', hasAnyKey ? 'true' : 'false')
+      window.dispatchEvent(new CustomEvent('apikey_updated', { detail: updated }))
       setByokMsg({
         type: 'success',
         text: updated.use_custom_keys
