@@ -984,6 +984,23 @@ async def build_discussions(refs: list[str], topic: str, minutes: int,
     official_dicts = [asdict(s) for s in selected if s.kind == "official"]
     social_dicts = [asdict(s) for s in selected if s.kind == "social"]
 
+    # Ensure both Commentary and Social Media sections have rich sources
+    used_off = {s["url"] for s in official_dicts}
+    for s in official:
+        if s.url not in used_off:
+            official_dicts.append(asdict(s))
+            used_off.add(s.url)
+        if len(official_dicts) >= 4:
+            break
+
+    used_soc = {s["url"] for s in social_dicts}
+    for s in social:
+        if s.url not in used_soc:
+            social_dicts.append(asdict(s))
+            used_soc.add(s.url)
+        if len(social_dicts) >= 4:
+            break
+
     off_block = "\n".join(
         f"{i+1}. {s['title']} | {s['url']} | {s['snippet']}"
         for i, s in enumerate(official_dicts)) or "(none)"

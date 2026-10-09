@@ -1564,16 +1564,46 @@ function Discussions({
             <p className="text-ui-label-sm text-on-surface-variant">No external discussion could be fetched right now. Engage the Scripture directly.</p>
           </div>
         )}
-        {d && d.status === 'ok' && (
-          <>
-            {/* Unified Sources Grid */}
-            <SourceGrid
-              sources={d.sources ?? []}
-              empty="No external discussion sources found."
-              onOpenSource={handleOpenSource}
-            />
-          </>
-        )}
+        {d && d.status === 'ok' && (() => {
+          const offList = (d.official_sources && d.official_sources.length > 0)
+            ? d.official_sources
+            : (d.sources || []).filter(s => s.kind === 'official' || (!s.platform && s.kind !== 'social'))
+
+          const socList = (d.social_sources && d.social_sources.length > 0)
+            ? d.social_sources
+            : (d.sources || []).filter(s => s.kind === 'social' || Boolean(s.platform))
+
+          return (
+            <div className="space-y-6">
+              {/* 1. Commentary Sources */}
+              <div>
+                <div className="mb-2.5 flex items-center gap-2 font-ui-label-sm uppercase tracking-wide text-on-surface-variant font-semibold">
+                  <span className="material-symbols-outlined text-[18px] text-primary">menu_book</span>
+                  <span>Commentary Sources</span>
+                </div>
+                <SourceGrid
+                  sources={offList.length > 0 ? offList : (socList.length === 0 ? (d.sources ?? []) : [])}
+                  empty="No commentary sources found."
+                  onOpenSource={handleOpenSource}
+                />
+              </div>
+
+              {/* 2. Social Media Sources */}
+              <div className="border-t border-outline-variant/20 pt-4">
+                <div className="mb-2.5 flex items-center gap-2 font-ui-label-sm uppercase tracking-wide text-on-surface-variant font-semibold">
+                  <span className="material-symbols-outlined text-[18px] text-primary">forum</span>
+                  <span>Social Media Sources</span>
+                  <span className="font-ui-label-xs normal-case tracking-normal text-on-surface-variant/70 font-normal">(Reddit · YouTube · Quora · Forums)</span>
+                </div>
+                <SourceGrid
+                  sources={socList}
+                  empty="No social media sources found."
+                  onOpenSource={handleOpenSource}
+                />
+              </div>
+            </div>
+          )
+        })()}
         {err && <p className="mt-2 text-ui-label-sm text-error">{err}</p>}
       </CollapsibleSection>
 
