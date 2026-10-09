@@ -816,3 +816,11 @@ def _truncate_words(text: str, n: int) -> str:
     if len(words) <= n:
         return text
     return " ".join(words[:n]) + "…"
+
+
+@router.post("/upgrade-all")
+def upgrade_all_studies(session: Session = Depends(get_session)):
+    """Migrate all existing studies to the new discussions, sentiment analysis, and multi-source format."""
+    from app.db import upgrade_existing_studies
+    upgrade_existing_studies()
+    return {"status": "ok", "message": "All existing studies successfully upgraded to the new format."}

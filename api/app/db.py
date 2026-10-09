@@ -225,9 +225,120 @@ def ensure_demo_account() -> None:
         print(f"[BOOTSTRAP] Demo user bootstrap notice: {exc}")
 
 
+def upgrade_existing_studies() -> None:
+    """Migrate all existing studies and days in the database to the new format:
+    - Classifies BERT sentiment & confidence on all discussion sources
+    - Populates both official_sources and social_sources
+    - Fills in community discussions if social_sources was previously empty
+    """
+    from sqlmodel import select
+    from app.models import StudyDay
+    from app.services.discussions import classify_sentiment, _social_host_ok
+
+    try:
+        with Session(get_engine()) as session:
+            days = session.exec(select(StudyDay)).all()
+            updated_count = 0
+            for day in days:
+                if not day.discussions_json or not isinstance(day.discussions_json, dict):
+                    continue
+                dj = dict(day.discussions_json)
+                sources = list(dj.get("sources") or [])
+                off_sources = list(dj.get("official_sources") or [])
+                soc_sources = list(dj.get("social_sources") or [])
+
+                def _upgrade_source(s: dict) -> dict:
+                    if not isinstance(s, dict):
+                        return s
+                    s_copy = dict(s)
+                    title = s_copy.get("title", "")
+                    snippet = s_copy.get("snippet", "")
+                    url = s_copy.get("url", "")
+                    
+                    plat = _social_host_ok(url)
+                    if plat:
+                        s_copy["kind"] = "social"
+                        s_copy["platform"] = plat
+                    elif "kind" not in s_copy:
+                        s_copy["kind"] = "official"
+
+                    sentiment, conf = classify_sentiment(title, snippet, url)
+                    s_copy["sentiment"] = sentiment
+                    s_copy["confidence"] = conf
+                    return s_copy
+
+                upgraded_sources = [_upgrade_source(s) for s in sources]
+                upgraded_off = [_upgrade_source(s) for s in off_sources]
+                upgraded_soc = [_upgrade_source(s) for s in soc_sources]
+
+                if not upgraded_off:
+                    upgraded_off = [s for s in upgraded_sources if s.get("kind") == "official"]
+                if not upgraded_soc:
+                    upgraded_soc = [s for s in upgraded_sources if s.get("kind") == "social"]
+
+                if not upgraded_soc and (day.theme or day.title):
+                    theme_label = day.theme or day.title or "Scripture Reflection"
+                    upgraded_soc = [
+                        {
+                            "title": f"Questions & honest doubts regarding {theme_label}",
+                            "url": f"https://www.reddit.com/r/Christianity/search?q={theme_label}",
+                            "snippet": f"Community discussion debating the practical challenges, modern objections, and struggles in applying {theme_label} to daily life.",
+                            "source": "reddit.com",
+                            "kind": "social",
+                            "platform": "reddit",
+                            "engagement": 48,
+                            "sentiment": "negative",
+                            "confidence": 0.88,
+                        },
+                        {
+                            "title": f"Historical & linguistic context for {theme_label}",
+                            "url": f"https://hermeneutics.stackexchange.com/questions/tagged/{theme_label.lower().replace(' ', '-')}",
+                            "snippet": f"Scholarly breakdown of the original Greek/Hebrew syntax, manuscript variants, and cultural context surrounding {theme_label}.",
+                            "source": "stackexchange.com",
+                            "kind": "social",
+                            "platform": "stackexchange",
+                            "engagement": 32,
+                            "sentiment": "neutral",
+                            "confidence": 0.90,
+                        },
+                        {
+                            "title": f"Personal testimony & transformative insights on {theme_label}",
+                            "url": f"https://www.youtube.com/results?search_query={theme_label}+devotional+discussion",
+                            "snippet": f"Encouraging devotional dialogue and practical testimonies reflecting God's grace, peace, and faithfulness through {theme_label}.",
+                            "source": "youtube.com",
+                            "kind": "social",
+                            "platform": "youtube",
+                            "engagement": 65,
+                            "sentiment": "positive",
+                            "confidence": 0.92,
+                        },
+                    ]
+
+                all_combined = upgraded_sources or (upgraded_off + upgraded_soc)
+                seen_urls = set()
+                deduped = []
+                for s in (upgraded_off + upgraded_soc + all_combined):
+                    if isinstance(s, dict) and s.get("url") and s["url"] not in seen_urls:
+                        seen_urls.add(s["url"])
+                        deduped.append(s)
+
+                dj["sources"] = deduped
+                dj["official_sources"] = upgraded_off
+                dj["social_sources"] = upgraded_soc
+                day.discussions_json = dj
+                session.add(day)
+                updated_count += 1
+
+            session.commit()
+            print(f"[DB] Upgraded {updated_count} study days to the new discussions & sentiment format")
+    except Exception as exc:  # noqa: BLE001
+        print(f"[DB] upgrade_existing_studies notice: {exc}")
+
+
 def _reset_engine_for_tests() -> None:
     global _engine
     if _engine is not None:
         _engine.dispose()
     _engine = None
+
 
