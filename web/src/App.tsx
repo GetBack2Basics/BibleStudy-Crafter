@@ -1578,7 +1578,7 @@ function Discussions({
               {/* 1. Commentary Sources */}
               <div>
                 <div className="mb-2.5 flex items-center gap-2 font-ui-label-sm uppercase tracking-wide text-on-surface-variant font-semibold">
-                  <span className="material-symbols-outlined text-[18px] text-primary">menu_book</span>
+                  <I name="menu_book" cls="text-[18px] text-primary" />
                   <span>Commentary Sources</span>
                 </div>
                 <SourceGrid
@@ -1591,15 +1591,29 @@ function Discussions({
               {/* 2. Social Media Sources */}
               <div className="border-t border-outline-variant/20 pt-4">
                 <div className="mb-2.5 flex items-center gap-2 font-ui-label-sm uppercase tracking-wide text-on-surface-variant font-semibold">
-                  <span className="material-symbols-outlined text-[18px] text-primary">forum</span>
+                  <I name="forum" cls="text-[18px] text-primary" />
                   <span>Social Media Sources</span>
                   <span className="font-ui-label-xs normal-case tracking-normal text-on-surface-variant/70 font-normal">(Reddit · YouTube · Quora · Forums)</span>
                 </div>
-                <SourceGrid
-                  sources={socList}
-                  empty="No social media sources found."
-                  onOpenSource={handleOpenSource}
-                />
+                {socList.length > 0 ? (
+                  <SourceGrid
+                    sources={socList}
+                    empty="No social media sources found."
+                    onOpenSource={handleOpenSource}
+                  />
+                ) : (
+                  <div className="rounded-xl border border-outline-variant/20 bg-surface-container/50 p-4 text-center">
+                    <p className="text-xs text-on-surface-variant mb-2">No social media perspectives loaded yet for these verses.</p>
+                    <button
+                      type="button"
+                      onClick={reload}
+                      disabled={busy}
+                      className="btn-primary text-xs py-1.5 px-3 rounded-lg cursor-pointer"
+                    >
+                      {busy ? 'Fetching…' : 'Fetch Social Media Voices'}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )
