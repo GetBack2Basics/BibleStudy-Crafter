@@ -266,3 +266,38 @@ def test_asset_belonging_to_other_study_is_404(client: TestClient) -> None:
         asset_id = asset.id
     r = client.get(f"/api/tts/asset/{asset_id}")
     assert r.status_code == 404
+
+
+def test_sample_serves_audio(client: TestClient) -> None:
+    with patch("gtts.gTTS", return_value=_FakeGTTs()):
+        r = client.get("/api/tts/sample?voice=gtts-en")
+    assert r.status_code == 200
+    assert r.headers["content-type"] == "audio/mpeg"
+    assert len(r.content) > 0
+
+
+def test_render_section_creates_asset(client: TestClient) -> None:
+    study = _make_owned_study(client)
+    _seed_day_with_content(client, study)
+    with _patch_create_task(client), \
+         patch("app.routers.tts._gtts_langs",
+               return_value=[{"short_name": "gtts-en",
+                              "gender": "Female",
+                              "friendly_name": "Google English (en)",
+                              "locale": "en"}]), \
+         patch("gtts.gTTS", return_value=_FakeGTTs()):
+        r = client.post("/api/tts/render", json={
+            "study_id": study.id,
+            "day_number": 1,
+            "voice": "gtts-en",
+            "section": "commentary",
+        })
+    assert r.status_code == 202
+    body = r.json()
+    assert body["status"] == "rendering"
+    with direct_session(client) as s:
+        asset = s.get(Asset, body["asset_id"])
+    assert asset is not None
+    assert asset.status == "ready"
+    assert asset.prompt == "commentary"
+

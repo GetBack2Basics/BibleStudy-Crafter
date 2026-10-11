@@ -82,17 +82,30 @@ export type TTSChoice = {
   gender: string
   friendly_name: string
   locale: string
+  accent?: string
+  category?: string
 }
 
 export const ttsDefaultVoices: TTSChoice[] = [
-  { short_name: 'gtts-en', gender: 'Female', friendly_name: 'Google English (en)', locale: 'en' },
-  { short_name: 'gtts-en_US', gender: 'Female', friendly_name: 'Google English (United States)', locale: 'en-US' },
-  { short_name: 'gtts-en_GB', gender: 'Female', friendly_name: 'Google English (United Kingdom)', locale: 'en-GB' },
-  { short_name: 'gtts-en_AU', gender: 'Female', friendly_name: 'Google English (Australia)', locale: 'en-AU' },
-  { short_name: 'gtts-es', gender: 'Female', friendly_name: 'Google Spanish (es)', locale: 'es' },
-  { short_name: 'gtts-fr', gender: 'Female', friendly_name: 'Google French (fr)', locale: 'fr' },
-  { short_name: 'gtts-de', gender: 'Female', friendly_name: 'Google German (de)', locale: 'de' },
-  { short_name: 'gtts-ja', gender: 'Female', friendly_name: 'Google Japanese (ja)', locale: 'ja' },
+  { short_name: 'gtts-en', gender: 'Female', friendly_name: 'Google English (General)', locale: 'en', accent: 'Standard' },
+  { short_name: 'gtts-en_US', gender: 'Female', friendly_name: 'Google English (United States)', locale: 'en-US', accent: 'American' },
+  { short_name: 'gtts-en_GB', gender: 'Female', friendly_name: 'Google English (United Kingdom)', locale: 'en-GB', accent: 'British' },
+  { short_name: 'gtts-en_AU', gender: 'Female', friendly_name: 'Google English (Australia)', locale: 'en-AU', accent: 'Australian' },
+  { short_name: 'gtts-en_CA', gender: 'Female', friendly_name: 'Google English (Canada)', locale: 'en-CA', accent: 'Canadian' },
+  { short_name: 'gtts-en_IN', gender: 'Female', friendly_name: 'Google English (India)', locale: 'en-IN', accent: 'Indian' },
+  { short_name: 'gtts-en_IE', gender: 'Female', friendly_name: 'Google English (Ireland)', locale: 'en-IE', accent: 'Irish' },
+  { short_name: 'gtts-en_ZA', gender: 'Female', friendly_name: 'Google English (South Africa)', locale: 'en-ZA', accent: 'South African' },
+  { short_name: 'gtts-es', gender: 'Female', friendly_name: 'Google Spanish (Spain)', locale: 'es-ES', accent: 'Castilian' },
+  { short_name: 'gtts-es_MX', gender: 'Female', friendly_name: 'Google Spanish (Mexico)', locale: 'es-MX', accent: 'Mexican' },
+  { short_name: 'gtts-fr', gender: 'Female', friendly_name: 'Google French (France)', locale: 'fr-FR', accent: 'French' },
+  { short_name: 'gtts-de', gender: 'Female', friendly_name: 'Google German (Germany)', locale: 'de-DE', accent: 'German' },
+  { short_name: 'gtts-it', gender: 'Female', friendly_name: 'Google Italian (Italy)', locale: 'it-IT', accent: 'Italian' },
+  { short_name: 'gtts-pt', gender: 'Female', friendly_name: 'Google Portuguese (Portugal)', locale: 'pt-PT', accent: 'European Portuguese' },
+  { short_name: 'gtts-el', gender: 'Female', friendly_name: 'Google Greek (Biblical / Modern)', locale: 'el-GR', accent: 'Greek' },
+  { short_name: 'gtts-la', gender: 'Female', friendly_name: 'Google Latin (Traditional)', locale: 'la', accent: 'Latin' },
+  { short_name: 'gtts-ja', gender: 'Female', friendly_name: 'Google Japanese', locale: 'ja-JP', accent: 'Japanese' },
+  { short_name: 'gtts-ko', gender: 'Female', friendly_name: 'Google Korean', locale: 'ko-KR', accent: 'Korean' },
+  { short_name: 'gtts-zh', gender: 'Female', friendly_name: 'Google Chinese (Mandarin)', locale: 'zh-CN', accent: 'Mandarin' },
 ]
 
 const j = (r: Response) => {
@@ -234,15 +247,47 @@ export const studies = {
       body: counts ? JSON.stringify(counts) : undefined,
     }).then(j),
 
+  generateClosingPrayer: (
+    id: number,
+    day: number,
+    notes?: Record<string, string> | null,
+    instruction?: string
+  ): Promise<{ day_number: number; closing_prayer: string; blocks_json: DayDraft }> =>
+    api.fetch(`/api/studies/${id}/days/${day}/closing-prayer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ notes: notes ?? null, instruction: instruction ?? null }),
+    }).then(j),
+
+
 
   ttsVoices: (): Promise<{ voices: TTSChoice[]; count: number }> =>
     api.fetch(`/api/tts/voices`).then(j),
 
-  ttsRender: (id: number, day: number, voice: string): Promise<{ asset_id: number; status: string }> =>
+  ttsSampleUrl: (voice: string, text?: string): string => {
+    const qs = new URLSearchParams()
+    if (voice) qs.set('voice', voice)
+    if (text) qs.set('text', text)
+    return `${api.url}/api/tts/sample?${qs.toString()}`
+  },
+
+  ttsRender: (
+    id: number,
+    day: number,
+    voice: string,
+    section: string = 'all',
+    customText?: string
+  ): Promise<{ asset_id: number; status: string }> =>
     api.fetch(`/api/tts/render`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ study_id: id, day_number: day, voice }),
+      body: JSON.stringify({
+        study_id: id,
+        day_number: day,
+        voice,
+        section: section || 'all',
+        custom_text: customText || null,
+      }),
     }).then(j),
 
   fetchSourceText: (url: string, studyId?: number, dayNumber?: number): Promise<{ title: string; text: string; source: string; note?: string }> => {
@@ -439,6 +484,23 @@ export const voicePreferences = {
   setCounts: (counts: { negative: number; neutral: number; positive: number }): void => {
     try {
       localStorage.setItem('study_voice_counts', JSON.stringify(counts))
+    } catch {
+      // ignore
+    }
+  },
+}
+
+export const ttsVoicePreferences = {
+  getPreferredVoice: (): string => {
+    try {
+      return localStorage.getItem('study_preferred_voice') || 'gtts-en'
+    } catch {
+      return 'gtts-en'
+    }
+  },
+  setPreferredVoice: (voiceShortName: string): void => {
+    try {
+      localStorage.setItem('study_preferred_voice', voiceShortName)
     } catch {
       // ignore
     }

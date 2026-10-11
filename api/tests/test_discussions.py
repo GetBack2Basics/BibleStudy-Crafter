@@ -51,10 +51,19 @@ async def test_build_discussions_cites_real_sources_only(monkeypatch):
     import httpx
     from app.services.llm import LLMResult
 
-    monkeypatch.setattr(httpx.AsyncClient, "post", _fake_post)
-    monkeypatch.setattr(httpx.AsyncClient, "get", _fake_post)
-
     real_url = "https://www.biblegateway.com/passage/?search=John+3%3A16"
+    sample_src = D.Source(title="What does John 3:16 mean?", url=real_url,
+                          snippet="A devotional take on God's love.", source="biblegateway.com")
+
+    async def fake_official(*a, **k):
+        return [sample_src]
+    async def fake_social(*a, **k):
+        return []
+    async def fake_neg(*a, **k):
+        return []
+    monkeypatch.setattr(D, "fetch_official", fake_official)
+    monkeypatch.setattr(D, "fetch_social", fake_social)
+    monkeypatch.setattr(D, "_fetch_targeted_negative", fake_neg)
 
     async def fake_complete(prompt, **kw):
         # The guide the model returns only cites the URLs we supplied.
@@ -97,8 +106,11 @@ async def test_build_discussions_splits_official_and_social(monkeypatch):
         return official
     async def fake_social(*a, **k):
         return social
+    async def fake_neg(*a, **k):
+        return []
     monkeypatch.setattr(D, "fetch_official", fake_official)
     monkeypatch.setattr(D, "fetch_social", fake_social)
+    monkeypatch.setattr(D, "_fetch_targeted_negative", fake_neg)
     async def fake_complete(*a, **k):
         return __import__("app.services.llm").services.llm.LLMResult(
             text="## Official commentary\nx\n## Social commentary\ny",
@@ -125,14 +137,19 @@ async def test_build_discussions_splits_official_and_social(monkeypatch):
 @pytest.mark.asyncio
 async def test_build_discussions_empty_when_no_sources(monkeypatch):
     import app.services.discussions as D
-    import httpx
 
-    async def _no_post(self, url, **kw):
-        return _Resp("")
-    async def _no_get(self, url, **kw):
-        return _Resp("")
-    monkeypatch.setattr(httpx.AsyncClient, "post", _no_post)
-    monkeypatch.setattr(httpx.AsyncClient, "get", _no_get)
+    async def fake_official(*a, **k):
+        return []
+    async def fake_social(*a, **k):
+        return []
+    async def fake_neg(*a, **k):
+        return []
+    async def fake_fallback(*a, **k):
+        return []
+    monkeypatch.setattr(D, "fetch_official", fake_official)
+    monkeypatch.setattr(D, "fetch_social", fake_social)
+    monkeypatch.setattr(D, "_fetch_targeted_negative", fake_neg)
+    monkeypatch.setattr(D, "_generate_fallback_social", fake_fallback)
 
     out = await D.build_discussions(["John 3:16"], "love", 15)
     assert out["status"] == "empty"

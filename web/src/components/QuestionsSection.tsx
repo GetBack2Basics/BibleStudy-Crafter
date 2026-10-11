@@ -6,6 +6,8 @@ interface QuestionsSectionProps {
   onSaveNotes: (updatedNotes: Record<string, string>) => Promise<void> | void
   editing?: boolean
   onQuestionsChange?: (updatedQuestions: string[]) => void
+  onReadAloud?: () => void
+  isReading?: boolean
 }
 
 export default function QuestionsSection({
@@ -14,6 +16,8 @@ export default function QuestionsSection({
   onSaveNotes,
   editing = false,
   onQuestionsChange,
+  onReadAloud,
+  isReading = false,
 }: QuestionsSectionProps) {
   // Local state for answers so user can type freely without parent or polling interrupting
   const [answers, setAnswers] = useState<Record<number, string>>({})
@@ -161,17 +165,37 @@ export default function QuestionsSection({
   // Interactive study view where user answers each question
   return (
     <div className="space-y-4">
-      {/* Header bar with progress counter (Save All removed) */}
-      <div className="flex items-center justify-between gap-2 border-b border-outline-variant/20 pb-2.5">
+      {/* Header bar with progress counter and on-demand Listen button */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-outline-variant/20 pb-2.5">
         <div className="flex items-center gap-2">
           <span className="text-xs font-medium text-on-surface-variant">Progress:</span>
           <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
             {answeredCount} of {questions.length} answered
           </span>
         </div>
-        <span className="text-xs text-on-surface-variant/70 hidden sm:inline">
-          Saves automatically when you click outside or click Save Answer
-        </span>
+        <div className="flex items-center gap-2">
+          {onReadAloud && (
+            <button
+              type="button"
+              id="read-aloud-questions"
+              onClick={onReadAloud}
+              className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-ui-label-xs font-semibold transition-all cursor-pointer shadow-xs ${
+                isReading
+                  ? 'bg-primary text-on-primary animate-pulse'
+                  : 'bg-surface-container hover:bg-surface-container-high text-on-surface hover:text-primary border border-outline-variant/30'
+              }`}
+              title={isReading ? 'Pause narration' : 'Listen to reflection questions'}
+            >
+              <span className="material-symbols-outlined text-[15px]">
+                {isReading ? 'graphic_eq' : 'volume_up'}
+              </span>
+              <span>{isReading ? 'Playing' : 'Listen to Questions'}</span>
+            </button>
+          )}
+          <span className="text-xs text-on-surface-variant/70 hidden sm:inline">
+            Saves automatically
+          </span>
+        </div>
       </div>
 
       {/* List of interactive questions */}

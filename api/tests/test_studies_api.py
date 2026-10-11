@@ -154,10 +154,10 @@ def test_revise_prayers(client):
     async def _revise_stub(*a, **k):
         from app.services.llm import LLMResult
         prompt_text = a[0] if a else ""
-        if "opening prayer" in prompt_text.lower():
-            return LLMResult(text="Revised opening prayer text.", provider="ollama",
+        if "closing prayer" in prompt_text.lower() and "thanksgiving" in prompt_text.lower():
+            return LLMResult(text="Revised closing prayer text.", provider="ollama",
                              model="m", tokens_in=1, tokens_out=1, data={})
-        return LLMResult(text="Revised closing prayer text.", provider="ollama",
+        return LLMResult(text="Revised opening prayer text.", provider="ollama",
                          model="m", tokens_in=1, tokens_out=1, data={})
 
     # Revise opening prayer
@@ -475,4 +475,37 @@ def test_update_day_includes_mentioned_verses(client):
     passage_refs = [p["ref"] for p in passages]
     assert "John 3:16" in passage_refs
     assert "Matthew 6:14-15" in passage_refs
+
+
+def test_generate_closing_prayer_endpoint(client):
+    """Test generating closing prayer on demand, grounded in notes and discussions."""
+    sid = _make_ready_study(client)
+    # Set notes on day 1
+    client.put(f"/api/studies/{sid}/days/1", json={
+        "blocks_json": {"heading": "Grace", "opening_prayer": "p", "commentary": "c", "questions": ["Q1"], "closing_prayer": ""},
+        "notes": {"question_0": "need reliance", "selah": "peace in storm"}
+    })
+
+    captured_prompt = {}
+    async def _cp_stub(*a, **k):
+        from app.services.llm import LLMResult
+        prompt = a[0] if a else k.get("prompt", "")
+        captured_prompt["prompt"] = prompt
+        return LLMResult(text="Lord, we come in full reliance on You. Amen.", provider="ollama", model="m",
+                         tokens_in=1, tokens_out=1, data={})
+
+    with patch("app.services.llm.complete", _cp_stub):
+        r = client.post(f"/api/studies/{sid}/days/1/closing-prayer", json={
+            "notes": {"discussions": "community insight"}
+        })
+    assert r.status_code == 200
+    assert r.json()["closing_prayer"] == "Lord, we come in full reliance on You. Amen."
+    assert "reliance" in captured_prompt["prompt"]
+    assert "peace in storm" in captured_prompt["prompt"]
+    assert "community insight" in captured_prompt["prompt"]
+
+    # Verify persisted in database
+    day_res = client.get(f"/api/studies/{sid}").json()["days"][0]
+    assert day_res["blocks_json"]["closing_prayer"] == "Lord, we come in full reliance on You. Amen."
+
 

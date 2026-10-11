@@ -12,6 +12,8 @@ interface PrayerSectionProps {
   isAIRefining?: boolean
   defaultOpen?: boolean
   className?: string
+  onReadAloud?: () => void
+  isReading?: boolean
 }
 
 export default function PrayerSection({
@@ -25,6 +27,8 @@ export default function PrayerSection({
   isAIRefining = false,
   defaultOpen = true,
   className = '',
+  onReadAloud,
+  isReading = false,
 }: PrayerSectionProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen)
   const [isEditing, setIsEditing] = useState(false)
@@ -151,6 +155,24 @@ export default function PrayerSection({
         <div className="flex items-center gap-1.5 shrink-0">
           {!isEditing ? (
             <>
+              {onReadAloud && (
+                <button
+                  type="button"
+                  id={`read-aloud-${title.toLowerCase().replace(/\s+/g, '-')}`}
+                  onClick={onReadAloud}
+                  className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-ui-label-xs font-semibold transition-all cursor-pointer shadow-xs ${
+                    isReading
+                      ? 'bg-primary text-on-primary animate-pulse'
+                      : 'bg-surface-container hover:bg-surface-container-high text-on-surface hover:text-primary border border-outline-variant/30'
+                  }`}
+                  title={isReading ? 'Pause narration' : `Listen to ${title.toLowerCase()}`}
+                >
+                  <span className="material-symbols-outlined text-[15px]">
+                    {isReading ? 'graphic_eq' : 'volume_up'}
+                  </span>
+                  <span>{isReading ? 'Playing' : 'Listen'}</span>
+                </button>
+              )}
               <button
                 type="button"
                 onClick={handleStartEdit}

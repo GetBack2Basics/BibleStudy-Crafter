@@ -14,6 +14,7 @@ interface ProfileModalProps {
   onUserUpdated: (user: AuthUser) => void
   initialTab?: Tab
   onLogout?: () => void
+  onOpenHelp?: () => void
 }
 
 export default function ProfileModal({
@@ -23,6 +24,7 @@ export default function ProfileModal({
   onUserUpdated,
   initialTab = 'profile',
   onLogout,
+  onOpenHelp,
 }: ProfileModalProps) {
   const [activeTab, setActiveTab] = useState<Tab>(initialTab)
 
@@ -388,6 +390,18 @@ export default function ProfileModal({
             >
               <span className="material-symbols-outlined text-[18px]">manage_accounts</span>
               User Management
+            </button>
+          )}
+
+          {onOpenHelp && (
+            <button
+              type="button"
+              onClick={onOpenHelp}
+              className="ml-auto flex items-center gap-1.5 py-1.5 px-3 my-2 rounded-xl text-ui-label-sm font-semibold text-primary bg-primary/10 hover:bg-primary/20 transition-all cursor-pointer whitespace-nowrap border border-primary/20 shrink-0"
+              title="Open the complete visual How to Use Guide"
+            >
+              <span className="material-symbols-outlined text-[18px]">help</span>
+              How to Use Guide
             </button>
           )}
         </div>

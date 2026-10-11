@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from app.config.providers import get_registry
+from app.services import events
 from app.services.bible_service import parse_ref, safe_parse_ref, Reference
 from app.services.llm import LLMResult, NoProviderAvailable, complete
 
@@ -168,10 +169,7 @@ Produce a JSON object with exactly these keys (no other text, no markdown):
       Format for high readability: use **bold** for key theological concepts, terms, and
       themes, and *italics* for Bible verse citations and direct scripture quotes),
   "questions": [str, str, str] (exactly {questions} reflection questions),
-  "closing_prayer": str (2-3 sentences; a prayer of RESPONSE that again gathers
-      ALL of today's passages together and echoes short phrases from at least
-      two different versions in the amalgamated block. It must answer the
-      opening prayer rather than repeat it.)
+  "closing_prayer": str (leave empty string ""; closing prayer is generated on demand at the conclusion of the study by the reader, grounded in their notes and discussions)
 }}"""
 
 
@@ -302,6 +300,13 @@ async def generate_day(title: str, focus: str, passages: list[Passage],
     b = budget(minutes)
     passage_block = "\n".join(f"- {p.ref}: {p.rational}" for p in passages) or "(none suggested)"
 
+    if study_id is not None:
+        events.emit(
+            "info", "study",
+            f"Day {day}: Resolving {translation} scripture texts & translations…",
+            study_id=study_id, day_number=day, progress=35, step="scripture",
+        )
+
     # Resolve scripture text locally so the model can ground the prayers in it.
     scripture_blocks = []
     for p in passages:
@@ -339,6 +344,13 @@ async def generate_day(title: str, focus: str, passages: list[Passage],
         amalgam_block=amalgam_block,
         prev_block=prev_block, snippet=snippet,
         commentary_words=b["commentary_words"], questions=b["questions"])
+
+    if study_id is not None:
+        events.emit(
+            "info", "study",
+            f"Day {day}: Drafting theological commentary, reflections & prayers…",
+            study_id=study_id, day_number=day, progress=65, step="commentary",
+        )
 
     res = await complete(prompt, system=build_system(tradition=tradition),
                          json_mode=True, session=session, study_id=study_id,

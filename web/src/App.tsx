@@ -5,16 +5,17 @@ import AuthScreen from './components/AuthScreen'
 import ProfileModal from './components/ProfileModal'
 import { api } from './lib/api'
 import { auth, type AuthUser } from './lib/auth'
-import { studies as studyApi, bible, preferences, passages, TRADITIONS, voicePreferences, type StudyOut, type DayOut, type DayDraft, type TranslationInfo, type CompareVerse, type PassageOut, type SearchHit, type TTSChoice, ttsDefaultVoices } from './lib/studies'
+import { studies as studyApi, bible, preferences, passages, TRADITIONS, voicePreferences, ttsVoicePreferences, type StudyOut, type DayOut, type DayDraft, type TranslationInfo, type CompareVerse, type PassageOut, type SearchHit, type TTSChoice, ttsDefaultVoices } from './lib/studies'
 
 import SourceReaderModal, { type AnySource } from './components/SourceReaderModal'
 import QuestionsSection from './components/QuestionsSection'
 import CommentarySection from './components/CommentarySection'
 import PrayerSection from './components/PrayerSection'
-import DayHeroBanner from './components/DayHeroBanner'
 import InfographicViewer from './components/InfographicViewer'
-import MoodArtworkSection from './components/MoodArtworkSection'
 import PromptCrafterModal from './components/PromptCrafterModal'
+import VoicePickerModal from './components/VoicePickerModal'
+import DayGenerationProgress from './components/DayGenerationProgress'
+import HelpGuideModal from './components/HelpGuideModal'
 import { assets as assetApi, type AssetOut } from './lib/studies'
 import { initAppearance, getStoredTheme, getStoredFontScale, applyTheme, applyFontScale, type ThemeMode } from './lib/theme'
 import { keysApi } from './lib/keys'
@@ -26,9 +27,10 @@ const STATUS_CLS: Record<string, string> = {
   failed: 'text-error',
 }
 
-const StudyTitleCtx = createContext<{ title: string | null; dayNum?: number } | null>(null)
-const SetStudyTitleCtx = createContext<((v: { title: string; dayNum?: number } | null) => void) | null>(null)
+const StudyTitleCtx = createContext<{ title: string | null; dayNum?: number; totalDays?: number; tradition?: string } | null>(null)
+const SetStudyTitleCtx = createContext<((v: { title: string; dayNum?: number; totalDays?: number; tradition?: string } | null) => void) | null>(null)
 export const OpenProfileCtx = createContext<(tab?: 'profile' | 'byok' | 'admin') => void>(() => {})
+export const OpenHelpCtx = createContext<() => void>(() => {})
 
 export function isKeyError(errText?: string | null): boolean {
   if (!errText) return false
@@ -179,12 +181,15 @@ export default function App() {
   const [authed, setAuthed] = useState<boolean>(() => auth.accessToken() !== null)
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const [isHelpOpen, setIsHelpOpen] = useState(false)
   const [profileTab, setProfileTab] = useState<'profile' | 'byok' | 'admin'>('profile')
   const [studiesList, setStudiesList] = useState<StudyOut[]>([])
   const [loadingList, setLoadingList] = useState(false)
-  const [studyTitle, setStudyTitle] = useState<{ title: string; dayNum?: number } | null>(null)
+  const [studyTitle, setStudyTitle] = useState<{ title: string; dayNum?: number; totalDays?: number; tradition?: string } | null>(null)
   const [theme, setTheme] = useState<ThemeMode>(() => getStoredTheme())
   const [fontScale, setFontScale] = useState<number>(() => getStoredFontScale())
+  const [showTypographyMenu, setShowTypographyMenu] = useState(false)
+  const [bookmarked, setBookmarked] = useState(false)
 
   useEffect(() => {
     initAppearance()
@@ -262,75 +267,200 @@ export default function App() {
   }
 
   return (
+    <OpenHelpCtx.Provider value={() => setIsHelpOpen(true)}>
     <OpenProfileCtx.Provider value={openProfile}>
     <SetStudyTitleCtx.Provider value={setStudyTitle}>
     <StudyTitleCtx.Provider value={studyTitle}>
-    <div className="min-h-screen bg-background text-on-background">
-      <header className="sticky top-0 z-30 flex flex-wrap items-center gap-4 border-b border-outline-variant/20 bg-surface-container-lowest/80 px-margin-mobile py-3 backdrop-blur lg:px-margin-desktop">
-        <Link to="/" className="font-study-title text-study-title font-bold text-primary tracking-tight hover:text-primary-container transition-colors">
-          {studyTitle?.title ?? 'BibleStudy-Crafter'}{studyTitle && studyTitle.dayNum ? ` · Day ${studyTitle.dayNum}` : ''}
-        </Link>
-        <div className="ml-auto flex flex-wrap items-center gap-2 sm:gap-3">
-          {/* Font scale decrease / increase (small F / big F) */}
-          <div className="flex items-center rounded-full border border-outline-variant/30 bg-surface-container-low p-0.5 shadow-sm">
-            <button
-              type="button"
-              onClick={handleDecreaseFont}
-              title="Decrease font size (small F)"
-              className="flex h-7 w-7 items-center justify-center rounded-full text-on-surface hover:bg-surface-container-high transition-colors font-bold"
-              aria-label="Decrease font size"
-            >
-              <span className="text-[11px] leading-none font-bold">F</span>
-            </button>
-            <div className="h-3.5 w-px bg-outline-variant/30 mx-0.5" />
-            <button
-              type="button"
-              onClick={handleIncreaseFont}
-              title="Increase font size (big F)"
-              className="flex h-7 w-7 items-center justify-center rounded-full text-on-surface hover:bg-surface-container-high transition-colors font-bold"
-              aria-label="Increase font size"
-            >
-              <span className="text-[17px] leading-none font-bold">F</span>
-            </button>
+    <div className="bg-surface text-on-surface antialiased flex flex-col min-h-screen">
+      {/* Fixed Apple HIG Top Navigation Bar */}
+      <header className="fixed top-0 w-full z-50 pt-safe bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.03)] border-b border-outline-variant/15">
+        <div className="h-14 px-gutter flex items-center justify-between max-w-5xl mx-auto">
+          {/* Left: Back to Study/Library */}
+          <div className="flex items-center min-w-[80px]">
+            {studyTitle ? (
+              <button
+                onClick={() => window.history.back()}
+                className="min-h-[44px] min-w-[44px] -ml-2 flex items-center gap-0.5 text-primary active:opacity-60 transition-opacity cursor-pointer"
+                type="button"
+                aria-label="Go back"
+              >
+                <span className="material-symbols-outlined text-[20px]">arrow_back_ios_new</span>
+                <span className="font-body-ui text-body-ui font-medium">Study</span>
+              </button>
+            ) : (
+              <Link to="/" className="flex items-center gap-1.5 text-primary font-bold tracking-tight hover:opacity-80 transition-opacity">
+                <span className="material-symbols-outlined text-[22px]">menu_book</span>
+                <span className="font-headline-md text-headline-md leading-none">Crafter</span>
+              </Link>
+            )}
           </div>
 
-          {/* Theme Quick Toggle */}
-          <button
-            type="button"
-            onClick={handleToggleTheme}
-            title={theme === 'dark' ? 'Switch to Light mode' : 'Switch to Dark mode'}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-outline-variant/30 bg-surface-container-low text-on-surface hover:bg-surface-container-high transition-colors shadow-sm"
-            aria-label="Toggle dark / light theme"
-          >
-            <I name={theme === 'dark' ? 'light_mode' : 'dark_mode'} cls="text-[18px] text-amber-400" />
-          </button>
+          {/* Center: Session / Study Title */}
+          <div className="flex-1 flex flex-col items-center justify-center px-space-xs text-center min-w-0">
+            <span className="font-caption-caps text-caption-caps text-secondary tracking-widest uppercase truncate max-w-[260px] sm:max-w-md">
+              {studyTitle?.dayNum ? `DAY ${studyTitle.dayNum} · ${studyTitle.title || 'STUDY'}` : 'BIBLE STUDY CRAFTER'}
+            </span>
+            <span className="font-headline-md text-[17px] sm:text-headline-md text-on-surface truncate max-w-[280px] sm:max-w-md font-serif">
+              {studyTitle?.title ? (studyTitle.dayNum ? 'Scripture Reading' : studyTitle.title) : 'Daily Scripture Sanctuary'}
+            </span>
+          </div>
 
-          {/* User Account / Profile Button */}
-          <button
-            type="button"
-            onClick={() => openProfile('profile')}
-            title={`Account Settings (${currentUser?.display_name || currentUser?.email || 'Profile'})`}
-            aria-label="Account Settings and Profile"
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-outline-variant/30 bg-surface-container-low hover:bg-surface-container-high transition-all shadow-sm overflow-hidden"
-          >
-            {currentUser?.picture_url ? (
-              <img src={currentUser.picture_url} alt="Avatar" className="h-full w-full object-cover" />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center bg-primary/20 text-primary font-bold text-xs">
-                {(currentUser?.display_name || currentUser?.email || 'U')[0].toUpperCase()}
-              </div>
-            )}
-          </button>
+          {/* Right: Action toolbar (Audio, Typography, Bookmark, Theme, Avatar) */}
+          <div className="flex items-center justify-end gap-1 min-w-[80px]">
+            {/* Typography settings */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowTypographyMenu(!showTypographyMenu)}
+                aria-label="Reader typography settings"
+                title="Typography & Text Size"
+                className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-full text-on-surface-variant hover:text-on-surface active:bg-surface-container transition-colors cursor-pointer"
+              >
+                <span className="font-body-ui text-body-ui font-medium tracking-tight">aA</span>
+              </button>
+
+              {showTypographyMenu && (
+                <div className="absolute right-0 top-12 w-48 rounded-2xl bg-surface-container-lowest p-3 shadow-lg border border-outline-variant/20 z-50 flex flex-col gap-2">
+                  <div className="text-caption-caps font-caption-caps text-secondary uppercase font-semibold">Text Size</div>
+                  <div className="flex items-center justify-between rounded-xl bg-surface-container p-1">
+                    <button
+                      type="button"
+                      onClick={handleDecreaseFont}
+                      className="px-3 py-1 rounded-lg text-xs font-bold text-on-surface hover:bg-surface-container-high transition-colors"
+                      title="Smaller Text"
+                    >
+                      A-
+                    </button>
+                    <span className="font-caption-caps text-caption-caps font-bold">{Math.round(fontScale * 100)}%</span>
+                    <button
+                      type="button"
+                      onClick={handleIncreaseFont}
+                      className="px-3 py-1 rounded-lg text-sm font-bold text-on-surface hover:bg-surface-container-high transition-colors"
+                      title="Larger Text"
+                    >
+                      A+
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Bookmark button */}
+            <button
+              type="button"
+              onClick={() => setBookmarked(!bookmarked)}
+              aria-label="Bookmark and save"
+              title={bookmarked ? 'Bookmarked' : 'Bookmark this study'}
+              className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-full text-on-surface-variant hover:text-on-surface active:bg-surface-container transition-colors cursor-pointer"
+            >
+              <span className={`material-symbols-outlined text-[20px] ${bookmarked ? 'text-primary' : ''}`}>
+                {bookmarked ? 'bookmark' : 'bookmark_border'}
+              </span>
+            </button>
+
+            {/* Help / Guide button */}
+            <button
+              type="button"
+              onClick={() => setIsHelpOpen(true)}
+              title="How to Use BibleStudy-Crafter (Visual Guide)"
+              aria-label="How to Use Guide"
+              className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-full text-on-surface-variant hover:text-on-surface active:bg-surface-container transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[20px]">help_outline</span>
+            </button>
+
+            {/* Theme Toggle */}
+            <button
+              type="button"
+              onClick={handleToggleTheme}
+              title={theme === 'dark' ? 'Switch to Light mode' : 'Switch to Dark mode'}
+              className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-full text-on-surface-variant hover:text-on-surface active:bg-surface-container transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[20px] text-amber-500">
+                {theme === 'dark' ? 'light_mode' : 'dark_mode'}
+              </span>
+            </button>
+
+            {/* User Profile Avatar */}
+            <button
+              type="button"
+              onClick={() => openProfile('profile')}
+              title={`Account Settings (${currentUser?.display_name || currentUser?.email || 'Profile'})`}
+              className="w-8 h-8 ml-1 rounded-full bg-primary flex items-center justify-center flex-shrink-0 cursor-pointer overflow-hidden shadow-xs"
+            >
+              {currentUser?.picture_url ? (
+                <img src={currentUser.picture_url} alt="Avatar" className="h-full w-full object-cover" />
+              ) : (
+                <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
+              )}
+            </button>
+          </div>
         </div>
       </header>
 
-      <main className="page-shell py-8">
+      {/* Main Study Content Area */}
+      <main className="flex flex-col relative w-full pt-14 pb-24 bg-surface min-h-screen">
         <Routes>
           <Route path="/" element={<StudyList studies={studiesList} loading={loadingList} onRefresh={refreshList} onDelete={handleDelete} onDeleteAll={handleDeleteAll} />} />
           <Route path="/study/:id" element={<StudyDetail />} />
           <Route path="/study/:id/day/:day" element={<DayDetail />} />
         </Routes>
       </main>
+
+      {/* Fixed Bottom Navigation Bar (Apple HIG mobile tab bar) */}
+      <nav className="fixed bottom-0 w-full z-50 pb-safe bg-surface/85 backdrop-blur-xl shadow-[0_-1px_8px_rgba(0,0,0,0.03)] border-t border-outline-variant/15">
+        <div className="h-14 px-gutter flex items-center justify-around max-w-lg mx-auto">
+          <Link
+            to={studyTitle?.dayNum ? `/study/${window.location.pathname.split('/')[2]}/day/${studyTitle.dayNum}` : '/'}
+            className="min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-0.5 transition-colors text-primary font-semibold"
+            aria-label="Scripture Reading"
+          >
+            <span className="material-symbols-outlined text-[22px]">menu_book</span>
+            <span className="font-caption-caps text-caption-caps capitalize">Read</span>
+          </Link>
+          <button
+            type="button"
+            onClick={() => {
+              const el = document.getElementById('selah-reflection-card') || document.getElementById('questions-section')
+              if (el) el.scrollIntoView({ behavior: 'smooth' })
+            }}
+            className="min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-0.5 text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer"
+            aria-label="Reflection"
+          >
+            <span className="material-symbols-outlined text-[22px]">edit_note</span>
+            <span className="font-caption-caps text-caption-caps capitalize">Reflect</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const el = document.getElementById('voices-discussions-section')
+              if (el) el.scrollIntoView({ behavior: 'smooth' })
+            }}
+            className="min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-0.5 text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer"
+            aria-label="Voices Discussion"
+          >
+            <span className="material-symbols-outlined text-[22px]">forum</span>
+            <span className="font-caption-caps text-caption-caps capitalize">Discuss</span>
+          </button>
+          <Link
+            to="/"
+            className="min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-0.5 text-on-surface-variant hover:text-on-surface transition-colors"
+            aria-label="Library"
+          >
+            <span className="material-symbols-outlined text-[22px]">local_library</span>
+            <span className="font-caption-caps text-caption-caps capitalize">Library</span>
+          </Link>
+          <button
+            type="button"
+            onClick={() => setIsHelpOpen(true)}
+            className="min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-0.5 text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer"
+            aria-label="How to Use & Help"
+          >
+            <span className="material-symbols-outlined text-[22px]">help_outline</span>
+            <span className="font-caption-caps text-caption-caps capitalize">Help</span>
+          </button>
+        </div>
+      </nav>
 
       <ProfileModal
         isOpen={isProfileOpen}
@@ -343,6 +473,12 @@ export default function App() {
         onUserUpdated={(u) => setCurrentUser(u)}
         initialTab={profileTab}
         onLogout={handleLogout}
+        onOpenHelp={() => setIsHelpOpen(true)}
+      />
+
+      <HelpGuideModal
+        isOpen={isHelpOpen}
+        onClose={() => setIsHelpOpen(false)}
       />
 
       <StatusDock />
@@ -350,6 +486,7 @@ export default function App() {
     </StudyTitleCtx.Provider>
     </SetStudyTitleCtx.Provider>
     </OpenProfileCtx.Provider>
+    </OpenHelpCtx.Provider>
   )
 }
 
@@ -363,6 +500,7 @@ function StudyList({ studies, loading, onRefresh, onDelete, onDeleteAll }: {
   onDeleteAll: () => void
 }) {
   const navigate = useNavigate()
+  const openHelp = useContext(OpenHelpCtx)
   const [topic, setTopic] = useState('')
   const [minutes, setMinutes] = useState(15)
   const [days, setDays] = useState(7)
@@ -426,9 +564,20 @@ function StudyList({ studies, loading, onRefresh, onDelete, onDeleteAll }: {
     <div className="space-y-8">
       {/* Step 1: Subject */}
       <section className="bg-surface-container rounded-3xl p-8 shadow-ambient">
-        <div className="mb-6 flex items-center gap-4">
-          <div className="step-badge">1</div>
-          <h2 className="font-headline-md text-headline-md text-on-surface">Subject of Inquiry</h2>
+        <div className="mb-6 flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-4">
+            <div className="step-badge">1</div>
+            <h2 className="font-headline-md text-headline-md text-on-surface">Subject of Inquiry</h2>
+          </div>
+          <button
+            type="button"
+            onClick={openHelp}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 transition-colors border border-primary/20 cursor-pointer shadow-2xs"
+            title="Open visual How to Use Guide"
+          >
+            <span className="material-symbols-outlined text-[16px]">help</span>
+            How to Use Guide
+          </button>
         </div>
         <form onSubmit={submit} className="space-y-6">
           <div className="bg-surface-container-lowest rounded-2xl p-4 shadow-sm focus-within:shadow-md transition-shadow">
@@ -573,7 +722,6 @@ function StudyList({ studies, loading, onRefresh, onDelete, onDeleteAll }: {
 /* ---------- Study detail (poll + render days) ---------- */
 
 function StudyDetail() {
-  const navigate = useNavigate()
   const params = useParams<{ id: string }>()
   const studyId = Number(params.id)
   const [study, setStudy] = useState<StudyOut | null>(null)
@@ -582,8 +730,25 @@ function StudyDetail() {
   // Live generation progress fed by the SSE event stream.
   const [progress, setProgress] = useState<number | null>(null)
   const [progressMsg, setProgressMsg] = useState<string>('')
+  const [dayProgressMap, setDayProgressMap] = useState<Record<number, { progress: number; message: string; step?: string }>>({})
   const esRef = useRef<EventSource | null>(null)
   const setTitle = useContext(SetStudyTitleCtx)
+
+  // Floating Audio Dock & Narration state for study view
+  const [activeAudioDayNum, setActiveAudioDayNum] = useState<number>(1)
+  const [activeAudioSection, setActiveAudioSection] = useState<string>('all')
+  const [audioTrigger, setAudioTrigger] = useState<{ section: string; timestamp: number } | null>(null)
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false)
+  const [playingAudioSection, setPlayingAudioSection] = useState<string | null>(null)
+  const [selectedVoice, setSelectedVoice] = useState<TTSChoice | null>(null)
+  const [isVoicePickerOpen, setIsVoicePickerOpen] = useState(false)
+  const [voices, setVoices] = useState<TTSChoice[]>(ttsDefaultVoices)
+
+  const handlePlayDaySection = (dayNumber: number, sec: string) => {
+    setActiveAudioDayNum(dayNumber)
+    setActiveAudioSection(sec)
+    setAudioTrigger({ section: sec, timestamp: Date.now() })
+  }
 
   const load = () => {
     studyApi.get(studyId).then(setStudy).catch((e) => setErr(e instanceof Error ? e.message : String(e)))
@@ -607,18 +772,28 @@ function StudyDetail() {
     // Stream real-time progress events for this study.
     const es = new EventSource(`${api.url}/api/events`)
     esRef.current = es
-    es.onmessage = (ev) => {
+    const handleEventData = (raw: string) => {
       try {
-        const data = JSON.parse(ev.data)
+        const data = JSON.parse(raw)
         if (data?.study_id === studyId && typeof data.progress === 'number') {
+          if (typeof data.day_number === 'number') {
+            setDayProgressMap((prev) => ({
+              ...prev,
+              [data.day_number]: {
+                progress: data.progress,
+                message: data.message || '',
+                step: data.step,
+              },
+            }))
+          }
           setProgress(data.progress)
           setProgressMsg(data.message || '')
-          if (data.progress >= 100 || data.level === 'error') {
-            es.close(); esRef.current = null
-          }
         }
       } catch { /* ignore malformed */ }
     }
+
+    es.addEventListener('log', (ev) => handleEventData((ev as MessageEvent).data))
+    es.onmessage = (ev) => handleEventData(ev.data)
 
     return () => {
       if (timer.current) clearInterval(timer.current)
@@ -634,54 +809,66 @@ function StudyDetail() {
 
   const genDay = async (day: number) => {
     setStudy((s) => s ? ({ ...s, days: s.days.map((d) => d.day_number === day ? { ...d, status: 'generating' } : d) }) : s)
+    setDayProgressMap((prev) => ({
+      ...prev,
+      [day]: { progress: 12, message: `Initiating Day ${day} study generator…`, step: 'init' },
+    }))
+
+    const simTimer = setInterval(() => {
+      setDayProgressMap((prev) => {
+        const cur = prev[day]
+        if (!cur || cur.progress >= 92) return prev
+        const increment = Math.max(1, Math.round((92 - cur.progress) / 6))
+        return {
+          ...prev,
+          [day]: { ...cur, progress: Math.min(92, cur.progress + increment) },
+        }
+      })
+    }, 1200)
+
     try {
       const res = await studyApi.generateDay(studyId, day)
-      setStudy((s) => s ? ({ ...s, days: s.days.map((d) => d.day_number === day ? { ...d, status: 'ready', blocks_json: res.draft } : d) }) : s)
+      clearInterval(simTimer)
+      setDayProgressMap((prev) => ({
+        ...prev,
+        [day]: { progress: 100, message: `Day ${day} generated successfully!`, step: 'complete' },
+      }))
+      setTimeout(() => {
+        setStudy((s) => s ? ({ ...s, days: s.days.map((d) => d.day_number === day ? { ...d, status: 'ready', blocks_json: res.draft } : d) }) : s)
+      }, 450)
     } catch (e) {
+      clearInterval(simTimer)
       setErr(e instanceof Error ? e.message : String(e))
+      setStudy((s) => s ? ({ ...s, days: s.days.map((d) => d.day_number === day ? { ...d, status: 'failed' } : d) }) : s)
     }
   }
 
   if (err && !study) return <div className="text-error">{err}</div>
   if (!study) return <p className="text-on-surface-variant">Loading…</p>
 
-  const readyDays = study.days.filter((d) => d.status === 'ready').length
+  const activeAudioDay = study.days.find((d) => d.day_number === activeAudioDayNum && d.blocks_json) ||
+                         study.days.find((d) => d.blocks_json) ||
+                         study.days[0]
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <button onClick={() => navigate('/')} className="btn-ghost">
-          <I name="arrow_back" cls="text-[18px]" /> All studies
-        </button>
-        <span className={`text-ui-label-md ${STATUS_CLS[study.status]}`}>
-          {study.status} · {readyDays}/{study.total_days} days ready
-        </span>
-      </div>
-
-      <div>
-        <h1 className="font-study-title text-study-title font-bold text-on-surface tracking-tight">{study.title || study.topic}</h1>
-        <p className="mt-1 text-ui-label-md text-on-surface-variant">
-          {study.total_days} days · {study.minutes_per_day} min/day · {study.tradition} · {study.primary_translation}
-        </p>
-      </div>
-
+    <div className="w-full flex flex-col items-center pb-24">
       {study.status === 'failed' && (
         <ApiKeyAlert
           error="AI Generation Failed: The AI provider was unreachable or free quota was exhausted. Please configure your free Gemini or OpenRouter key below to continue."
-          className="my-3"
+          className="my-3 w-full max-w-[98%]"
         />
       )}
 
       {err && (
         isKeyError(err) ? (
-          <ApiKeyAlert error={err} className="my-3" />
+          <ApiKeyAlert error={err} className="my-3 w-full max-w-[98%]" />
         ) : (
-          <div className="text-error my-3">{err}</div>
+          <div className="text-error my-3 w-full max-w-[98%]">{err}</div>
         )
       )}
 
       {study.status === 'generating' && (
-        <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-4 shadow-ambient">
+        <div className="w-full max-w-[98%] mb-4 rounded-2xl border border-outline-variant/20 bg-surface-container-low p-4 shadow-ambient">
           <div className="mb-2 flex items-center justify-between text-ui-label-md">
             <span className="text-tertiary">{progressMsg || 'Generating outline & day 1…'}</span>
             <span className="text-on-surface-variant">{progress != null ? `${progress}%` : 'working…'}</span>
@@ -693,31 +880,108 @@ function StudyDetail() {
         </div>
       )}
 
-      <div className="space-y-6">
+      <div className="w-full max-w-[98%] space-y-4">
         {study.days.map((d) => (
-          <DayCard key={d.day_number} studyId={studyId} day={d} onGenerate={() => genDay(d.day_number)} />
+          <DayCard
+            key={d.day_number}
+            studyId={studyId}
+            day={d}
+            defaultOpen={d.day_number === 1}
+            totalDays={study.total_days}
+            studyTopic={study.title || study.topic}
+            primaryTranslation={study.primary_translation}
+            dayProgress={dayProgressMap[d.day_number] || (study.status === 'generating' && d.day_number === 1 ? { progress: progress ?? 15, message: progressMsg } : undefined)}
+            onGenerate={() => genDay(d.day_number)}
+            onPlaySection={(sec) => handlePlayDaySection(d.day_number, sec)}
+            playingSection={activeAudioDayNum === d.day_number && isPlayingAudio ? playingAudioSection : null}
+            isPlayingAudio={activeAudioDayNum === d.day_number && isPlayingAudio}
+            selectedVoice={selectedVoice}
+            onOpenVoicePicker={() => setIsVoicePickerOpen(true)}
+          />
         ))}
       </div>
+
+      {/* Floating Apple Dock Audio Player for Study View */}
+      {activeAudioDay && activeAudioDay.blocks_json && (
+        <DayTTS
+          studyId={studyId}
+          day={activeAudioDay}
+          voices={voices}
+          setVoices={setVoices}
+          selectedVoice={selectedVoice}
+          onSelectVoice={setSelectedVoice}
+          activeSection={activeAudioSection}
+          onChangeSection={setActiveAudioSection}
+          externalTrigger={audioTrigger}
+          isVoicePickerOpen={isVoicePickerOpen}
+          onOpenVoicePicker={() => setIsVoicePickerOpen(true)}
+          onCloseVoicePicker={() => setIsVoicePickerOpen(false)}
+          onAudioStateChange={(playing, sec) => {
+            setIsPlayingAudio(playing)
+            setPlayingAudioSection(sec)
+          }}
+        />
+      )}
     </div>
   )
 }
 
 /* ---------- Day card with inline editing + select-to-revise ---------- */
 
-function DayCard({ studyId, day, onGenerate, defaultOpen = false }: { studyId: number; day: DayOut; onGenerate: () => void; defaultOpen?: boolean }) {
+/* ---------- Day card with inline editing + select-to-revise ---------- */
+
+function DayCard({
+  studyId,
+  day,
+  onGenerate,
+  defaultOpen = false,
+  totalDays = 7,
+  studyTopic = 'Study',
+  primaryTranslation = 'KJV',
+  dayProgress,
+  onPlaySection,
+  playingSection,
+  isPlayingAudio,
+  selectedVoice,
+  onOpenVoicePicker,
+}: {
+  studyId: number
+  day: DayOut
+  onGenerate: () => void
+  defaultOpen?: boolean
+  totalDays?: number
+  studyTopic?: string
+  primaryTranslation?: string
+  dayProgress?: { progress: number; message: string; step?: string }
+  onPlaySection?: (section: string) => void
+  playingSection?: string | null
+  isPlayingAudio?: boolean
+  selectedVoice?: TTSChoice | null
+  onOpenVoicePicker?: () => void
+}) {
   const dayLink = `/study/${studyId}/day/${day.day_number}`
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState<DayDraft | null>(day.blocks_json ?? null)
   const [notes, setNotes] = useState<Record<string, string>>(day.notes ?? {})
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<'scripture' | 'commentary' | 'journal' | 'questions' | 'voices' | 'prayer'>('scripture')
+  const [isGeneratingClosingPrayer, setIsGeneratingClosingPrayer] = useState(false)
   const draftRef = useRef<DayDraft | null>(draft)
   draftRef.current = draft
   const notesRef = useRef<Record<string, string>>(notes)
   notesRef.current = notes
 
-  // day-level collapse (default collapsed so long studies stay scannable, or open on detail page)
+  // day-level collapse
   const [dayOpen, setDayOpen] = useState(defaultOpen)
+
+  const isGenerating = day.status === 'generating' || Boolean(dayProgress && dayProgress.progress < 100)
+
+  useEffect(() => {
+    if (isGenerating) {
+      setDayOpen(true)
+    }
+  }, [isGenerating])
 
   // Visual Assets & Prompt Crafter State
   const [dayAssets, setDayAssets] = useState<AssetOut[]>([])
@@ -747,10 +1011,7 @@ function DayCard({ studyId, day, onGenerate, defaultOpen = false }: { studyId: n
     setIsCrafterOpen(true)
   }
 
-  // keep local draft in sync with the server ONLY when not actively editing,
-  // so the 2s poll doesn't clobber in-progress edits
   useEffect(() => { if (!editing) setDraft(day.blocks_json ?? null) }, [day.blocks_json, editing])
-  // sync notes from server when not editing
   useEffect(() => { if (!editing) setNotes(day.notes ?? {}) }, [day.notes, editing])
 
   const startEdit = () => { setDraft(day.blocks_json ?? null); setErr(null); setEditing(true) }
@@ -819,108 +1080,411 @@ function DayCard({ studyId, day, onGenerate, defaultOpen = false }: { studyId: n
     }
   }
 
+  const handleGenerateClosingPrayer = async (instruction?: string) => {
+    setIsGeneratingClosingPrayer(true)
+    setErr(null)
+    try {
+      const res = await studyApi.generateClosingPrayer(studyId, day.day_number, notes, instruction)
+      if (res && res.closing_prayer) {
+        const current = draft || day.blocks_json
+        if (current) {
+          setDraft({ ...current, closing_prayer: res.closing_prayer })
+        }
+      }
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e))
+    } finally {
+      setIsGeneratingClosingPrayer(false)
+    }
+  }
+
+  const scrollToTab = (tab: 'scripture' | 'commentary' | 'journal' | 'questions' | 'voices' | 'prayer') => {
+    setActiveTab(tab)
+    const map: Record<string, string> = {
+      scripture: 'scripture-reading-section',
+      commentary: 'commentary-section',
+      journal: 'selah-reflection-card',
+      questions: 'questions-section',
+      voices: 'voices-discussions-section',
+      prayer: 'closing-prayer-section',
+    }
+    const targetId = map[tab]
+    const el = document.getElementById(targetId)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
+
   return (
-    <article className="passage-card">
-      <div className="mb-3 flex items-center gap-3">
-        <button type="button" onClick={() => setDayOpen((o) => !o)} aria-expanded={dayOpen}
-                aria-label={dayOpen ? `Collapse Day ${day.day_number}` : `Expand Day ${day.day_number}`}
-                className="shrink-0 rounded-full p-1 text-on-surface-variant transition-colors hover:bg-surface-container-high">
-          <I name={dayOpen ? 'expand_less' : 'expand_more'} cls="text-[24px]" />
-        </button>
-        <Link to={dayLink} className="min-w-0 flex-1">
-          <h3 className="font-headline-md text-headline-md text-on-surface truncate">
-            <span className="text-primary">Day {day.day_number}</span>{draft?.heading ? ` — ${draft.heading}` : (day.title ? ` — ${day.title}` : '')}
-            {day.theme && <span className="ml-2 font-ui-label-sm font-normal text-on-surface-variant">· {day.theme}</span>}
-          </h3>
-        </Link>
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
-          <span className={`text-ui-label-sm ${STATUS_CLS[day.status]}`}>{day.status}</span>
-          {!editing && day.status !== 'generating' && (
-            <>
-              <button onClick={startEdit} className="btn-outline"><I name="edit" cls="text-[16px]" /> Edit</button>
-              <button onClick={onGenerate} className="btn-outline">
-                <I name={day.blocks_json ? 'autorenew' : 'add'} cls="text-[16px]" />
-                {day.blocks_json ? 'Regenerate' : 'Generate'}
+    <div className="w-full flex flex-col items-center">
+      <article className="w-full max-w-[98%] bg-transparent flex flex-col gap-6">
+        {/* Day Card Header Bar (When in study list view) */}
+        {!defaultOpen && (
+          <div className="bg-surface-container-lowest rounded-2xl p-4 shadow-sm border border-outline-variant/20 flex flex-col gap-2.5">
+            <div className="flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => setDayOpen((o) => !o)}
+                aria-expanded={dayOpen}
+                className="shrink-0 rounded-full p-1 text-on-surface-variant transition-colors hover:bg-surface-container cursor-pointer"
+              >
+                <I name={dayOpen ? 'expand_less' : 'expand_more'} cls="text-[22px]" />
               </button>
-            </>
-          )}
-          {editing && (
-            <>
-              <button onClick={cancel} className="btn-ghost">Cancel</button>
-              <button onClick={save} disabled={saving} className="btn-primary px-3 py-1.5 disabled:opacity-50">
-                {saving ? 'Saving…' : 'Save'}
-              </button>
-            </>
-          )}
-        </div>
-      </div>
+              <Link to={dayLink} className="min-w-0 flex-1">
+                <h3 className="font-headline-md text-headline-md text-on-surface truncate">
+                  <span className="text-primary font-semibold">Day {day.day_number}</span>
+                  {draft?.heading ? ` — ${draft.heading}` : day.title ? ` — ${day.title}` : ''}
+                  {day.theme && <span className="ml-2 font-caption-caps text-secondary text-caption-caps">· {day.theme}</span>}
+                </h3>
+              </Link>
+              <div className="flex shrink-0 items-center gap-2">
+                {isGenerating ? (
+                  <span className="text-caption-caps font-caption-caps px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/25 flex items-center gap-1.5 animate-pulse font-semibold">
+                    <span className="material-symbols-outlined text-[13px] animate-spin">progress_activity</span>
+                    Generating · {dayProgress?.progress != null ? `${dayProgress.progress}%` : 'Working…'}
+                  </span>
+                ) : (
+                  <span className={`text-caption-caps font-caption-caps px-2 py-0.5 rounded bg-secondary-container ${STATUS_CLS[day.status]}`}>
+                    {day.status}
+                  </span>
+                )}
+                {!editing && !isGenerating && (
+                  <>
+                    <button onClick={startEdit} className="btn-outline text-xs py-1 px-2.5">
+                      <I name="edit" cls="text-[14px]" /> Edit
+                    </button>
+                    <button
+                      onClick={() => {
+                        setDayOpen(true)
+                        onGenerate()
+                      }}
+                      className="btn-outline text-xs py-1 px-2.5"
+                    >
+                      <I name={day.blocks_json ? 'autorenew' : 'add'} cls="text-[14px]" />
+                      {day.blocks_json ? 'Regenerate' : 'Generate'}
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+            {isGenerating && (
+              <div className="w-full pt-0.5">
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-container">
+                  <div
+                    className="h-full rounded-full bg-primary transition-all duration-500"
+                    style={{ width: `${dayProgress?.progress != null ? dayProgress.progress : 15}%` }}
+                  />
+                </div>
+                {dayProgress?.message && (
+                  <p className="text-[11px] text-primary font-medium truncate mt-1 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0 animate-ping" />
+                    {dayProgress.message}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
-      {dayOpen && (
-        <div className="space-y-4">
-          {err && (
-            isKeyError(err) ? (
-              <ApiKeyAlert error={err} className="mb-2" />
+        {dayOpen && (
+          <div className="flex flex-col gap-6 w-full">
+            {err && (
+              isKeyError(err) ? (
+                <ApiKeyAlert error={err} className="mb-2" />
+              ) : (
+                <p className="mb-2 text-ui-label-sm text-error">{err}</p>
+              )
+            )}
+
+            {/* Top Apple HIG 32px Segmented Control */}
+            <div className="w-full flex justify-center pt-1 pb-2">
+              <div className="w-full max-w-[520px] bg-surface-container rounded-xl p-1 flex items-center shadow-inner" role="tablist">
+                <button
+                  type="button"
+                  onClick={() => scrollToTab('scripture')}
+                  className={`flex-1 py-1.5 px-2.5 rounded-lg text-center font-label-nav text-label-nav transition-all cursor-pointer ${
+                    activeTab === 'scripture'
+                      ? 'bg-surface-container-lowest text-on-surface shadow-sm font-semibold'
+                      : 'text-on-surface-variant hover:text-on-surface'
+                  }`}
+                >
+                  Scripture
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollToTab('commentary')}
+                  className={`flex-1 py-1.5 px-2.5 rounded-lg text-center font-label-nav text-label-nav transition-all cursor-pointer ${
+                    activeTab === 'commentary'
+                      ? 'bg-surface-container-lowest text-on-surface shadow-sm font-semibold'
+                      : 'text-on-surface-variant hover:text-on-surface'
+                  }`}
+                >
+                  Commentary
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollToTab('journal')}
+                  className={`flex-1 py-1.5 px-2.5 rounded-lg text-center font-label-nav text-label-nav transition-all cursor-pointer ${
+                    activeTab === 'journal'
+                      ? 'bg-surface-container-lowest text-on-surface shadow-sm font-semibold'
+                      : 'text-on-surface-variant hover:text-on-surface'
+                  }`}
+                >
+                  Journal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollToTab('questions')}
+                  className={`flex-1 py-1.5 px-2.5 rounded-lg text-center font-label-nav text-label-nav transition-all cursor-pointer ${
+                    activeTab === 'questions'
+                      ? 'bg-surface-container-lowest text-on-surface shadow-sm font-semibold'
+                      : 'text-on-surface-variant hover:text-on-surface'
+                  }`}
+                >
+                  Questions
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollToTab('voices')}
+                  className={`flex-1 py-1.5 px-2.5 rounded-lg text-center font-label-nav text-label-nav transition-all cursor-pointer ${
+                    activeTab === 'voices'
+                      ? 'bg-surface-container-lowest text-on-surface shadow-sm font-semibold'
+                      : 'text-on-surface-variant hover:text-on-surface'
+                  }`}
+                >
+                  Voices
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollToTab('prayer')}
+                  className={`flex-1 py-1.5 px-2.5 rounded-lg text-center font-label-nav text-label-nav transition-all cursor-pointer ${
+                    activeTab === 'prayer'
+                      ? 'bg-surface-container-lowest text-on-surface shadow-sm font-semibold'
+                      : 'text-on-surface-variant hover:text-on-surface'
+                  }`}
+                >
+                  Prayer
+                </button>
+              </div>
+            </div>
+
+            {editing && (
+              <div className="flex items-center justify-between rounded-xl bg-surface-container-low p-3.5 border border-primary/30 shadow-sm">
+                <span className="text-body-ui font-medium text-primary flex items-center gap-1.5">
+                  <I name="edit_note" cls="text-[18px]" /> Editing Study Day Content
+                </span>
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={cancel} disabled={saving} className="btn-outline text-xs py-1.5 px-3">
+                    Cancel
+                  </button>
+                  <button type="button" onClick={save} disabled={saving} className="btn-primary text-xs py-1.5 px-3.5">
+                    {saving ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Session Editorial Header */}
+            <header className="flex flex-col pt-1">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-2 h-2 rounded-full bg-primary"></span>
+                <span className="font-caption-caps text-caption-caps text-primary tracking-widest uppercase font-semibold">
+                  DAY {day.day_number} OF {totalDays} · {studyTopic.toUpperCase()}
+                </span>
+              </div>
+              <h1 className="font-headline-display-mobile md:font-headline-display text-on-surface tracking-tight mb-2">
+                {draft?.heading || day.title || `Day ${day.day_number}`}
+              </h1>
+              {day.theme && (
+                <p className="font-headline-md text-headline-md text-secondary font-normal mb-3.5 leading-snug">
+                  {day.theme}
+                </p>
+              )}
+              {/* Micro metadata pill row */}
+              <div className="flex items-center flex-wrap gap-2 pt-0.5">
+                <button
+                  type="button"
+                  className="h-[28px] pl-3 pr-2.5 rounded-full bg-surface-container flex items-center gap-1 text-on-surface hover:bg-surface-container-high transition-colors active:scale-95 cursor-pointer shadow-xs border border-outline-variant/20"
+                >
+                  <span className="font-caption-caps text-caption-caps font-semibold">
+                    {primaryTranslation} 1611
+                  </span>
+                  <span className="material-symbols-outlined text-[14px] text-secondary">expand_more</span>
+                </button>
+                <span className="inline-flex items-center gap-1 text-secondary font-label-nav text-label-nav">
+                  <span className="material-symbols-outlined text-[15px]">schedule</span>
+                  6 min read
+                </span>
+                <span className="text-outline-variant font-body-ui text-[12px]">•</span>
+                <button
+                  type="button"
+                  id="editorial-voice-picker-btn"
+                  onClick={onOpenVoicePicker}
+                  className="inline-flex items-center gap-1.5 text-tertiary hover:text-primary font-label-nav text-label-nav transition-colors cursor-pointer bg-surface-container/60 hover:bg-surface-container px-2.5 py-0.5 rounded-full border border-outline-variant/20 shadow-xs"
+                  title="Choose AI narrator voice"
+                >
+                  <span className="material-symbols-outlined text-[15px]">graphic_eq</span>
+                  <span>{selectedVoice?.friendly_name || selectedVoice?.short_name || 'AI Voice'} Narration</span>
+                  <span className="material-symbols-outlined text-[14px]">expand_more</span>
+                </button>
+              </div>
+            </header>
+
+            {draft ? (
+              <>
+                {isGenerating && (
+                  <DayGenerationProgress
+                    dayNumber={day.day_number}
+                    totalDays={totalDays}
+                    studyTopic={studyTopic}
+                    progress={dayProgress?.progress ?? 25}
+                    message={dayProgress?.message}
+                    step={dayProgress?.step}
+                    isRegenerating={true}
+                    className="mb-4"
+                  />
+                )}
+                <DraftEditor
+                  draft={draft}
+                  studyId={studyId}
+                  day={day.day_number}
+                  editing={editing}
+                  onChange={setDraft}
+                  notes={notes}
+                  onNotesChange={setNotes}
+                  onSaveNotes={handleSaveNotes}
+                  activeCoverAsset={activeCover}
+                  activeInfographicAsset={activeInfographic}
+                  onOpenPromptCrafter={handleOpenCrafter}
+                  onRefreshAssets={loadDayAssets}
+                  onSaveSection={handleSaveSection}
+                  onAIRefineSection={handleAIRefineSection}
+                  refiningSection={refiningSection}
+                  primaryTranslation={primaryTranslation}
+                  onPlaySection={onPlaySection}
+                  playingSection={playingSection}
+                  isPlayingAudio={isPlayingAudio}
+                />
+              </>
+            ) : isGenerating ? (
+              <DayGenerationProgress
+                dayNumber={day.day_number}
+                totalDays={totalDays}
+                studyTopic={studyTopic}
+                progress={dayProgress?.progress ?? 20}
+                message={dayProgress?.message}
+                step={dayProgress?.step}
+                className="my-2"
+              />
             ) : (
-              <p className="mb-2 text-ui-label-sm text-error">{err}</p>
-            )
-          )}
+              <div className="bg-surface-container-lowest rounded-2xl p-8 text-center shadow-sm border border-outline-variant/20">
+                <p className="text-body-reading text-on-surface-variant mb-4">
+                  This study day is ready to generate.
+                </p>
+                <button
+                  onClick={() => {
+                    setDayOpen(true)
+                    onGenerate()
+                  }}
+                  className="btn-primary px-6 py-2.5"
+                >
+                  <I name="auto_awesome" cls="text-[18px]" /> Generate Day {day.day_number}
+                </button>
+              </div>
+            )}
 
-          {/* Day Hero Cover Art Banner */}
-          <DayHeroBanner
-            studyId={studyId}
-            dayNumber={day.day_number}
-            dayTitle={day.title}
-            dayHeading={draft?.heading}
-            dayTheme={day.theme}
-            scriptureRefs={draft?.scripture?.map((s) => s.ref).filter(Boolean) || []}
-            activeCoverAsset={activeCover}
-            onOpenPromptCrafter={handleOpenCrafter}
-          />
+            <div id="voices-discussions-section">
+              <Discussions
+                studyId={studyId}
+                day={day}
+                draft={draft}
+                notes={notes}
+                onSaveNotes={handleSaveNotes}
+              />
+            </div>
 
-          {draft ? (
-            <DraftEditor
-              draft={draft}
-              studyId={studyId}
-              day={day.day_number}
-              editing={editing}
-              onChange={setDraft}
-              notes={notes}
-              onNotesChange={setNotes}
-              onSaveNotes={handleSaveNotes}
-              activeCoverAsset={activeCover}
-              activeInfographicAsset={activeInfographic}
-              onOpenPromptCrafter={handleOpenCrafter}
-              onRefreshAssets={loadDayAssets}
-              onSaveSection={handleSaveSection}
-              onAIRefineSection={handleAIRefineSection}
-              refiningSection={refiningSection}
-            />
-          ) : (
-            <p className="text-ui-label-sm text-on-surface-variant">
-              {day.status === 'generating' ? 'Working…' : 'Not generated yet.'}
-            </p>
-          )}
-          <Discussions
-            studyId={studyId}
-            day={day}
-            draft={draft}
-            notes={notes}
-            onSaveNotes={handleSaveNotes}
-          />
-        </div>
-      )}
+            {/* Closing Prayer: positioned at the end of the day, generated on demand grounded in notes & voices */}
+            <div id="closing-prayer-section" className="w-full">
+              {draft?.closing_prayer ? (
+                <div className="flex flex-col gap-3">
+                  <PrayerSection
+                    title="Closing prayer"
+                    icon="volunteer_activism"
+                    prayer={draft.closing_prayer}
+                    note={notes.closing_prayer}
+                    onSavePrayer={async (text) => {
+                      await handleSaveSection('closing_prayer', text)
+                    }}
+                    onSaveNote={async (noteVal) => {
+                      const nextNotes = { ...notes, closing_prayer: noteVal }
+                      await handleSaveNotes(nextNotes)
+                    }}
+                    onAIRefine={async (inst, sel) => {
+                      await handleAIRefineSection('closing_prayer', inst, sel)
+                    }}
+                    isAIRefining={refiningSection === 'closing_prayer'}
+                    onReadAloud={() => onPlaySection?.('closing_prayer')}
+                    isReading={isPlayingAudio && playingSection === 'closing_prayer'}
+                  />
+                  <div className="flex justify-end pr-2">
+                    <button
+                      type="button"
+                      disabled={isGeneratingClosingPrayer}
+                      onClick={() => handleGenerateClosingPrayer()}
+                      className="text-xs text-secondary hover:text-primary transition-colors flex items-center gap-1.5 cursor-pointer py-1 px-3 rounded-full hover:bg-surface-container"
+                      title="Regenerate closing prayer incorporating latest notes and voices"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">
+                        {isGeneratingClosingPrayer ? 'sync' : 'auto_awesome'}
+                      </span>
+                      <span>{isGeneratingClosingPrayer ? 'Regenerating prayer…' : 'Regenerate Prayer from Notes & Voices'}</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <section className="bg-surface-container-lowest rounded-2xl p-6 sm:p-8 shadow-sm border border-outline-variant/20 flex flex-col items-center text-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-secondary-container/60 flex items-center justify-center text-primary">
+                    <span className="material-symbols-outlined text-[28px]">volunteer_activism</span>
+                  </div>
+                  <div className="max-w-lg">
+                    <h3 className="font-headline-md text-headline-md text-on-surface">Closing Prayer</h3>
+                    <p className="mt-1.5 text-body-reading text-on-surface-variant text-sm leading-relaxed">
+                      Conclude your study with a personal closing prayer of response. When you are ready, generate a prayer deeply grounded in today's scripture readings, your personal reflection notes, and the community discussions.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleGenerateClosingPrayer()}
+                    disabled={isGeneratingClosingPrayer}
+                    className="btn-primary px-6 py-2.5 flex items-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[20px] animate-pulse">
+                      {isGeneratingClosingPrayer ? 'sync' : 'auto_awesome'}
+                    </span>
+                    <span>
+                      {isGeneratingClosingPrayer
+                        ? 'Crafting prayer from notes & scripture…'
+                        : 'Generate Closing Prayer'}
+                    </span>
+                  </button>
+                </section>
+              )}
+            </div>
+          </div>
+        )}
 
-      {/* Prompt Crafter Studio Modal */}
-      <PromptCrafterModal
-        isOpen={isCrafterOpen}
-        onClose={() => setIsCrafterOpen(false)}
-        studyId={studyId}
-        dayNumber={day.day_number}
-        dayTitle={draft?.heading || day.title || `Day ${day.day_number}`}
-        initialTab={crafterInitialTab}
-        onAssetSelected={loadDayAssets}
-      />
-    </article>
+        {/* Prompt Crafter Studio Modal */}
+        <PromptCrafterModal
+          isOpen={isCrafterOpen}
+          onClose={() => setIsCrafterOpen(false)}
+          studyId={studyId}
+          dayNumber={day.day_number}
+          dayTitle={draft?.heading || day.title || `Day ${day.day_number}`}
+          initialTab={crafterInitialTab}
+          onAssetSelected={loadDayAssets}
+        />
+      </article>
+    </div>
   )
 }
 
@@ -942,6 +1506,10 @@ function DraftEditor({
   onSaveSection,
   onAIRefineSection,
   refiningSection,
+  primaryTranslation = 'KJV',
+  onPlaySection,
+  playingSection,
+  isPlayingAudio,
 }: {
   draft: DayDraft
   editing: boolean
@@ -958,13 +1526,58 @@ function DraftEditor({
   onSaveSection?: (section: 'opening_prayer' | 'commentary' | 'closing_prayer', newText: string) => Promise<void> | void
   onAIRefineSection?: (section: 'opening_prayer' | 'commentary' | 'closing_prayer', instruction: string, selection?: string | null) => Promise<void> | void
   refiningSection?: 'opening_prayer' | 'commentary' | 'closing_prayer' | null
+  primaryTranslation?: string
+  onPlaySection?: (section: string) => void
+  playingSection?: string | null
+  isPlayingAudio?: boolean
 }) {
   const setField = (patch: Partial<DayDraft>) => onChange({ ...draft, ...patch })
   const saveNotesHandler = onSaveNotes || onNotesChange
+  const [copiedMemoryVerse, setCopiedMemoryVerse] = useState(false)
+  const [selahNote, setSelahNote] = useState(notes.selah ?? '')
+  const [savedSelahFeedback, setSavedSelahFeedback] = useState(false)
+  const [memoryVerseHighlighted, setMemoryVerseHighlighted] = useState<boolean>(
+    () => notes.memory_verse_highlighted === 'true'
+  )
+
+  // Primary memory verse extraction
+  const memoryVerseRef = draft.scripture?.[0]?.ref || 'ACTS 1:8'
+  const memoryVerseText =
+    draft.scripture?.[0]?.text ||
+    '“But ye shall receive power, after that the Holy Ghost is come upon you: and ye shall be witnesses unto me both in Jerusalem, and in all Judaea, and in Samaria, and unto the uttermost part of the earth.”'
+
+  const toggleMemoryVerseHighlight = async () => {
+    const next = !memoryVerseHighlighted
+    setMemoryVerseHighlighted(next)
+    const nextNotes = { ...notes, memory_verse_highlighted: String(next) }
+    if (saveNotesHandler) await saveNotesHandler(nextNotes)
+  }
+
+  const handleCopyMemoryVerse = async () => {
+    try {
+      await navigator.clipboard.writeText(`${memoryVerseRef} — ${memoryVerseText}`)
+      setCopiedMemoryVerse(true)
+      setTimeout(() => setCopiedMemoryVerse(false), 2000)
+    } catch {
+      // ignore
+    }
+  }
+
+  const handleSaveSelah = async () => {
+    const nextNotes = { ...notes, selah: selahNote }
+    if (saveNotesHandler) await saveNotesHandler(nextNotes)
+    setSavedSelahFeedback(true)
+    setTimeout(() => setSavedSelahFeedback(false), 2500)
+  }
+
+  const activeArtworkUrl =
+    activeCoverAsset && activeCoverAsset.status === 'ready' && activeCoverAsset.has_content
+      ? assetApi.mediaUrl(activeCoverAsset.id)
+      : 'https://lh3.googleusercontent.com/aida-public/AB6AXuAlwjjFWGLJyNg1evmXVgz9BDI7LgN0qaf6C77zZddgIkhEYBxbr3Ixcxh_3koHw1fPhQXfKYaaaCZw-SrUcwEl0qJnNVC-xYnFd5_5UJInle3j_lsOhoxwK5NG9YBDwvG_xFWuv1uoNfgTWQ2mI_t6yXBuW3dli063RejSo6KVWQHvj1RlYuiYtg2lMVgzfiss1UsoSxbq_2u-r_GBMiJ5uzkLeXJinXeEeihIoH3p6QFTMUaBW6eDPA'
 
   return (
-    <div className="space-y-4 text-body-reading text-on-surface">
-      {/* Optional Day Heading Edit when editing day overview */}
+    <div className="flex flex-col gap-6 text-body-reading text-on-surface">
+      {/* Optional Day Heading Edit */}
       {editing && (
         <div className="rounded-2xl border border-outline-variant/30 bg-surface-container-low p-4 space-y-3">
           <Labeled label="Day Heading">
@@ -979,74 +1592,240 @@ function DraftEditor({
         </div>
       )}
 
-      {/* Scripture Readings */}
-      <CollapsibleSection title="Scriptures" icon="auto_stories" defaultOpen>
-        <PassageEditor studyId={studyId} day={day} fallbackScripture={draft.scripture} onChanged={() => { /* passage changes are server-side; nothing to sync into draft */ }} />
-      </CollapsibleSection>
+      {/* Anchor Scripture Card (Apple Journal Style) */}
+      <section className="bg-surface-container-lowest rounded-2xl p-6 shadow-sm border border-outline-variant/20 flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <span className="font-caption-caps text-caption-caps tracking-wider text-primary font-semibold uppercase">
+            MEMORY VERSE · {memoryVerseRef}
+          </span>
+          <span className="material-symbols-outlined text-primary text-[18px]">verified</span>
+        </div>
+        <blockquote
+          className={`font-body-reading text-body-reading italic text-on-surface leading-relaxed select-text transition-all ${
+            memoryVerseHighlighted
+              ? 'bg-primary/10 rounded-xl p-3 border-l-4 border-primary shadow-xs'
+              : 'pl-1'
+          }`}
+        >
+          {memoryVerseText.startsWith('“') ? memoryVerseText : `“${memoryVerseText}”`}
+        </blockquote>
+        {/* Micro Action Toolbar (28px height buttons) */}
+        <div className="flex items-center gap-1.5 pt-1 flex-wrap">
+          {onPlaySection && (
+            <button
+              type="button"
+              id="read-aloud-memory-verse-btn"
+              onClick={() => onPlaySection('scripture')}
+              className={`h-7 px-2.5 rounded-full flex items-center gap-1 active:scale-95 transition-all cursor-pointer ${
+                isPlayingAudio && playingSection === 'scripture'
+                  ? 'bg-primary text-on-primary shadow-xs animate-pulse'
+                  : 'bg-surface-container hover:bg-surface-container-high text-on-surface'
+              }`}
+              title={isPlayingAudio && playingSection === 'scripture' ? 'Pause scripture narration' : 'Listen to scripture reading'}
+            >
+              <span className="material-symbols-outlined text-[14px]">
+                {isPlayingAudio && playingSection === 'scripture' ? 'graphic_eq' : 'volume_up'}
+              </span>
+              <span className="font-label-nav text-label-nav font-medium">
+                {isPlayingAudio && playingSection === 'scripture' ? 'Playing' : 'Listen'}
+              </span>
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={toggleMemoryVerseHighlight}
+            className={`h-7 px-2.5 rounded-full flex items-center gap-1 active:scale-95 transition-all cursor-pointer ${
+              memoryVerseHighlighted
+                ? 'bg-primary text-on-primary shadow-xs'
+                : 'bg-surface-container hover:bg-surface-container-high text-on-surface'
+            }`}
+            title={memoryVerseHighlighted ? 'Remove highlight' : 'Highlight memory verse'}
+          >
+            <span
+              className={`material-symbols-outlined text-[14px] ${
+                memoryVerseHighlighted ? 'text-on-primary' : 'text-primary'
+              }`}
+            >
+              brush
+            </span>
+            <span className="font-label-nav text-label-nav font-medium">
+              {memoryVerseHighlighted ? 'Highlighted' : 'Highlight'}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const el = document.getElementById('selah-reflection-card')
+              if (el) el.scrollIntoView({ behavior: 'smooth' })
+            }}
+            className="h-7 px-2.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center gap-1 active:scale-95 transition-transform cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[14px]">edit_note</span>
+            <span className="font-label-nav text-label-nav font-medium">Note</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleCopyMemoryVerse}
+            className="h-7 px-2.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center gap-1 active:scale-95 transition-transform cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[14px]">content_copy</span>
+            <span className="font-label-nav text-label-nav font-medium">
+              {copiedMemoryVerse ? 'Copied!' : 'Copy'}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={handleCopyMemoryVerse}
+            aria-label="Share Verse"
+            className="h-7 w-7 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center justify-center active:scale-95 transition-transform ml-auto cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[15px]">ios_share</span>
+          </button>
+        </div>
+      </section>
 
-      {/* Sacred Visual Atmosphere & Mood Artwork directly following Scripture reading */}
-      <MoodArtworkSection
-        studyId={studyId}
-        dayNumber={day}
-        dayTitle={draft.heading}
-        dayTheme={draft.heading}
-        scriptureRefs={draft?.scripture?.map((s) => s.ref).filter(Boolean) || []}
-        activeArtwork={activeCoverAsset}
-        onOpenPromptCrafter={onOpenPromptCrafter}
-        onAssetChanged={onRefreshAssets}
-      />
+      {/* Visual Narrative: Sacred Art Piece */}
+      <figure className="flex flex-col gap-2">
+        <div className="relative w-full h-48 sm:h-64 rounded-2xl overflow-hidden shadow-sm bg-surface-container-high border border-outline-variant/20">
+          <img
+            className="w-full h-full object-cover object-center"
+            alt={activeCoverAsset?.prompt || 'Biblical atmosphere narrative art'}
+            src={activeArtworkUrl}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-on-background/50 via-transparent to-transparent"></div>
+          <span className="absolute bottom-3 left-3 px-2.5 py-1 rounded-full bg-surface-container-lowest/85 backdrop-blur-md text-on-surface font-caption-caps text-caption-caps shadow-xs">
+            JERUSALEM · C. 33 A.D.
+          </span>
+        </div>
+        <figcaption className="font-body-ui text-label-nav text-secondary flex items-center justify-between px-1">
+          <span>{draft.heading || 'Sacred Atmosphere & Scripture Context'}</span>
+          <button
+            type="button"
+            onClick={() => onOpenPromptCrafter?.('presets')}
+            className="text-primary font-medium hover:underline text-label-nav cursor-pointer"
+          >
+            {activeCoverAsset ? 'Customize Art' : 'Expand Art'}
+          </button>
+        </figcaption>
+      </figure>
 
-      {/* 1. Opening Prayer Section (CoverLetter-Crafter Edit, Save & AI Update Pattern) */}
-      <PrayerSection
-        title="Opening prayer"
-        icon="volunteer_activism"
-        prayer={draft.opening_prayer ?? ''}
-        note={notes.opening_prayer}
-        onSavePrayer={async (text) => {
-          if (onSaveSection) {
-            await onSaveSection('opening_prayer', text)
-          } else {
-            setField({ opening_prayer: text })
-          }
-        }}
-        onSaveNote={async (noteVal) => {
-          const nextNotes = { ...notes, opening_prayer: noteVal }
-          if (saveNotesHandler) await saveNotesHandler(nextNotes)
-        }}
-        onAIRefine={async (inst, sel) => {
-          if (onAIRefineSection) {
-            await onAIRefineSection('opening_prayer', inst, sel)
-          }
-        }}
-        isAIRefining={refiningSection === 'opening_prayer'}
-      />
+      {/* Opening Prayer */}
+      {draft.opening_prayer && (
+        <PrayerSection
+          title="Opening prayer"
+          icon="volunteer_activism"
+          prayer={draft.opening_prayer ?? ''}
+          note={notes.opening_prayer}
+          onSavePrayer={async (text) => {
+            if (onSaveSection) await onSaveSection('opening_prayer', text)
+            else setField({ opening_prayer: text })
+          }}
+          onSaveNote={async (noteVal) => {
+            const nextNotes = { ...notes, opening_prayer: noteVal }
+            if (saveNotesHandler) await saveNotesHandler(nextNotes)
+          }}
+          onAIRefine={async (inst, sel) => {
+            if (onAIRefineSection) await onAIRefineSection('opening_prayer', inst, sel)
+          }}
+          isAIRefining={refiningSection === 'opening_prayer'}
+          onReadAloud={() => onPlaySection?.('opening_prayer')}
+          isReading={Boolean(isPlayingAudio && playingSection === 'opening_prayer')}
+        />
+      )}
 
-      {/* 2. Commentary Section (CoverLetter-Crafter Edit, Save & AI Update Pattern) */}
-      <CommentarySection
-        commentary={draft.commentary ?? ''}
-        note={notes.commentary}
-        onSave={async (text) => {
-          if (onSaveSection) {
-            await onSaveSection('commentary', text)
-          } else {
-            setField({ commentary: text })
-          }
-        }}
-        onSaveNote={async (noteVal) => {
-          const nextNotes = { ...notes, commentary: noteVal }
-          if (saveNotesHandler) await saveNotesHandler(nextNotes)
-        }}
-        onAIRefine={async (inst, sel) => {
-          if (onAIRefineSection) {
-            await onAIRefineSection('commentary', inst, sel)
-          }
-        }}
-        isAIRefining={refiningSection === 'commentary'}
-      />
+      {/* Primary Scripture Passage Reader (with drop cap & verse numbering) */}
+      <div id="scripture-reading-section">
+        <PassageEditor
+          studyId={studyId}
+          day={day}
+          fallbackScripture={draft.scripture}
+          onChanged={() => {}}
+          primaryTranslation={primaryTranslation}
+          onReadAloud={() => onPlaySection?.('scripture')}
+          isReading={Boolean(isPlayingAudio && playingSection === 'scripture')}
+        />
+      </div>
+
+      {/* Sleek Inset Disclosure Group (HIG Table View Rows) */}
+      <section className="bg-surface-container-lowest rounded-2xl shadow-sm border border-outline-variant/20 overflow-hidden flex flex-col">
+        <button
+          type="button"
+          onClick={() => {
+            const el = document.getElementById('scripture-reading-section')
+            if (el) el.scrollIntoView({ behavior: 'smooth' })
+          }}
+          className="w-full px-5 py-3.5 flex items-center justify-between hover:bg-surface-container transition-colors text-left group cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center">
+              <span className="material-symbols-outlined text-[17px]">menu_book</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="font-body-ui text-body-ui font-medium text-on-surface">
+                Read Full Passage ({memoryVerseRef})
+              </span>
+              <span className="font-label-nav text-label-nav text-secondary">
+                The apostolic witness and foundational scripture
+              </span>
+            </div>
+          </div>
+          <span className="material-symbols-outlined text-secondary group-hover:translate-x-0.5 transition-transform text-[18px]">
+            chevron_right
+          </span>
+        </button>
+        <div className="h-[1px] bg-surface-container-high ml-14"></div>
+        <button
+          type="button"
+          onClick={() => {
+            const el = document.getElementById('commentary-section')
+            if (el) el.scrollIntoView({ behavior: 'smooth' })
+          }}
+          className="w-full px-5 py-3.5 flex items-center justify-between hover:bg-surface-container transition-colors text-left group cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-tertiary-fixed text-on-tertiary-fixed flex items-center justify-center">
+              <span className="material-symbols-outlined text-[17px]">lightbulb</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="font-body-ui text-body-ui font-medium text-on-surface">
+                Theological Insight: {draft.heading || 'Academic Commentary'}
+              </span>
+              <span className="font-label-nav text-label-nav text-secondary">
+                Historical context, linguistic nuances, and hermeneutics
+              </span>
+            </div>
+          </div>
+          <span className="material-symbols-outlined text-secondary group-hover:translate-x-0.5 transition-transform text-[18px]">
+            chevron_right
+          </span>
+        </button>
+      </section>
+
+      {/* Commentary Section */}
+      <div id="commentary-section">
+        <CommentarySection
+          commentary={draft.commentary ?? ''}
+          note={notes.commentary}
+          onSave={async (text) => {
+            if (onSaveSection) await onSaveSection('commentary', text)
+            else setField({ commentary: text })
+          }}
+          onSaveNote={async (noteVal) => {
+            const nextNotes = { ...notes, commentary: noteVal }
+            if (saveNotesHandler) await saveNotesHandler(nextNotes)
+          }}
+          onAIRefine={async (inst, sel) => {
+            if (onAIRefineSection) await onAIRefineSection('commentary', inst, sel)
+          }}
+          isAIRefining={refiningSection === 'commentary'}
+          onReadAloud={() => onPlaySection?.('commentary')}
+          isReading={Boolean(isPlayingAudio && playingSection === 'commentary')}
+        />
+      </div>
 
       {/* Key Learnings & Infographic */}
       {draft.commentary && (
-        <CollapsibleSection title="Key Learnings & Infographic" icon="insights" defaultOpen>
+        <CollapsibleSection title="Key Learnings & Visual Infographic" icon="insights" defaultOpen>
           <InfographicViewer
             studyId={studyId}
             dayNumber={day}
@@ -1059,49 +1838,55 @@ function DraftEditor({
         </CollapsibleSection>
       )}
 
+      {/* Selah Contemplative Pause & Quick Reflection */}
+      <section id="selah-reflection-card" className="bg-surface-container-lowest rounded-2xl p-6 shadow-sm border border-outline-variant/20 flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-tertiary"></span>
+          <span className="font-caption-caps text-caption-caps tracking-widest text-tertiary uppercase font-semibold">
+            SELAH · DAILY REFLECTION
+          </span>
+        </div>
+        <p className="font-headline-md text-headline-md text-on-surface leading-snug">
+          Where is God calling you to step forward with faith and boldness today?
+        </p>
+        <div className="bg-surface-container-low rounded-xl p-3.5 flex flex-col gap-2.5">
+          <textarea
+            className="w-full bg-transparent resize-none outline-none font-body-journal text-body-journal text-on-surface placeholder:text-secondary placeholder:font-body-journal"
+            placeholder="Jot down a prompt reflection, personal prayer, or insight on your heart…"
+            rows={3}
+            value={selahNote}
+            onChange={(e) => setSelahNote(e.target.value)}
+          />
+          <div className="flex items-center justify-between pt-1">
+            <span className="font-caption-caps text-caption-caps text-secondary">
+              {savedSelahFeedback ? 'Saved to your study journal ✓' : 'Private & Synced with your account'}
+            </span>
+            <button
+              type="button"
+              onClick={handleSaveSelah}
+              className="h-[30px] px-3.5 rounded-full bg-on-background text-surface hover:opacity-90 active:scale-95 transition-all font-label-nav text-label-nav font-medium flex items-center gap-1 shadow-sm cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[14px]">check</span>
+              <span>Save Entry</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
       {/* Reflection Questions */}
-      <CollapsibleSection title="Reflection questions" icon="help" defaultOpen>
-        <QuestionsSection
-          questions={draft.questions ?? []}
-          notes={notes}
-          onSaveNotes={saveNotesHandler}
-          editing={editing}
-          onQuestionsChange={(q) => setField({ questions: q })}
-        />
-      </CollapsibleSection>
-
-      {/* 3. Closing Prayer Section (CoverLetter-Crafter Edit, Save & AI Update Pattern) */}
-      <PrayerSection
-        title="Closing prayer"
-        icon="volunteer_activism"
-        prayer={draft.closing_prayer ?? ''}
-        note={notes.closing_prayer}
-        onSavePrayer={async (text) => {
-          if (onSaveSection) {
-            await onSaveSection('closing_prayer', text)
-          } else {
-            setField({ closing_prayer: text })
-          }
-        }}
-        onSaveNote={async (noteVal) => {
-          const nextNotes = { ...notes, closing_prayer: noteVal }
-          if (saveNotesHandler) await saveNotesHandler(nextNotes)
-        }}
-        onAIRefine={async (inst, sel) => {
-          if (onAIRefineSection) {
-            await onAIRefineSection('closing_prayer', inst, sel)
-          }
-        }}
-        isAIRefining={refiningSection === 'closing_prayer'}
-      />
-
-      {/* External Discussions / Source Notes */}
-      {notes.discussions && (
-        <CollapsibleSection title="Notes" icon="edit_note" defaultOpen>
-          <p className="rounded-xl bg-surface-container-high p-3 text-ui-label-sm text-on-surface whitespace-pre-wrap">{notes.discussions}</p>
+      <div id="questions-section">
+        <CollapsibleSection title="Reflection questions" icon="help" defaultOpen>
+          <QuestionsSection
+            questions={draft.questions ?? []}
+            notes={notes}
+            onSaveNotes={saveNotesHandler}
+            editing={editing}
+            onQuestionsChange={(q) => setField({ questions: q })}
+            onReadAloud={() => onPlaySection?.('questions')}
+            isReading={Boolean(isPlayingAudio && playingSection === 'questions')}
+          />
         </CollapsibleSection>
-      )}
-
+      </div>
     </div>
   )
 }
@@ -1118,7 +1903,6 @@ function Labeled({ label, children }: { label: string; children: React.ReactNode
 /* ---------- Day detail view for /study/:id/day/:day ---------- */
 
 function DayDetail() {
-  const navigate = useNavigate()
   const params = useParams<{ id: string; day: string }>()
   const studyId = Number(params.id)
   const dayNum = Number(params.day)
@@ -1128,6 +1912,7 @@ function DayDetail() {
   const timer = useRef<ReturnType<typeof setInterval> | null>(null)
   const [progress, setProgress] = useState<number | null>(null)
   const [progressMsg, setProgressMsg] = useState<string>('')
+  const [dayProgress, setDayProgress] = useState<{ progress: number; message: string; step?: string } | null>(null)
   const esRef = useRef<EventSource | null>(null)
   const setTitle = useContext(SetStudyTitleCtx)
 
@@ -1153,55 +1938,65 @@ function DayDetail() {
 
     const es = new EventSource(`${api.url}/api/events`)
     esRef.current = es
-    es.onmessage = (ev) => {
+    const handleEventData = (raw: string) => {
       try {
-        const data = JSON.parse(ev.data)
+        const data = JSON.parse(raw)
         if (data?.study_id === studyId && typeof data.progress === 'number') {
+          if (data.day_number === dayNum || (data.day_number == null && study?.status === 'generating')) {
+            setDayProgress({
+              progress: data.progress,
+              message: data.message || '',
+              step: data.step,
+            })
+          }
           setProgress(data.progress)
           setProgressMsg(data.message || '')
-          if (data.progress >= 100 || data.level === 'error') {
-            es.close(); esRef.current = null
-          }
         }
       } catch { /* ignore malformed */ }
     }
+
+    es.addEventListener('log', (ev) => handleEventData((ev as MessageEvent).data))
+    es.onmessage = (ev) => handleEventData(ev.data)
 
     return () => {
       if (timer.current) clearInterval(timer.current)
       if (esRef.current) esRef.current.close()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [studyId])
+  }, [studyId, dayNum])
 
   useEffect(() => {
-    if (study) setTitle?.({ title: study.title || study.topic, dayNum })
+    if (study) setTitle?.({ title: study.title || study.topic, dayNum, totalDays: study.total_days, tradition: study.tradition })
     return () => setTitle?.(null)
   }, [study, setTitle, dayNum])
 
   const day = study?.days.find((d) => d.day_number === dayNum)
 
-  if (err && !study) return <div className="text-error">{err}</div>
-  if (!study) return <p className="text-on-surface-variant">Loading…</p>
-  if (!day) return <div className="text-error">Day {dayNum} not found in this study.</div>
+  const [activeAudioSection, setActiveAudioSection] = useState<string>('all')
+  const [audioTrigger, setAudioTrigger] = useState<{ section: string; timestamp: number } | null>(null)
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false)
+  const [playingAudioSection, setPlayingAudioSection] = useState<string | null>(null)
+  const [selectedVoice, setSelectedVoice] = useState<TTSChoice | null>(null)
+  const [isVoicePickerOpen, setIsVoicePickerOpen] = useState(false)
+  const [voices, setVoices] = useState<TTSChoice[]>(ttsDefaultVoices)
+
+  const handlePlaySection = (sec: string) => {
+    setActiveAudioSection(sec)
+    setAudioTrigger({ section: sec, timestamp: Date.now() })
+  }
+
+  if (err && !study) return <div className="text-error p-4">{err}</div>
+  if (!study) return <p className="text-on-surface-variant p-4">Loading study sanctuary…</p>
+  if (!day) return <div className="text-error p-4">Day {dayNum} not found in this study.</div>
+
+  const effectiveDayProgress = dayProgress || (study.status === 'generating' ? { progress: progress ?? 15, message: progressMsg } : undefined)
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <button onClick={() => navigate(`/study/${studyId}`)} className="btn-ghost">
-          <I name="arrow_back" cls="text-[18px]" /> Back to study
-        </button>
-      </div>
-
-      <div>
-        <h1 className="font-study-title text-study-title font-bold text-on-surface tracking-tight">
-          {study.title || study.topic} — Day {dayNum}
-        </h1>
-      </div>
-
+    <div className="w-full flex flex-col items-center px-1 sm:px-2 pb-8">
       {study.status === 'generating' && (
-        <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-4 shadow-ambient">
+        <div className="w-full max-w-[98%] mb-4 rounded-2xl border border-outline-variant/20 bg-surface-container-low p-4 shadow-sm">
           <div className="mb-2 flex items-center justify-between text-ui-label-md">
-            <span className="text-tertiary">{progressMsg || 'Generating…'}</span>
+            <span className="text-tertiary">{progressMsg || 'Crafting study day…'}</span>
             <span className="text-on-surface-variant">{progress != null ? `${progress}%` : 'working…'}</span>
           </div>
           <div className="h-2 w-full overflow-hidden rounded-full bg-outline-variant/30">
@@ -1211,70 +2006,225 @@ function DayDetail() {
         </div>
       )}
 
-      <DayCard studyId={studyId} day={day} defaultOpen onGenerate={async () => {
-        try {
-          await studyApi.generateDay(studyId, dayNum)
-          navigate(`/study/${studyId}/day/${dayNum}`)
-        } catch (e) {
-          setErr(e instanceof Error ? e.message : String(e))
-        }
-      }} />
+      <DayCard
+        studyId={studyId}
+        day={day}
+        defaultOpen
+        totalDays={study.total_days}
+        studyTopic={study.title || study.topic}
+        primaryTranslation={study.primary_translation}
+        dayProgress={effectiveDayProgress}
+        onGenerate={async () => {
+          setStudy((s) => s ? ({ ...s, days: s.days.map((d) => d.day_number === dayNum ? { ...d, status: 'generating' } : d) }) : s)
+          setDayProgress({ progress: 12, message: `Initiating Day ${dayNum} study generator…`, step: 'init' })
 
-      <DayTTS studyId={studyId} day={day} />
+          const simTimer = setInterval(() => {
+            setDayProgress((prev) => {
+              if (!prev || prev.progress >= 92) return prev
+              const increment = Math.max(1, Math.round((92 - prev.progress) / 6))
+              return { ...prev, progress: Math.min(92, prev.progress + increment) }
+            })
+          }, 1200)
 
-      <div className="text-ui-label-md text-on-surface-variant">
-        {study.status} · {study.days.filter((d) => d.status === 'ready').length}/{study.total_days} days ready
-      </div>
+          try {
+            const res = await studyApi.generateDay(studyId, dayNum)
+            clearInterval(simTimer)
+            setDayProgress({ progress: 100, message: `Day ${dayNum} generated successfully!`, step: 'complete' })
+            setTimeout(() => {
+              setStudy((s) => s ? ({ ...s, days: s.days.map((d) => d.day_number === dayNum ? { ...d, status: 'ready', blocks_json: res.draft } : d) }) : s)
+            }, 450)
+          } catch (e) {
+            clearInterval(simTimer)
+            setErr(e instanceof Error ? e.message : String(e))
+            setStudy((s) => s ? ({ ...s, days: s.days.map((d) => d.day_number === dayNum ? { ...d, status: 'failed' } : d) }) : s)
+          }
+        }}
+        onPlaySection={handlePlaySection}
+        playingSection={isPlayingAudio ? playingAudioSection : null}
+        isPlayingAudio={isPlayingAudio}
+        selectedVoice={selectedVoice}
+        onOpenVoicePicker={() => setIsVoicePickerOpen(true)}
+      />
+
+      {/* Floating Apple Dock Audio Player */}
+      <DayTTS
+        studyId={studyId}
+        day={day}
+        voices={voices}
+        setVoices={setVoices}
+        selectedVoice={selectedVoice}
+        onSelectVoice={setSelectedVoice}
+        activeSection={activeAudioSection}
+        onChangeSection={setActiveAudioSection}
+        externalTrigger={audioTrigger}
+        isVoicePickerOpen={isVoicePickerOpen}
+        onOpenVoicePicker={() => setIsVoicePickerOpen(true)}
+        onCloseVoicePicker={() => setIsVoicePickerOpen(false)}
+        onAudioStateChange={(playing, sec) => {
+          setIsPlayingAudio(playing)
+          setPlayingAudioSection(sec)
+        }}
+      />
     </div>
   )
 }
 
-/* ---------- Read aloud: TTS for a day's content ---------- */
+/* ---------- Read aloud: TTS for a day's content (Apple HIG Floating Audio Dock) ---------- */
 
-function DayTTS({ studyId, day }: { studyId: number; day: DayOut }) {
-  const [voices, setVoices] = useState<TTSChoice[]>(ttsDefaultVoices)
-  const [selectedVoice, setSelectedVoice] = useState<TTSChoice | null>(null)
-  const [loadingVoices, setLoadingVoices] = useState(false)
+const SECTION_OPTIONS = [
+  { id: 'all', label: 'Entire Day Study', icon: 'auto_stories' },
+  { id: 'opening_prayer', label: 'Opening Prayer', icon: 'volunteer_activism' },
+  { id: 'scripture', label: 'Scripture Reading', icon: 'menu_book' },
+  { id: 'commentary', label: 'Theological Commentary', icon: 'lightbulb' },
+  { id: 'questions', label: 'Reflection Questions', icon: 'help' },
+  { id: 'closing_prayer', label: 'Closing Prayer', icon: 'volunteer_activism' },
+]
+
+function DayTTS({
+  studyId,
+  day,
+  voices = ttsDefaultVoices,
+  setVoices,
+  selectedVoice,
+  onSelectVoice,
+  activeSection = 'all',
+  onChangeSection,
+  externalTrigger,
+  isVoicePickerOpen = false,
+  onOpenVoicePicker,
+  onCloseVoicePicker,
+  onAudioStateChange,
+}: {
+  studyId: number
+  day: DayOut
+  voices?: TTSChoice[]
+  setVoices?: React.Dispatch<React.SetStateAction<TTSChoice[]>>
+  selectedVoice?: TTSChoice | null
+  onSelectVoice?: (v: TTSChoice) => void
+  activeSection?: string
+  onChangeSection?: (sec: string) => void
+  externalTrigger?: { section: string; timestamp: number } | null
+  isVoicePickerOpen?: boolean
+  onOpenVoicePicker?: () => void
+  onCloseVoicePicker?: () => void
+  onAudioStateChange?: (isPlaying: boolean, section: string | null) => void
+}) {
+  const [internalVoices, setInternalVoices] = useState<TTSChoice[]>(voices.length ? voices : ttsDefaultVoices)
+  const [internalVoice, setInternalVoice] = useState<TTSChoice | null>(selectedVoice ?? null)
+  const [internalModalOpen, setInternalModalOpen] = useState(false)
+  const [currentSection, setCurrentSection] = useState<string>(activeSection || 'all')
+  const [isSectionMenuOpen, setIsSectionMenuOpen] = useState(false)
   const [ttsStatus, setTtsStatus] = useState<{ asset_id?: number; status?: string } | null>(null)
   const [loadingRender, setLoadingRender] = useState(false)
   const [err, setErr] = useState<string | null>(null)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(360)
+  const [speed, setSpeed] = useState<number>(1.0)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const assetPollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const sectionMenuRef = useRef<HTMLDivElement | null>(null)
 
-  // When the day changes, reset TTS state so the picker and play button start fresh.
-  useEffect(() => {
+  const effectiveVoices = voices.length ? voices : internalVoices
+  const effectiveVoice = selectedVoice !== undefined ? selectedVoice : internalVoice
+  const effectiveModalOpen = isVoicePickerOpen !== undefined ? isVoicePickerOpen : internalModalOpen
+
+  const handleVoiceSelect = (v: TTSChoice) => {
+    if (onSelectVoice) onSelectVoice(v)
+    else setInternalVoice(v)
     setTtsStatus(null)
-    setSelectedVoice(voices[0] ?? null)
-    setErr(null)
-  }, [day.day_number, voices])
-
-  const loadVoices = async () => {
-    if (voices.length > 0 && voices[0]?.short_name) return
-    setLoadingVoices(true)
-    try {
-      const res = await studyApi.ttsVoices()
-      setVoices(res.voices.length ? res.voices : ttsDefaultVoices)
-      if (!selectedVoice || !res.voices.find((v) => v.short_name === selectedVoice.short_name)) {
-        setSelectedVoice(res.voices[0] ?? ttsDefaultVoices[0] ?? null)
-      }
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e))
-      setVoices(ttsDefaultVoices)
-      setSelectedVoice(ttsDefaultVoices[0] ?? null)
-    } finally {
-      setLoadingVoices(false)
-    }
   }
 
-  useEffect(() => { loadVoices() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  const handleOpenModal = () => {
+    if (onOpenVoicePicker) onOpenVoicePicker()
+    else setInternalModalOpen(true)
+  }
 
-  const startRender = async () => {
-    if (!selectedVoice) return
+  const handleCloseModal = () => {
+    if (onCloseVoicePicker) onCloseVoicePicker()
+    else setInternalModalOpen(false)
+  }
+
+  // Load and cache voices
+  useEffect(() => {
+    const initVoices = async () => {
+      try {
+        const res = await studyApi.ttsVoices()
+        const list = res.voices.length ? res.voices : ttsDefaultVoices
+        if (setVoices) setVoices(list)
+        setInternalVoices(list)
+        const pref = ttsVoicePreferences.getPreferredVoice()
+        const match = list.find((v) => v.short_name === pref)
+        if (match) {
+          handleVoiceSelect(match)
+        } else if (!effectiveVoice) {
+          handleVoiceSelect(list[0] ?? ttsDefaultVoices[0] ?? null)
+        }
+      } catch {
+        if (setVoices) setVoices(ttsDefaultVoices)
+        setInternalVoices(ttsDefaultVoices)
+        if (!effectiveVoice) {
+          handleVoiceSelect(ttsDefaultVoices[0] ?? null)
+        }
+      }
+    }
+    initVoices()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Sync section with parent
+  useEffect(() => {
+    if (activeSection && activeSection !== currentSection) {
+      setCurrentSection(activeSection)
+      setTtsStatus(null)
+    }
+  }, [activeSection])
+
+  // External trigger (clicking Listen on any card)
+  useEffect(() => {
+    if (externalTrigger && externalTrigger.section) {
+      setCurrentSection(externalTrigger.section)
+      startRender(externalTrigger.section)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [externalTrigger?.timestamp])
+
+  // Notify parent of playing state
+  useEffect(() => {
+    onAudioStateChange?.(isPlaying, isPlaying ? currentSection : null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPlaying, currentSection])
+
+  // Click outside listener for section menu
+  useEffect(() => {
+    const handleDocClick = (e: MouseEvent) => {
+      if (sectionMenuRef.current && !sectionMenuRef.current.contains(e.target as Node)) {
+        setIsSectionMenuOpen(false)
+      }
+    }
+    if (isSectionMenuOpen) {
+      document.addEventListener('mousedown', handleDocClick)
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleDocClick)
+    }
+  }, [isSectionMenuOpen])
+
+  const startRender = async (sectionToRender?: string) => {
+    const sec = sectionToRender || currentSection || 'all'
+    const voiceToUse = effectiveVoice || effectiveVoices[0] || ttsDefaultVoices[0]
+    if (!voiceToUse) return
+
     setLoadingRender(true)
     setTtsStatus(null)
     setErr(null)
+    if (audioRef.current) {
+      audioRef.current.pause()
+    }
+    setIsPlaying(false)
+
     try {
-      const res = await studyApi.ttsRender(studyId, day.day_number, selectedVoice.short_name)
+      const res = await studyApi.ttsRender(studyId, day.day_number, voiceToUse.short_name, sec)
       setTtsStatus(res)
       if (res.status === 'rendering') {
         pollAsset(res.asset_id)
@@ -1305,9 +2255,8 @@ function DayTTS({ studyId, day }: { studyId: number; day: DayOut }) {
           setTtsStatus({ asset_id: assetId, status: 'failed' })
           setErr('Voice rendering failed')
         }
-        // 202 still rendering - keep polling
       } catch {
-        /* keep polling */
+        // keep polling
       }
     }, 1500)
   }
@@ -1323,85 +2272,270 @@ function DayTTS({ studyId, day }: { studyId: number; day: DayOut }) {
     const src = `${api.url}/api/tts/asset/${assetId}${qs}`
     const audio = new Audio(src)
     audioRef.current = audio
+    audio.playbackRate = speed
+
+    audio.addEventListener('timeupdate', () => {
+      setCurrentTime(audio.currentTime)
+      if (audio.duration && !isNaN(audio.duration)) {
+        setDuration(audio.duration)
+      }
+    })
+    audio.addEventListener('play', () => setIsPlaying(true))
+    audio.addEventListener('pause', () => setIsPlaying(false))
+    audio.addEventListener('ended', () => {
+      setIsPlaying(false)
+      setCurrentTime(0)
+    })
     audio.addEventListener('error', () => setErr('Playback failed'))
-    audio.play().catch(() => {/* autoplay blocked; user can press play */})
+    audio.play().catch(() => {})
   }
 
-  const ttsReady = ttsStatus?.status === 'ready'
-  const ttsRendering = ttsStatus?.status === 'rendering'
-  const hasVoice = Boolean(selectedVoice)
-  const dayReady = day.status === 'ready' && day.blocks_json
-  const contentEmpty = dayReady && !day.blocks_json?.opening_prayer &&
-    !day.blocks_json?.commentary && (!day.blocks_json?.questions || day.blocks_json.questions.length === 0) &&
-    !day.blocks_json?.closing_prayer
+  const togglePlay = () => {
+    if (!ttsStatus || ttsStatus.status !== 'ready') {
+      startRender()
+      return
+    }
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause()
+      } else {
+        audioRef.current.play().catch(() => {})
+      }
+    }
+  }
+
+  const handleSelectSection = (sec: string) => {
+    setCurrentSection(sec)
+    onChangeSection?.(sec)
+    setTtsStatus(null)
+    startRender(sec)
+  }
+
+  const skip = (deltaSec: number) => {
+    if (!audioRef.current || !duration) return
+    const next = Math.max(0, Math.min(duration, audioRef.current.currentTime + deltaSec))
+    audioRef.current.currentTime = next
+    setCurrentTime(next)
+  }
+
+  const cycleSpeed = () => {
+    const next = speed === 1.0 ? 1.25 : speed === 1.25 ? 1.5 : speed === 1.5 ? 2.0 : 1.0
+    setSpeed(next)
+    if (audioRef.current) {
+      audioRef.current.playbackRate = next
+    }
+  }
+
+  const stopPlayback = () => {
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
+      setIsPlaying(false)
+      setCurrentTime(0)
+    }
+  }
+
+  const formatTime = (secs: number) => {
+    const m = Math.floor(secs / 60)
+    const s = Math.floor(secs % 60)
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+  }
+
+  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!audioRef.current || !duration) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const pos = (e.clientX - rect.left) / rect.width
+    const newTime = pos * duration
+    audioRef.current.currentTime = newTime
+    setCurrentTime(newTime)
+  }
+
+  const ttsRendering = ttsStatus?.status === 'rendering' || loadingRender
+  const currentSectionMeta = SECTION_OPTIONS.find((s) => s.id === currentSection) || SECTION_OPTIONS[0]
 
   return (
-    <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-4 shadow-ambient">
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="flex items-center gap-2">
-          <I name="speaker_wave" cls="text-[20px] text-primary" />
-          <span className="font-ui-label-sm text-on-surface-variant">Read aloud</span>
-        </div>
-
-        <label className="flex flex-1 min-w-0 flex-wrap items-center gap-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest px-3 py-1.5">
-          <span className="shrink-0 font-ui-label-sm text-on-surface-variant">Voice</span>
-          <select
-            className="field-underline inline-block w-auto min-w-0 text-on-surface"
-            value={selectedVoice?.short_name ?? ''}
-            onChange={(e) => {
-              const v = voices.find((vv) => vv.short_name === e.target.value)
-              setSelectedVoice(v ?? null)
-            }}
-            disabled={loadingVoices || voices.length === 0}
-          >
-            {loadingVoices && <option value="">Loading voices…</option>}
-            {voices.map((v) => (
-              <option key={v.short_name} value={v.short_name}>
-                {v.friendly_name || `${v.locale} · ${v.gender} · ${v.short_name}`}
-              </option>
-            ))}
-          </select>
-          {voices.length === 0 && !loadingVoices && (
-            <span className="text-ui-label-sm text-error">No voices available</span>
-          )}
-        </label>
-
-        <div className="flex items-center gap-2 ml-auto">
-          <button
-            onClick={startRender}
-            disabled={!dayReady || contentEmpty || !hasVoice || ttsRendering || loadingRender}
-            className="btn-outline disabled:opacity-50 disabled:text-on-surface-variant"
-          >
-            {ttsRendering ? 'Rendering…' : loadingRender ? 'Starting…' : ttsReady ? 'Re-read' : 'Read'}
-            <I name={ttsRendering ? 'hourglass_empty' : ttsReady ? 'replay' : 'play_arrow'} cls="text-[18px]" />
-          </button>
-
-          {ttsReady && (
+    <aside id="day-tts-player-dock" className="fixed bottom-3 sm:bottom-5 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-1.25rem)] max-w-[640px] pointer-events-auto">
+      {/* Popover for Section Selection */}
+      {isSectionMenuOpen && (
+        <div
+          ref={sectionMenuRef}
+          id="tts-section-menu-popover"
+          className="mb-2 p-2 rounded-2xl bg-surface-container-lowest/95 backdrop-blur-xl border border-outline-variant/30 shadow-2xl flex flex-col gap-1 text-ui-label-xs animate-in fade-in slide-in-from-bottom-2 duration-150"
+        >
+          <div className="px-3 py-1.5 text-[11px] font-bold text-on-surface-variant uppercase tracking-wider flex items-center justify-between border-b border-outline-variant/10">
+            <span>Read Section On Demand</span>
             <button
-              onClick={() => { if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0 } }}
-              className="btn-ghost"
-              title="Stop"
+              type="button"
+              onClick={() => setIsSectionMenuOpen(false)}
+              className="text-on-surface-variant hover:text-on-surface"
             >
-              <I name="stop" cls="text-[18px]" />
+              <span className="material-symbols-outlined text-[16px]">close</span>
             </button>
-          )}
-        </div>
-      </div>
-
-      {ttsRendering && (
-        <div className="mt-3 flex items-center gap-2 text-ui-label-sm text-tertiary">
-          <span className="relative flex h-2 w-24 overflow-hidden rounded-full bg-outline-variant/30">
-            <span className="animate-pulse h-full rounded-full bg-primary" style={{ width: '40%' }} />
-          </span>
-          <span>Rendering voice…</span>
+          </div>
+          {SECTION_OPTIONS.map((opt) => (
+            <button
+              key={opt.id}
+              type="button"
+              id={`select-audio-section-${opt.id}`}
+              onClick={() => {
+                setIsSectionMenuOpen(false)
+                handleSelectSection(opt.id)
+              }}
+              className={`flex items-center justify-between px-3 py-2 rounded-xl text-left transition-all cursor-pointer ${
+                currentSection === opt.id
+                  ? 'bg-primary/10 text-primary font-bold'
+                  : 'hover:bg-surface-container text-on-surface'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px] opacity-80">{opt.icon}</span>
+                <span>{opt.label}</span>
+              </div>
+              {currentSection === opt.id && (
+                <span className="material-symbols-outlined text-[16px]">check</span>
+              )}
+            </button>
+          ))}
         </div>
       )}
 
-      {err && <p className="mt-2 text-ui-label-sm text-error">{err}</p>}
+      {/* Main Glassmorphic Dock */}
+      <div className="backdrop-blur-xl bg-surface-container-lowest/90 rounded-2xl sm:rounded-full px-3.5 py-2.5 sm:py-2 flex flex-col sm:flex-row items-center justify-between shadow-xl border border-outline-variant/20 gap-2 sm:gap-2.5">
+        {/* Play/Pause Button & Selectors */}
+        <div className="flex items-center gap-1.5 w-full sm:w-auto justify-between sm:justify-start">
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              id="tts-play-pause-btn"
+              onClick={togglePlay}
+              disabled={ttsRendering}
+              aria-label={isPlaying ? 'Pause Narration' : 'Play Narration'}
+              className="w-9 h-9 rounded-full bg-primary text-on-primary flex items-center justify-center active:scale-95 transition-transform flex-shrink-0 shadow-sm cursor-pointer disabled:opacity-50"
+            >
+              <span className="material-symbols-outlined text-[20px]">
+                {ttsRendering ? 'sync' : isPlaying ? 'pause' : 'play_arrow'}
+              </span>
+            </button>
 
-      {/* Hidden audio element for playback */}
+            {/* Quick Section Picker Pill */}
+            <button
+              type="button"
+              id="tts-section-picker-btn"
+              onClick={() => setIsSectionMenuOpen(!isSectionMenuOpen)}
+              className="h-7 px-2.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface text-[11px] font-semibold flex items-center gap-1 border border-outline-variant/20 transition-all cursor-pointer"
+              title="Change section to read"
+            >
+              <span className="material-symbols-outlined text-[14px] text-primary">
+                {currentSectionMeta.icon}
+              </span>
+              <span className="truncate max-w-[95px]">{currentSectionMeta.label}</span>
+              <span className="material-symbols-outlined text-[13px] text-secondary">
+                {isSectionMenuOpen ? 'expand_less' : 'expand_more'}
+              </span>
+            </button>
+          </div>
+
+          {/* Quick Voice Picker Pill */}
+          <button
+            type="button"
+            id="tts-voice-picker-btn"
+            onClick={handleOpenModal}
+            className="h-7 px-2.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface text-[11px] font-semibold flex items-center gap-1 border border-outline-variant/20 transition-all cursor-pointer"
+            title="Sample & choose AI voices"
+          >
+            <span className="material-symbols-outlined text-[14px] text-tertiary">graphic_eq</span>
+            <span className="truncate max-w-[105px]">
+              {effectiveVoice?.friendly_name || effectiveVoice?.short_name || 'AI Voice'}
+            </span>
+            <span className="material-symbols-outlined text-[13px] text-secondary">tune</span>
+          </button>
+        </div>
+
+        {/* Center: Scrubber & Progress */}
+        <div className="flex-1 w-full sm:px-1.5 flex flex-col justify-center min-w-0">
+          <div className="flex items-center justify-between text-caption-caps font-caption-caps mb-1">
+            <span className="font-label-nav text-label-nav text-on-surface font-medium truncate">
+              {ttsRendering
+                ? 'Rendering narration…'
+                : `${day.title || `Day ${day.day_number}`} · ${currentSectionMeta.label}`}
+            </span>
+            <span className="text-secondary tabular-nums ml-2 font-mono text-[11px]">
+              {formatTime(currentTime)} / {formatTime(duration || 360)}
+            </span>
+          </div>
+          <div
+            id="tts-scrubber-track"
+            className="w-full bg-surface-container h-1.5 rounded-full overflow-hidden cursor-pointer"
+            onClick={handleSeek}
+          >
+            <div
+              className={`h-full rounded-full transition-all duration-150 ${
+                ttsRendering ? 'bg-primary/50 animate-pulse' : 'bg-primary'
+              }`}
+              style={{ width: `${Math.min(100, (currentTime / (duration || 1)) * 100)}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Right Controls: Rewind, Speed, Forward, Stop */}
+        <div className="flex items-center gap-0.5 flex-shrink-0">
+          <button
+            type="button"
+            id="tts-skip-back-btn"
+            onClick={() => skip(-10)}
+            aria-label="Rewind 10 seconds"
+            title="Rewind 10s"
+            className="w-7 h-7 rounded-full flex items-center justify-center text-secondary hover:text-on-surface transition-colors cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[16px]">replay_10</span>
+          </button>
+
+          <button
+            type="button"
+            id="tts-speed-btn"
+            onClick={cycleSpeed}
+            className="h-6 px-1.5 rounded-full bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-label-nav text-[11px] font-semibold cursor-pointer"
+            title="Playback speed"
+          >
+            {speed}×
+          </button>
+
+          <button
+            type="button"
+            id="tts-skip-forward-btn"
+            onClick={() => skip(10)}
+            aria-label="Forward 10 seconds"
+            title="Forward 10s"
+            className="w-7 h-7 rounded-full flex items-center justify-center text-secondary hover:text-on-surface transition-colors cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[16px]">forward_10</span>
+          </button>
+
+          <button
+            type="button"
+            id="tts-stop-btn"
+            onClick={stopPlayback}
+            aria-label="Stop playback"
+            title="Stop"
+            className="w-7 h-7 rounded-full flex items-center justify-center text-secondary hover:text-on-surface transition-colors cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[16px]">stop</span>
+          </button>
+        </div>
+      </div>
+
+      {err && <p className="text-center text-xs text-error mt-1">{err}</p>}
       <audio ref={audioRef} />
-    </div>
+
+      {/* Voice Picker Modal */}
+      <VoicePickerModal
+        isOpen={effectiveModalOpen}
+        onClose={handleCloseModal}
+        voices={effectiveVoices}
+        selectedVoice={effectiveVoice}
+        onSelectVoice={handleVoiceSelect}
+      />
+    </aside>
   )
 }
 
@@ -1779,11 +2913,65 @@ function VerseExpander({ refText }: { refText: string }) {
 
 /* ---------- Scripture passages: version-switchable, reorderable, highlightable ---------- */
 
-function PassageEditor({ studyId, day, fallbackScripture, onChanged }: {
+function renderPassageHighlights(text: string, highlights?: { text: string; note?: string }[] | null) {
+  if (!highlights || highlights.length === 0) return text
+  let parts: Array<{ text: string; isHl: boolean }> = [{ text, isHl: false }]
+  for (const h of highlights) {
+    if (!h.text) continue
+    const newParts: Array<{ text: string; isHl: boolean }> = []
+    for (const part of parts) {
+      if (part.isHl) {
+        newParts.push(part)
+        continue
+      }
+      const idx = part.text.toLowerCase().indexOf(h.text.toLowerCase())
+      if (idx >= 0) {
+        if (idx > 0) newParts.push({ text: part.text.slice(0, idx), isHl: false })
+        newParts.push({ text: part.text.slice(idx, idx + h.text.length), isHl: true })
+        if (idx + h.text.length < part.text.length) {
+          newParts.push({ text: part.text.slice(idx + h.text.length), isHl: false })
+        }
+      } else {
+        newParts.push(part)
+      }
+    }
+    parts = newParts
+  }
+
+  return (
+    <>
+      {parts.map((p, idx) =>
+        p.isHl ? (
+          <mark
+            key={idx}
+            className="bg-primary/20 text-on-surface font-medium rounded px-1 py-0.5 not-italic border-b border-primary/40"
+          >
+            {p.text}
+          </mark>
+        ) : (
+          p.text
+        )
+      )}
+    </>
+  )
+}
+
+function PassageEditor({
+  studyId,
+  day,
+  fallbackScripture,
+  onChanged,
+  primaryTranslation = 'KJV',
+  onReadAloud,
+  isReading = false,
+}: {
   studyId: number
   day: number
   fallbackScripture?: Array<{ ref: string; translation?: string; text?: string; rationale?: string }>
   onChanged: () => void
+  primaryTranslation?: string
+  onReadAloud?: () => void
+  isReading?: boolean
 }) {
   const [list, setList] = useState<PassageOut[]>([])
   const [all, setAll] = useState<TranslationInfo[]>([])
@@ -1793,6 +2981,7 @@ function PassageEditor({ studyId, day, fallbackScripture, onChanged }: {
   const [newRef, setNewRef] = useState('')
   const [hlText, setHlText] = useState<string | null>(null)
   const [hlNote, setHlNote] = useState('')
+  const [copiedPid, setCopiedPid] = useState<number | null>(null)
 
   const load = async () => {
     setBusy(true)
@@ -1856,10 +3045,29 @@ function PassageEditor({ studyId, day, fallbackScripture, onChanged }: {
 
   const [hlPid, setHlPid] = useState<number | null>(null)
 
-  const captureHighlight = (p: PassageOut, el: HTMLTextAreaElement | null) => {
-    if (!el) return
-    const t = el.value.slice(el.selectionStart, el.selectionEnd).trim()
-    if (t) { setHlText(t); setHlPid(p.id) }
+  const captureHighlight = (p: PassageOut) => {
+    const sel = typeof window !== 'undefined' ? window.getSelection()?.toString().trim() : null
+    if (sel) {
+      setHlText(sel)
+      setHlPid(p.id)
+    }
+  }
+
+  const handleHighlightPassage = (p: PassageOut) => {
+    const sel = typeof window !== 'undefined' ? window.getSelection()?.toString().trim() : null
+    const target = sel || p.text
+    setHlText(target)
+    setHlPid(p.id)
+  }
+
+  const handleCopyPassage = async (p: PassageOut) => {
+    try {
+      await navigator.clipboard.writeText(`${p.ref} (${p.translation || primaryTranslation}) — ${p.text}`)
+      setCopiedPid(p.id)
+      setTimeout(() => setCopiedPid(null), 2000)
+    } catch {
+      // ignore
+    }
   }
 
   const saveHighlight = () => {
@@ -1871,7 +3079,6 @@ function PassageEditor({ studyId, day, fallbackScripture, onChanged }: {
     reloadWhenDone(passages.update(studyId, day, hlPid, { highlights }))
   }
 
-  // Edit an existing personal reflection's note.
   const [editHl, setEditHl] = useState<{ pid: number; idx: number; text: string; note: string } | null>(null)
   const startEditHl = (pid: number, idx: number, text: string, note: string) =>
     setEditHl({ pid, idx, text, note })
@@ -1892,24 +3099,50 @@ function PassageEditor({ studyId, day, fallbackScripture, onChanged }: {
   }
 
   const hasFallback = fallbackScripture && fallbackScripture.length > 0
+  const activePassages = list.length > 0 ? list : []
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between font-ui-label-lg text-ui-label-lg text-on-surface">
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between pb-1">
         <div className="flex items-center gap-2">
-          <I name="auto_stories" cls="text-[20px] text-primary" /> Scriptures
+          <span className="font-caption-caps text-caption-caps tracking-widest text-secondary uppercase font-semibold">
+            PRIMARY SCRIPTURE READING
+          </span>
+          <span className="text-caption-caps font-caption-caps px-2 py-0.5 rounded bg-secondary-container text-on-secondary-container font-medium">
+            AUTHORIZED TEXT
+          </span>
         </div>
-        {list.length === 0 && hasFallback && !busy && (
-          <button
-            onClick={seedFromDraft}
-            disabled={seeding}
-            className="btn-outline text-[12px] py-1 px-2.5 flex items-center gap-1.5"
-            title="Import scriptures into the interactive passages editor"
-          >
-            <I name="sync" cls={`text-[15px] ${seeding ? 'animate-spin' : ''}`} />
-            {seeding ? 'Importing…' : 'Make Passages Interactive'}
-          </button>
-        )}
+        <div className="flex items-center gap-1.5">
+          {onReadAloud && (
+            <button
+              type="button"
+              id="read-aloud-scripture"
+              onClick={onReadAloud}
+              className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-ui-label-xs font-semibold transition-all cursor-pointer shadow-xs ${
+                isReading
+                  ? 'bg-primary text-on-primary animate-pulse'
+                  : 'bg-surface-container hover:bg-surface-container-high text-on-surface hover:text-primary border border-outline-variant/30'
+              }`}
+              title={isReading ? 'Pause scripture narration' : 'Listen to scripture reading'}
+            >
+              <span className="material-symbols-outlined text-[15px]">
+                {isReading ? 'graphic_eq' : 'volume_up'}
+              </span>
+              <span>{isReading ? 'Playing' : 'Listen'}</span>
+            </button>
+          )}
+          {list.length === 0 && hasFallback && !busy && (
+            <button
+              onClick={seedFromDraft}
+              disabled={seeding}
+              className="btn-outline text-[12px] py-1 px-2.5 flex items-center gap-1.5 cursor-pointer"
+              title="Import scriptures into the interactive passages editor"
+            >
+              <I name="sync" cls={`text-[15px] ${seeding ? 'animate-spin' : ''}`} />
+              {seeding ? 'Importing…' : 'Make Interactive'}
+            </button>
+          )}
+        </div>
       </div>
 
       {err && (
@@ -1919,144 +3152,221 @@ function PassageEditor({ studyId, day, fallbackScripture, onChanged }: {
         </div>
       )}
 
-      {busy && <p className="text-ui-label-sm text-on-surface-variant flex items-center gap-2">
-        <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-        Loading passages…
-      </p>}
+      {busy && (
+        <p className="text-ui-label-sm text-on-surface-variant flex items-center gap-2">
+          <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          Loading passage texts…
+        </p>
+      )}
 
       {/* Render active passages */}
-      {list.map((p, i) => (
-        <div key={p.id} className="passage-card relative group/card">
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <VerseExpander refText={p.ref} />
-            <div className="flex items-center gap-1">
-              <button onClick={() => reorder(p.id, -1)} disabled={i === 0}
-                className="btn-ghost px-1.5 disabled:opacity-30" title="Move Up"><I name="arrow_upward" cls="text-[16px]" /></button>
-              <button onClick={() => reorder(p.id, 1)} disabled={i === list.length - 1}
-                className="btn-ghost px-1.5 disabled:opacity-30" title="Move Down"><I name="arrow_downward" cls="text-[16px]" /></button>
-              <button onClick={() => remove(p.id)}
-                className="btn-ghost px-1.5 text-error" title="Remove Passage"><I name="close" cls="text-[16px]" /></button>
+      {activePassages.map((p, i) => {
+        const text = p.text.trim()
+        const firstChar = text.charAt(0)
+        const restOfText = text.slice(1)
+
+        return (
+          <article key={p.id} className="bg-surface-container-lowest rounded-2xl p-6 shadow-sm border border-outline-variant/20 flex flex-col gap-4">
+            <div className="flex items-center justify-between pb-1 border-b border-outline-variant/10">
+              <div className="flex items-center gap-2">
+                <VerseExpander refText={p.ref} />
+                <span className="text-caption-caps font-caption-caps px-2 py-0.5 rounded bg-secondary-container text-on-secondary-container font-mono">
+                  {p.translation || primaryTranslation}
+                </span>
+              </div>
+              <div className="flex items-center gap-1">
+                {/* Version switcher */}
+                <select
+                  className="text-[11px] font-mono font-medium py-1 px-2 rounded-md border border-outline-variant/30 bg-surface-container text-on-surface focus:outline-none focus:ring-1 focus:ring-primary shadow-xs transition-colors cursor-pointer"
+                  value={p.translation || primaryTranslation}
+                  onChange={(e) => switchVersion(p.id, e.target.value)}
+                  title="Choose Bible Version"
+                >
+                  {all.map((t) => (
+                    <option key={t.code} value={t.code}>
+                      {t.code}
+                    </option>
+                  ))}
+                </select>
+
+                <button onClick={() => reorder(p.id, -1)} disabled={i === 0}
+                  className="btn-ghost px-1.5 disabled:opacity-30" title="Move Up"><I name="arrow_upward" cls="text-[16px]" /></button>
+                <button onClick={() => reorder(p.id, 1)} disabled={i === list.length - 1}
+                  className="btn-ghost px-1.5 disabled:opacity-30" title="Move Down"><I name="arrow_downward" cls="text-[16px]" /></button>
+                <button onClick={() => remove(p.id)}
+                  className="btn-ghost px-1.5 text-error" title="Remove Passage"><I name="close" cls="text-[16px]" /></button>
+              </div>
             </div>
-          </div>
-          <div className="relative">
-            <textarea readOnly
-              className="w-full rounded-xl border border-outline-variant/20 bg-surface-container-lowest px-3.5 py-2.5 pb-8 font-body-reading text-on-surface outline-none focus:border-primary/40 transition-colors"
-              rows={Math.max(2, Math.ceil(p.text.length / 70))}
-              value={p.text}
-              onMouseUp={(e) => captureHighlight(p, e.currentTarget)}
-            />
-            {/* Version dropdown: small, sleek, on the bottom right of each verse */}
-            <div className="absolute right-2.5 bottom-2.5 flex items-center gap-1 z-10">
-              <select
-                className="text-[11px] font-mono font-medium py-0.5 px-2 rounded-md border border-outline-variant/30 bg-surface-container-high/90 hover:bg-surface-container-highest text-on-surface focus:outline-none focus:ring-1 focus:ring-primary shadow-xs transition-colors cursor-pointer"
-                value={p.translation}
-                onChange={(e) => switchVersion(p.id, e.target.value)}
-                title="Choose Bible Version"
-              >
-                {all.map((t) => (
-                  <option key={t.code} value={t.code}>
-                    {t.code} — {t.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          {p.rationale && <div className="mt-1 text-ui-label-sm italic text-on-surface-variant">Why: {p.rationale}</div>}
-          {p.highlights && p.highlights.length > 0 && (
-            <div className="mt-2 space-y-1">
-              <div className="font-ui-label-sm uppercase tracking-wide text-tertiary">Personal reflection</div>
-              {p.highlights.map((h, hi) => (
-                editHl && editHl.pid === p.id && editHl.idx === hi ? (
-                  <div key={hi} className="rounded-lg border border-tertiary/40 bg-tertiary/5 p-2 space-y-2">
-                    <textarea
-                      className="field-underline w-full"
-                      rows={2}
-                      value={editHl.text}
-                      onChange={(e) => setEditHl({ ...editHl, text: e.target.value })}
-                    />
-                    <input
-                      className="field-underline w-full"
-                      placeholder="Your note…"
-                      value={editHl.note}
-                      onChange={(e) => setEditHl({ ...editHl, note: e.target.value })}
-                    />
-                    <div className="flex gap-2">
-                      <button onClick={saveEditHl} className="btn-primary px-3 py-1.5">Save</button>
-                      <button onClick={() => setEditHl(null)} className="btn-ghost">Cancel</button>
-                    </div>
-                  </div>
+
+            {/* Reading Body with Drop Cap and Verse styling (Single Clean Render with selection highlighting) */}
+            <div
+              onMouseUp={() => captureHighlight(p)}
+              onTouchEnd={() => captureHighlight(p)}
+              className="font-body-reading text-body-reading text-on-surface leading-loose tracking-wide select-text cursor-text"
+            >
+              <p className="mb-1">
+                {i === 0 ? (
+                  <>
+                    <span className="float-left text-[46px] leading-[40px] font-headline-display pr-2 pt-1 text-primary font-normal select-none">
+                      {firstChar}
+                    </span>
+                    {renderPassageHighlights(restOfText, p.highlights)}
+                  </>
                 ) : (
-                  <div key={hi} className="group rounded-lg border border-tertiary/30 bg-tertiary/5 px-2 py-1 text-ui-label-sm">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <span className="text-on-tertiary-container">"{h.text}"</span>
-                        {h.note && <span className="text-on-surface-variant"> — {h.note}</span>}
-                      </div>
-                      <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                        <button onClick={() => startEditHl(p.id, hi, h.text, h.note ?? '')}
-                          className="btn-ghost px-1.5" title="Edit reflection">
-                          <I name="edit" cls="text-[16px]" />
-                        </button>
-                        <button onClick={() => deleteHl(p.id, hi)}
-                          className="btn-ghost px-1.5 text-error" title="Delete reflection">
-                          <I name="delete" cls="text-[16px]" />
-                        </button>
+                  <>
+                    <sup className="font-verse-num text-verse-num text-primary font-semibold mr-1 select-none">{i + 1}</sup>
+                    {renderPassageHighlights(text, p.highlights)}
+                  </>
+                )}
+              </p>
+            </div>
+
+            {/* Micro Action Toolbar for passage */}
+            <div className="flex items-center gap-1.5 pt-1 border-t border-outline-variant/10">
+              <button
+                type="button"
+                onClick={() => handleHighlightPassage(p)}
+                className={`h-7 px-2.5 rounded-full flex items-center gap-1 active:scale-95 transition-all cursor-pointer ${
+                  p.highlights && p.highlights.length > 0
+                    ? 'bg-primary/10 text-primary hover:bg-primary/20'
+                    : 'bg-surface-container hover:bg-surface-container-high text-on-surface'
+                }`}
+                title="Highlight selected phrase or full passage"
+              >
+                <span className="material-symbols-outlined text-[14px] text-primary">brush</span>
+                <span className="font-label-nav text-label-nav font-medium">Highlight</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleCopyPassage(p)}
+                className="h-7 px-2.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center gap-1 active:scale-95 transition-transform cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[14px]">content_copy</span>
+                <span className="font-label-nav text-label-nav font-medium">
+                  {copiedPid === p.id ? 'Copied!' : 'Copy'}
+                </span>
+              </button>
+            </div>
+
+            {p.rationale && (
+              <div className="text-ui-label-sm italic text-secondary bg-surface-container-low p-2 rounded-lg">
+                Context: {p.rationale}
+              </div>
+            )}
+
+            {/* Highlights Drawer */}
+            {p.highlights && p.highlights.length > 0 && (
+              <div className="space-y-1.5 pt-2 border-t border-outline-variant/10">
+                <div className="font-caption-caps text-caption-caps uppercase tracking-wider text-primary font-semibold">
+                  Personal Reflections & Highlights
+                </div>
+                {p.highlights.map((h, hi) => (
+                  editHl && editHl.pid === p.id && editHl.idx === hi ? (
+                    <div key={hi} className="rounded-xl border border-primary/40 bg-primary/5 p-3 space-y-2">
+                      <textarea
+                        className="field-underline w-full"
+                        rows={2}
+                        value={editHl.text}
+                        onChange={(e) => setEditHl({ ...editHl, text: e.target.value })}
+                      />
+                      <input
+                        className="field-underline w-full"
+                        placeholder="Your personal note…"
+                        value={editHl.note}
+                        onChange={(e) => setEditHl({ ...editHl, note: e.target.value })}
+                      />
+                      <div className="flex gap-2">
+                        <button onClick={saveEditHl} className="btn-primary px-3 py-1 text-xs">Save</button>
+                        <button onClick={() => setEditHl(null)} className="btn-ghost text-xs">Cancel</button>
                       </div>
                     </div>
-                  </div>
-                )
-              ))}
-            </div>
-          )}
-        </div>
-      ))}
+                  ) : (
+                    <div key={hi} className="group rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 text-ui-label-sm">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <span className="text-primary font-medium font-serif italic">"{h.text}"</span>
+                          {h.note && <span className="text-on-surface-variant"> — {h.note}</span>}
+                        </div>
+                        <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                          <button onClick={() => startEditHl(p.id, hi, h.text, h.note ?? '')}
+                            className="btn-ghost px-1.5" title="Edit reflection">
+                            <I name="edit" cls="text-[15px]" />
+                          </button>
+                          <button onClick={() => deleteHl(p.id, hi)}
+                            className="btn-ghost px-1.5 text-error" title="Delete reflection">
+                            <I name="delete" cls="text-[15px]" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                ))}
+              </div>
+            )}
+          </article>
+        )
+      })}
 
       {/* Fallback view when no database DayPassage rows exist yet */}
       {!busy && list.length === 0 && hasFallback && (
         <div className="space-y-3">
           {fallbackScripture!.map((fs, i) => (
-            <div key={i} className="passage-card border border-outline-variant/30">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="font-ui-label-sm font-semibold text-primary">{fs.ref}</span>
-                {fs.translation && <span className="text-ui-label-xs text-on-surface-variant font-mono">{fs.translation}</span>}
+            <article key={i} className="bg-surface-container-lowest rounded-2xl p-6 shadow-sm border border-outline-variant/20 flex flex-col gap-3">
+              <div className="flex items-center justify-between pb-1 border-b border-outline-variant/10">
+                <span className="font-headline-md text-headline-md font-semibold text-primary">{fs.ref}</span>
+                {fs.translation && (
+                  <span className="text-caption-caps font-caption-caps px-2 py-0.5 rounded bg-secondary-container text-on-secondary-container font-mono">
+                    {fs.translation}
+                  </span>
+                )}
               </div>
               {fs.text && (
-                <div className="w-full rounded-xl bg-surface-container-lowest px-3 py-2 font-body-reading text-on-surface">
-                  {fs.text}
+                <div className="font-body-reading text-body-reading text-on-surface leading-loose tracking-wide">
+                  {i === 0 ? (
+                    <p>
+                      <span className="float-left text-[46px] leading-[40px] font-headline-display pr-2 pt-1 text-primary font-normal">
+                        {fs.text.charAt(0)}
+                      </span>
+                      {fs.text.slice(1)}
+                    </p>
+                  ) : (
+                    <p>{fs.text}</p>
+                  )}
                 </div>
               )}
-              {fs.rationale && <div className="mt-1 text-ui-label-sm italic text-on-surface-variant">Why: {fs.rationale}</div>}
-            </div>
+              {fs.rationale && <div className="text-ui-label-sm italic text-secondary">Context: {fs.rationale}</div>}
+            </article>
           ))}
         </div>
       )}
 
-      {!busy && list.length === 0 && !hasFallback && (
-        <p className="text-ui-label-sm text-on-surface-variant">No scripture passages added for this day yet. Add one below:</p>
-      )}
-
-      <div className="flex items-center gap-2">
+      {/* Add Scripture Reference Form */}
+      <div className="flex items-center gap-2 mt-2 bg-surface-container-lowest p-3 rounded-2xl border border-outline-variant/20 shadow-xs">
         <input
-          className="field-underline flex-1"
-          placeholder="Add a scripture ref (e.g. John 3:16)"
+          className="field-underline flex-1 py-1 text-sm"
+          placeholder="Add another scripture ref (e.g. Acts 2:1-4, Romans 8:28)..."
           value={newRef} onChange={(e) => setNewRef(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') add() }}
         />
-        <button onClick={add} className="btn-primary px-4 py-1.5">Add</button>
+        <button onClick={add} className="btn-primary px-4 py-1.5 text-xs">Add Passage</button>
       </div>
 
       {hlText && (
-        <div className="rounded-2xl border border-tertiary/40 bg-tertiary/5 p-3">
-          <div className="mb-1 font-ui-label-sm font-semibold uppercase tracking-wide text-tertiary">Highlight for reflection</div>
-          <p className="mb-2 text-ui-label-sm italic text-on-tertiary-container">"{hlText.slice(0, 120)}{hlText.length > 120 ? '…' : ''}"</p>
+        <div className="rounded-2xl border border-primary/40 bg-primary/5 p-4 shadow-sm">
+          <div className="mb-1 font-caption-caps text-caption-caps font-semibold uppercase tracking-wider text-primary">
+            Capture Highlight For Reflection
+          </div>
+          <p className="mb-2 text-ui-label-sm italic text-on-primary-container font-serif">
+            "{hlText.slice(0, 140)}{hlText.length > 140 ? '…' : ''}"
+          </p>
           <input
-            className="field-underline w-full"
-            placeholder="Optional note…"
+            className="field-underline w-full text-sm"
+            placeholder="Write a personal note or prayer on this verse…"
             value={hlNote} onChange={(e) => setHlNote(e.target.value)}
           />
-          <div className="mt-2 flex gap-2">
-            <button onClick={saveHighlight} className="btn-primary px-4 py-1.5">Save highlight</button>
-            <button onClick={() => { setHlText(null); setHlNote(''); setHlPid(null) }} className="btn-ghost">Cancel</button>
+          <div className="mt-3 flex gap-2">
+            <button onClick={saveHighlight} className="btn-primary px-4 py-1.5 text-xs">Save Highlight</button>
+            <button onClick={() => { setHlText(null); setHlNote(''); setHlPid(null) }} className="btn-ghost text-xs">Cancel</button>
           </div>
         </div>
       )}

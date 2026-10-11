@@ -23,6 +23,7 @@ from app.db import get_engine, get_session
 from app.models import Study, StudyDay, DayPassage, Asset, User
 from app.services import events
 from app.services import bible_service as bs
+from app.services.llm import NoProviderAvailable
 from app.services.studies import generate_day as study_generate_day
 from app.services.studies import build_day_discussions
 
@@ -144,7 +145,7 @@ async def create_study(body: StudyCreate,
     session.refresh(s)
     study_id = s.id
 
-    events.emit("info", "study", f"Study {study_id} created: {body.topic}", study_id=study_id, progress=5)
+    events.emit("info", "study", f"Study {study_id} created: {body.topic}", study_id=study_id, day_number=1, progress=10, step="init")
     asyncio.create_task(_build_outline_and_day1(study_id, body, user_id=user.id))
     return {"study_id": study_id, "status": "generating"}
 
@@ -162,7 +163,7 @@ async def _build_outline_and_day1(study_id: int, body: StudyCreate, user_id: int
             user_keys = get_user_keys(session, user_id)
             custom_keys = user_keys if user_keys.get("use_custom_keys") else None
 
-            events.emit("info", "study", f"Study {study_id}: drafting outline…", study_id=study_id, progress=25)
+            events.emit("info", "study", f"Study {study_id}: drafting outline…", study_id=study_id, day_number=1, progress=25, step="passages")
             outline = await generate_outline(
                 body.topic, body.minutes_per_day, body.total_days,
                 tradition=study.tradition, session=session, study_id=study_id,
@@ -209,15 +210,15 @@ async def _build_outline_and_day1(study_id: int, body: StudyCreate, user_id: int
                     stub.theme = od.focus
             session.commit()
             events.emit("success", "study",
-                        f"Study {study_id} outline ready ({len(outline.days)} days)", study_id=study_id, progress=60)
-            events.emit("info", "study", f"Study {study_id}: writing day 1…", study_id=study_id, progress=75)
+                        f"Study {study_id} outline ready ({len(outline.days)} days)", study_id=study_id, day_number=1, progress=50, step="scripture")
+            events.emit("info", "study", f"Study {study_id}: writing day 1…", study_id=study_id, day_number=1, progress=65, step="commentary")
             await study_generate_day(study, 1, session=session,
                                      tradition=study.tradition,
                                      translation=study.primary_translation,
                                      custom_keys=custom_keys)
             study.status = "ready"
             session.commit()
-            events.emit("success", "study", f"Study {study_id} day 1 generated", study_id=study_id, progress=100)
+            events.emit("success", "study", f"Study {study_id} day 1 generated", study_id=study_id, day_number=1, progress=100, step="complete")
             # Best-effort: gather real, cited discussions for day 1 in the background.
             asyncio.create_task(
                 _build_discussions_safe(study_id, 1))
@@ -319,8 +320,13 @@ async def generate_day_endpoint(study_id: int, day_number: int,
         raise HTTPException(404, "study not found")
     if day_number < 1 or day_number > s.total_days:
         raise HTTPException(400, "day out of range")
-    events.emit("info", "study", f"Study {study_id} day {day_number}: regenerating…",
-                study_id=study_id, progress=75)
+    target = next((d for d in s.days if d.day_number == day_number), None)
+    if target:
+        target.status = "generating"
+        session.add(target)
+        session.commit()
+    events.emit("info", "study", f"Study {study_id} day {day_number}: Initializing day generation…",
+                study_id=study_id, day_number=day_number, progress=10, step="init")
     try:
         from app.routers.keys import get_user_keys
         from app.services.llm import NoProviderAvailable
@@ -333,19 +339,19 @@ async def generate_day_endpoint(study_id: int, day_number: int,
                                          custom_keys=custom_keys)
     except NoProviderAvailable as exc:
         events.emit("error", "llm", "AI Provider unavailable - API key required",
-                    study_id=study_id)
+                    study_id=study_id, day_number=day_number)
         raise HTTPException(
             status_code=402,
             detail="KEY_REQUIRED: AI generation requires an API key. Please add your free Gemini or OpenRouter key in your Profile."
         )
     except ValueError as exc:
         events.emit("error", "study", f"Study {study_id} day {day_number} failed: {exc}",
-                    study_id=study_id)
+                    study_id=study_id, day_number=day_number)
         raise HTTPException(400, str(exc))
     # Best-effort real, cited discussions for the freshly generated day.
     asyncio.create_task(_build_discussions_safe(study_id, day_number))
-    events.emit("success", "study", f"Study {study_id} day {day_number} regenerated",
-                study_id=study_id, progress=100)
+    events.emit("success", "study", f"Study {study_id} day {day_number} ready",
+                study_id=study_id, day_number=day_number, progress=100, step="complete")
     return {"day_number": day_number, "status": "ready", "draft": draft}
 
 
@@ -392,6 +398,42 @@ class DayRevise(BaseModel):
     instruction: str
     selection: str | None = None
     target_field: str | None = "commentary"
+    notes: dict[str, Any] | None = None
+
+
+class ClosingPrayerRequest(BaseModel):
+    notes: dict[str, Any] | None = None
+    instruction: str | None = None
+
+
+CLOSING_PRAYER_PROMPT = """You are crafting a deeply reverent, grounded, and personal CLOSING PRAYER of response to conclude this day's Bible study.
+
+STUDY CONTEXT:
+- Overall Study Topic: {study_topic}
+- Theological Tradition: {tradition}
+- Day {day_number}: {heading}
+- Key Themes & Commentary:
+{commentary_summary}
+
+CHOSEN SCRIPTURE PASSAGES FOR TODAY:
+{scripture_block}
+
+USER'S PERSONAL STUDY NOTES & REFLECTIONS:
+{user_notes_block}
+
+COMMUNITY VOICES & PERSPECTIVES EXPLORED:
+{voices_block}
+
+{optional_user_instruction}
+
+GUIDELINES FOR THE CLOSING PRAYER:
+1. Grounded in Scripture: Draw deeply on today's scripture passages. Echo concrete words, imagery, and truths from the text.
+2. Grounded in the Reader's Notes: Directly integrate and honor the reader's personal reflections, observations, and honest notes, acknowledging where they feel called to grow, rely on God, or obey.
+3. Grounded in the Community Voices: Weave in the tensions, diverse insights, questions, or perspectives surfaced in the discussions section—transforming intellectual inquiry and diverse views into humble adoration, steadfast faith, and unity before God.
+4. Voice & Tone: Write as an earnest, heartfelt prayer spoken directly to God ("Heavenly Father...", "Lord Jesus...", "Holy Spirit..."). Reverent, thoughtful, and personal.
+5. Structure: 2 to 3 cohesive paragraphs separated by blank lines.
+6. Clean Output: Do NOT include verse references or citations in brackets, do NOT include markdown headings or titles. Return ONLY the prayer text itself.
+"""
 
 
 REVISE_PROMPT = """You are helping a user revise the {section_title} of a Bible study.
@@ -446,7 +488,7 @@ async def revise_day_endpoint(study_id: int, day_number: int, body: DayRevise,
         field_key = "commentary"
 
     current_text = (target.blocks_json or {}).get(field_key, "") if target.blocks_json else ""
-    if not current_text and not body.instruction:
+    if not current_text and not body.instruction and field_key != "closing_prayer":
         raise HTTPException(400, f"day has no {field_key} to revise yet")
 
     # Ground the revision on the day's chosen scripture passages.
@@ -472,7 +514,39 @@ async def revise_day_endpoint(study_id: int, day_number: int, body: DayRevise,
         context_parts.append(f"- Reflection Questions: {', '.join(str(q) for q in blocks.get('questions', []))}")
     if field_key != "closing_prayer" and blocks.get("closing_prayer"):
         context_parts.append(f"- Closing Prayer: {blocks.get('closing_prayer')}")
-    
+
+    if field_key == "closing_prayer":
+        notes_dict = {**(target.notes or {}), **(body.notes or {})}
+        questions = blocks.get("questions") or []
+        note_lines = []
+        for k, v in notes_dict.items():
+            if not v or not str(v).strip():
+                continue
+            v_str = str(v).strip()
+            if k.startswith("question_"):
+                try:
+                    q_idx = int(k.split("_")[1])
+                    q_label = questions[q_idx] if q_idx < len(questions) else f"Question {q_idx + 1}"
+                    note_lines.append(f"Reflection on '{q_label}': \"{v_str}\"")
+                except Exception:
+                    note_lines.append(f"Question Note: \"{v_str}\"")
+            elif k == "selah":
+                note_lines.append(f"Selah Reflection: \"{v_str}\"")
+            elif k == "discussions":
+                note_lines.append(f"Voices Note: \"{v_str}\"")
+            else:
+                note_lines.append(f"Note ({k}): \"{v_str}\"")
+        if note_lines:
+            context_parts.append(f"- User Study Notes & Reflections: {'; '.join(note_lines)}")
+
+        discussions = target.discussions_json or {}
+        sources = discussions.get("sources") or []
+        if sources:
+            disc_summaries = [f"[{s.get('sentiment', 'perspective')}] {s.get('title')}: {s.get('snippet', '')[:80]}" for s in sources[:4]]
+            context_parts.append(f"- Community Voices/Discussions: {'; '.join(disc_summaries)}")
+        elif discussions.get("guide"):
+            context_parts.append(f"- Discussions Topic: {discussions.get('topic', '')}")
+
     page_context = "\n".join(context_parts) if context_parts else "(Day content being crafted)"
 
     section_titles = {
@@ -490,8 +564,8 @@ async def revise_day_endpoint(study_id: int, day_number: int, body: DayRevise,
         if field_key in ("opening_prayer", "closing_prayer"):
             specific_rules = (
                 f"1. The user has highlighted the specific excerpt above from the {sec_title}. "
-                f"Revise and update that excerpt based on the user's instruction and the scriptures.\n"
-                f"2. Write in a reverent, thoughtful tone grounded in the scriptures.\n"
+                f"Revise and update that excerpt based on the user's instruction, reflection notes, and the scriptures.\n"
+                f"2. Write in a reverent, thoughtful tone grounded in the scriptures and user reflections.\n"
                 f"3. Return the revised excerpt that replaces the highlighted portion (or the complete updated prayer with the revision incorporated seamlessly)."
             )
         else:
@@ -503,7 +577,13 @@ async def revise_day_endpoint(study_id: int, day_number: int, body: DayRevise,
             )
     else:
         selection_block = "The user has requested a revision of the entire section."
-        if field_key in ("opening_prayer", "closing_prayer"):
+        if field_key == "closing_prayer":
+            specific_rules = (
+                f"1. Craft or revise the complete {sec_title} grounded in today's scripture passages, the user's reflection notes, and community discussions above.\n"
+                f"2. Write in a reverent, thoughtful tone spoken directly to God as a personal prayer of commitment (2-3 paragraphs).\n"
+                f"3. Return the complete updated {sec_title}."
+            )
+        elif field_key == "opening_prayer":
             specific_rules = (
                 f"1. Rewrite and improve the entire {sec_title} according to the user's instruction and the scriptures above.\n"
                 f"2. Write in a reverent, thoughtful tone grounded in the scriptures.\n"
@@ -598,6 +678,160 @@ async def revise_day_endpoint(study_id: int, day_number: int, body: DayRevise,
     }
 
 
+async def _generate_closing_prayer_for_day(
+    study: Study,
+    target: StudyDay,
+    session: Session,
+    custom_notes: dict[str, Any] | None = None,
+    instruction: str | None = None,
+) -> str:
+    from app.services.llm import complete
+    from app.services.prompts import build_system
+
+    # 1. Scriptures
+    passages = session.exec(
+        select(DayPassage).where(DayPassage.study_day_id == target.id)
+        .order_by(DayPassage.order)
+    ).all()
+    scripture_parts = []
+    for p in passages:
+        txt = (p.text or "").strip()
+        scripture_parts.append(f"- {p.ref} ({p.translation}): {txt}")
+
+    blocks = target.blocks_json or {}
+    if not scripture_parts and blocks.get("scripture"):
+        for s in blocks.get("scripture", []):
+            if isinstance(s, dict):
+                ref = s.get("ref", "")
+                tr = s.get("translation", study.primary_translation or "KJV")
+                t = s.get("text", "")
+                scripture_parts.append(f"- {ref} ({tr}): {t}")
+
+    scripture_block = "\n".join(scripture_parts) or "(Scripture readings for today)"
+
+    heading = blocks.get("heading") or target.title or f"Day {target.day_number}"
+    commentary = str(blocks.get("commentary") or "")
+    comm_summary = (commentary[:600] + "...") if len(commentary) > 600 else commentary
+
+    # 2. User notes
+    notes_dict = {**(target.notes or {}), **(custom_notes or {})}
+    questions = blocks.get("questions") or []
+    note_lines = []
+    for k, v in notes_dict.items():
+        if not v or not str(v).strip():
+            continue
+        v_str = str(v).strip()
+        if k.startswith("question_"):
+            try:
+                q_idx = int(k.split("_")[1])
+                q_label = questions[q_idx] if q_idx < len(questions) else f"Question {q_idx + 1}"
+                note_lines.append(f"- Reflection on '{q_label}': \"{v_str}\"")
+            except Exception:
+                note_lines.append(f"- Question Reflection: \"{v_str}\"")
+        elif k == "selah":
+            note_lines.append(f"- Daily Selah Reflection: \"{v_str}\"")
+        elif k == "discussions":
+            note_lines.append(f"- Journal note from Voices / Readings: \"{v_str}\"")
+        elif k == "commentary":
+            note_lines.append(f"- Commentary Note: \"{v_str}\"")
+        else:
+            note_lines.append(f"- Personal Note ({k}): \"{v_str}\"")
+
+    user_notes_block = "\n".join(note_lines) if note_lines else "(No user notes recorded yet; ground in the study themes and scriptures)"
+
+    # 3. Community Voices / Discussions
+    discussions = target.discussions_json or {}
+    disc_lines = []
+    topic = discussions.get("topic") or target.theme or heading
+    disc_lines.append(f"Topic: {topic}")
+    sources = discussions.get("sources") or []
+    for s in sources[:8]:
+        title = s.get("title") or "Source"
+        sentiment = s.get("sentiment") or "perspective"
+        snippet = s.get("snippet") or ""
+        disc_lines.append(f"- [{sentiment}] \"{title}\": {snippet}")
+    if not sources and discussions.get("guide"):
+        disc_lines.append(str(discussions["guide"])[:600])
+
+    voices_block = "\n".join(disc_lines) if disc_lines else "(Community perspectives on these scriptures)"
+
+    instruction_block = f"USER'S ADDITIONAL FOCUS/REQUEST:\n\"{instruction}\"" if instruction else ""
+    prompt = CLOSING_PRAYER_PROMPT.format(
+        study_topic=study.topic or study.title,
+        tradition=study.tradition,
+        day_number=target.day_number,
+        heading=heading,
+        commentary_summary=comm_summary,
+        scripture_block=scripture_block,
+        user_notes_block=user_notes_block,
+        voices_block=voices_block,
+        optional_user_instruction=instruction_block,
+    )
+
+    res = await complete(
+        prompt,
+        system=build_system(tradition=study.tradition),
+        session=session,
+        study_id=study.id,
+    )
+    return res.text.strip()
+
+
+@router.post("/{study_id}/days/{day_number}/closing-prayer")
+async def generate_closing_prayer_endpoint(
+    study_id: int,
+    day_number: int,
+    body: ClosingPrayerRequest | None = None,
+    session: Session = Depends(get_session),
+) -> dict:
+    """Generate or regenerate a closing prayer grounded in scripture, user notes, and discussions."""
+    s = session.get(Study, study_id)
+    if s is None:
+        raise HTTPException(404, "study not found")
+    target = next((d for d in s.days if d.day_number == day_number), None)
+    if target is None:
+        raise HTTPException(400, "day out of range")
+
+    custom_notes = body.notes if body else None
+    instruction = body.instruction if body else None
+
+    if custom_notes:
+        target.notes = {**(target.notes or {}), **custom_notes}
+
+    prayer_text = await _generate_closing_prayer_for_day(
+        s, target, session, custom_notes=custom_notes, instruction=instruction
+    )
+
+    target.blocks_json = {**(target.blocks_json or {}), "closing_prayer": prayer_text}
+
+    # Ensure scriptures section includes all verses mentioned
+    text_sources = [
+        target.blocks_json.get("commentary") or "",
+        target.blocks_json.get("opening_prayer") or "",
+        prayer_text,
+        target.blocks_json.get("heading") or "",
+        *[str(q) for q in target.blocks_json.get("questions", []) if str(q).strip()],
+    ]
+    scripture = target.blocks_json.get("scripture") or []
+    tr = s.primary_translation or "KJV"
+    updated_scripture = bs.ensure_scriptures_include_mentioned(
+        scripture, text_sources, translation=tr, session=session
+    )
+    target.blocks_json["scripture"] = updated_scripture
+    if getattr(target, "id", None) is not None:
+        from app.services.studies import _sync_passages
+        _sync_passages(session, target, updated_scripture, tr)
+
+    session.add(target)
+    session.commit()
+    events.emit("success", "study", f"Study {study_id} day {day_number} closing prayer generated")
+    return {
+        "day_number": day_number,
+        "closing_prayer": prayer_text,
+        "blocks_json": target.blocks_json,
+    }
+
+
 @router.put("/{study_id}/days/{day_number}")
 def update_day_endpoint(study_id: int, day_number: int, body: DayUpdate,
                         session: Session = Depends(get_session)) -> dict:
@@ -649,7 +883,7 @@ def update_day_endpoint(study_id: int, day_number: int, body: DayUpdate,
     target.blocks_json = body.blocks_json
     if body.notes is not None:
         target.notes = body.notes
-    if target.status == "pending":
+    if target.status in ("pending", "generating"):
         target.status = "ready"
     target.context_summary = make_summary(body.blocks_json, target.context_summary)
     

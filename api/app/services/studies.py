@@ -36,6 +36,14 @@ async def generate_day(study: Study, day_number: int, *, session: Session,
     # Day N reads ALL prior days via the compressed rolling history (plan decision).
     prior_summary = get_compressed_history(getattr(study, "history_json", None)) or None
 
+    sid = getattr(study, "id", None)
+    if sid is not None:
+        events.emit(
+            "info", "study",
+            f"Day {day_number}: Selecting focal scriptures and context…",
+            study_id=sid, day_number=day_number, progress=25, step="passages",
+        )
+
     passages = _passages_for(study, day_number)
     # Fallback ladder (never leave a day without real scripture):
     #   1. outline suggested passages (from generate_outline)
@@ -64,6 +72,13 @@ async def generate_day(study: Study, day_number: int, *, session: Session,
                 for s in prev.blocks_json["scripture"]
             ) or None
 
+    if sid is not None:
+        events.emit(
+            "info", "study",
+            f"Day {day_number}: Crafting commentary & reflections…",
+            study_id=sid, day_number=day_number, progress=50, step="commentary",
+        )
+
     draft = await _generate_day(
         title=study.title or study.topic,
         focus=target.theme,
@@ -78,6 +93,13 @@ async def generate_day(study: Study, day_number: int, *, session: Session,
         translation=translation,
         custom_keys=custom_keys,
     )
+
+    if sid is not None:
+        events.emit(
+            "info", "study",
+            f"Day {day_number}: Saving study draft & synchronizing passages…",
+            study_id=sid, day_number=day_number, progress=92, step="saving",
+        )
 
     target.blocks_json = draft
     target.status = "ready"

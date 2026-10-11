@@ -12,7 +12,9 @@ export type LogEvent = {
   message: string
   cost_usd: number | null
   study_id: number | null
+  day_number?: number | null
   progress?: number | null
+  step?: string | null
 }
 
 export type Meta = {

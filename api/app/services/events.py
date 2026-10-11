@@ -48,7 +48,10 @@ def emit(
     *,
     cost_usd: float | None = None,
     study_id: int | None = None,
+    day_number: int | None = None,
     progress: int | None = None,
+    step: str | None = None,
+    **extra: Any,
 ) -> dict[str, Any]:
     """Record one activity-log entry. Never raises - logging must not break work."""
     global _local_seq
@@ -70,7 +73,10 @@ def emit(
         "message": message,
         "cost_usd": cost_usd,
         "study_id": study_id,
+        "day_number": day_number,
         "progress": progress,
+        "step": step,
+        **extra,
     }
     payload = json.dumps(event)
     if client is not None:
