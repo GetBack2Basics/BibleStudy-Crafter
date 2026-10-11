@@ -32,6 +32,33 @@ const SetStudyTitleCtx = createContext<((v: { title: string; dayNum?: number; to
 export const OpenProfileCtx = createContext<(tab?: 'profile' | 'byok' | 'admin') => void>(() => {})
 export const OpenHelpCtx = createContext<() => void>(() => {})
 
+export interface AudioControllerState {
+  hasAudio: boolean
+  isPlaying: boolean
+  isRendering: boolean
+  isExpanded: boolean
+  togglePlay: () => void
+  setIsExpanded: (expanded: boolean) => void
+  toggleExpanded: () => void
+  section?: string
+}
+
+export const AudioControllerCtx = createContext<{
+  state: AudioControllerState
+  register: (ctrl: Partial<AudioControllerState> | null) => void
+}>({
+  state: {
+    hasAudio: false,
+    isPlaying: false,
+    isRendering: false,
+    isExpanded: false,
+    togglePlay: () => {},
+    setIsExpanded: () => {},
+    toggleExpanded: () => {},
+  },
+  register: () => {},
+})
+
 export function isKeyError(errText?: string | null): boolean {
   if (!errText) return false
   const lower = errText.toLowerCase()
@@ -262,11 +289,40 @@ export default function App() {
     }
   }, [authed])
 
+  const [audioState, setAudioState] = useState<AudioControllerState>({
+    hasAudio: false,
+    isPlaying: false,
+    isRendering: false,
+    isExpanded: false,
+    togglePlay: () => {},
+    setIsExpanded: () => {},
+    toggleExpanded: () => {},
+  })
+
+  const registerAudioController = (ctrl: Partial<AudioControllerState> | null) => {
+    if (!ctrl) {
+      setAudioState((prev) => ({
+        ...prev,
+        hasAudio: false,
+        isPlaying: false,
+        isRendering: false,
+        isExpanded: false,
+      }))
+    } else {
+      setAudioState((prev) => ({
+        ...prev,
+        ...ctrl,
+        hasAudio: true,
+      }))
+    }
+  }
+
   if (!authed) {
     return <AuthScreen onAuthed={() => { setAuthed(true); loadUser() }} />
   }
 
   return (
+    <AudioControllerCtx.Provider value={{ state: audioState, register: registerAudioController }}>
     <OpenHelpCtx.Provider value={() => setIsHelpOpen(true)}>
     <OpenProfileCtx.Provider value={openProfile}>
     <SetStudyTitleCtx.Provider value={setStudyTitle}>
@@ -442,6 +498,61 @@ export default function App() {
             <span className="material-symbols-outlined text-[22px]">forum</span>
             <span className="font-caption-caps text-caption-caps capitalize">Discuss</span>
           </button>
+
+          {/* Voice Synthesizer / Audio Reader Icon in Footer */}
+          <button
+            type="button"
+            id="nav-audio-synthesizer-btn"
+            onClick={() => {
+              if (audioState.hasAudio) {
+                if (!audioState.isExpanded) {
+                  audioState.setIsExpanded(true)
+                } else {
+                  audioState.togglePlay()
+                }
+              }
+            }}
+            disabled={!audioState.hasAudio}
+            className={`min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-0.5 transition-colors cursor-pointer ${
+              !audioState.hasAudio
+                ? 'opacity-30 cursor-not-allowed text-on-surface-variant'
+                : audioState.isPlaying
+                ? 'text-primary font-bold'
+                : 'text-on-surface-variant hover:text-on-surface'
+            }`}
+            aria-label={audioState.isPlaying ? 'Pause Narration' : 'Play Narration'}
+            title={
+              !audioState.hasAudio
+                ? 'Audio narrator available in studies'
+                : audioState.isExpanded
+                ? audioState.isPlaying
+                  ? 'Pause audio'
+                  : 'Play audio'
+                : audioState.isPlaying
+                ? 'Audio playing · Click to show full controls'
+                : 'Click to show voice narration controls'
+            }
+          >
+            <div className="relative flex items-center justify-center">
+              <span className={`material-symbols-outlined text-[22px] ${audioState.isRendering ? 'animate-spin' : ''}`}>
+                {audioState.isRendering
+                  ? 'sync'
+                  : audioState.isPlaying
+                  ? 'pause'
+                  : 'play_arrow'}
+              </span>
+              {audioState.isPlaying && (
+                <span className="absolute -top-0.5 -right-1 flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
+                </span>
+              )}
+            </div>
+            <span className="font-caption-caps text-caption-caps capitalize">
+              {audioState.isRendering ? 'Loading' : audioState.isPlaying ? 'Pause' : 'Listen'}
+            </span>
+          </button>
+
           <Link
             to="/"
             className="min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-0.5 text-on-surface-variant hover:text-on-surface transition-colors"
@@ -487,6 +598,7 @@ export default function App() {
     </SetStudyTitleCtx.Provider>
     </OpenProfileCtx.Provider>
     </OpenHelpCtx.Provider>
+    </AudioControllerCtx.Provider>
   )
 }
 
@@ -902,7 +1014,7 @@ function StudyDetail() {
       </div>
 
       {/* Floating Apple Dock Audio Player for Study View */}
-      {activeAudioDay && activeAudioDay.blocks_json && (
+      {activeAudioDay && (
         <DayTTS
           studyId={studyId}
           day={activeAudioDay}
@@ -2109,13 +2221,16 @@ function DayTTS({
   onCloseVoicePicker?: () => void
   onAudioStateChange?: (isPlaying: boolean, section: string | null) => void
 }) {
+  const { register } = useContext(AudioControllerCtx)
   const [internalVoices, setInternalVoices] = useState<TTSChoice[]>(voices.length ? voices : ttsDefaultVoices)
   const [internalVoice, setInternalVoice] = useState<TTSChoice | null>(selectedVoice ?? null)
   const [internalModalOpen, setInternalModalOpen] = useState(false)
   const [currentSection, setCurrentSection] = useState<string>(activeSection || 'all')
   const [isSectionMenuOpen, setIsSectionMenuOpen] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
   const [ttsStatus, setTtsStatus] = useState<{ asset_id?: number; status?: string } | null>(null)
   const [loadingRender, setLoadingRender] = useState(false)
+  const ttsRendering = ttsStatus?.status === 'rendering' || loadingRender
   const [err, setErr] = useState<string | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
@@ -2184,6 +2299,7 @@ function DayTTS({
   useEffect(() => {
     if (externalTrigger && externalTrigger.section) {
       setCurrentSection(externalTrigger.section)
+      setIsExpanded(true)
       startRender(externalTrigger.section)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2194,6 +2310,28 @@ function DayTTS({
     onAudioStateChange?.(isPlaying, isPlaying ? currentSection : null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPlaying, currentSection])
+
+  // Register with footer audio controller
+  useEffect(() => {
+    register({
+      hasAudio: true,
+      isPlaying,
+      isRendering: ttsRendering,
+      isExpanded,
+      section: currentSection,
+      togglePlay,
+      setIsExpanded,
+      toggleExpanded: () => setIsExpanded((prev) => !prev),
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPlaying, ttsRendering, isExpanded, currentSection])
+
+  useEffect(() => {
+    return () => {
+      register(null)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Click outside listener for section menu
   useEffect(() => {
@@ -2350,181 +2488,10 @@ function DayTTS({
     setCurrentTime(newTime)
   }
 
-  const ttsRendering = ttsStatus?.status === 'rendering' || loadingRender
   const currentSectionMeta = SECTION_OPTIONS.find((s) => s.id === currentSection) || SECTION_OPTIONS[0]
 
   return (
-    <aside id="day-tts-player-dock" className="fixed bottom-3 sm:bottom-5 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-1.25rem)] max-w-[640px] pointer-events-auto">
-      {/* Popover for Section Selection */}
-      {isSectionMenuOpen && (
-        <div
-          ref={sectionMenuRef}
-          id="tts-section-menu-popover"
-          className="mb-2 p-2 rounded-2xl bg-surface-container-lowest/95 backdrop-blur-xl border border-outline-variant/30 shadow-2xl flex flex-col gap-1 text-ui-label-xs animate-in fade-in slide-in-from-bottom-2 duration-150"
-        >
-          <div className="px-3 py-1.5 text-[11px] font-bold text-on-surface-variant uppercase tracking-wider flex items-center justify-between border-b border-outline-variant/10">
-            <span>Read Section On Demand</span>
-            <button
-              type="button"
-              onClick={() => setIsSectionMenuOpen(false)}
-              className="text-on-surface-variant hover:text-on-surface"
-            >
-              <span className="material-symbols-outlined text-[16px]">close</span>
-            </button>
-          </div>
-          {SECTION_OPTIONS.map((opt) => (
-            <button
-              key={opt.id}
-              type="button"
-              id={`select-audio-section-${opt.id}`}
-              onClick={() => {
-                setIsSectionMenuOpen(false)
-                handleSelectSection(opt.id)
-              }}
-              className={`flex items-center justify-between px-3 py-2 rounded-xl text-left transition-all cursor-pointer ${
-                currentSection === opt.id
-                  ? 'bg-primary/10 text-primary font-bold'
-                  : 'hover:bg-surface-container text-on-surface'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px] opacity-80">{opt.icon}</span>
-                <span>{opt.label}</span>
-              </div>
-              {currentSection === opt.id && (
-                <span className="material-symbols-outlined text-[16px]">check</span>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Main Glassmorphic Dock */}
-      <div className="backdrop-blur-xl bg-surface-container-lowest/90 rounded-2xl sm:rounded-full px-3.5 py-2.5 sm:py-2 flex flex-col sm:flex-row items-center justify-between shadow-xl border border-outline-variant/20 gap-2 sm:gap-2.5">
-        {/* Play/Pause Button & Selectors */}
-        <div className="flex items-center gap-1.5 w-full sm:w-auto justify-between sm:justify-start">
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              id="tts-play-pause-btn"
-              onClick={togglePlay}
-              disabled={ttsRendering}
-              aria-label={isPlaying ? 'Pause Narration' : 'Play Narration'}
-              className="w-9 h-9 rounded-full bg-primary text-on-primary flex items-center justify-center active:scale-95 transition-transform flex-shrink-0 shadow-sm cursor-pointer disabled:opacity-50"
-            >
-              <span className="material-symbols-outlined text-[20px]">
-                {ttsRendering ? 'sync' : isPlaying ? 'pause' : 'play_arrow'}
-              </span>
-            </button>
-
-            {/* Quick Section Picker Pill */}
-            <button
-              type="button"
-              id="tts-section-picker-btn"
-              onClick={() => setIsSectionMenuOpen(!isSectionMenuOpen)}
-              className="h-7 px-2.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface text-[11px] font-semibold flex items-center gap-1 border border-outline-variant/20 transition-all cursor-pointer"
-              title="Change section to read"
-            >
-              <span className="material-symbols-outlined text-[14px] text-primary">
-                {currentSectionMeta.icon}
-              </span>
-              <span className="truncate max-w-[95px]">{currentSectionMeta.label}</span>
-              <span className="material-symbols-outlined text-[13px] text-secondary">
-                {isSectionMenuOpen ? 'expand_less' : 'expand_more'}
-              </span>
-            </button>
-          </div>
-
-          {/* Quick Voice Picker Pill */}
-          <button
-            type="button"
-            id="tts-voice-picker-btn"
-            onClick={handleOpenModal}
-            className="h-7 px-2.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface text-[11px] font-semibold flex items-center gap-1 border border-outline-variant/20 transition-all cursor-pointer"
-            title="Sample & choose AI voices"
-          >
-            <span className="material-symbols-outlined text-[14px] text-tertiary">graphic_eq</span>
-            <span className="truncate max-w-[105px]">
-              {effectiveVoice?.friendly_name || effectiveVoice?.short_name || 'AI Voice'}
-            </span>
-            <span className="material-symbols-outlined text-[13px] text-secondary">tune</span>
-          </button>
-        </div>
-
-        {/* Center: Scrubber & Progress */}
-        <div className="flex-1 w-full sm:px-1.5 flex flex-col justify-center min-w-0">
-          <div className="flex items-center justify-between text-caption-caps font-caption-caps mb-1">
-            <span className="font-label-nav text-label-nav text-on-surface font-medium truncate">
-              {ttsRendering
-                ? 'Rendering narration…'
-                : `${day.title || `Day ${day.day_number}`} · ${currentSectionMeta.label}`}
-            </span>
-            <span className="text-secondary tabular-nums ml-2 font-mono text-[11px]">
-              {formatTime(currentTime)} / {formatTime(duration || 360)}
-            </span>
-          </div>
-          <div
-            id="tts-scrubber-track"
-            className="w-full bg-surface-container h-1.5 rounded-full overflow-hidden cursor-pointer"
-            onClick={handleSeek}
-          >
-            <div
-              className={`h-full rounded-full transition-all duration-150 ${
-                ttsRendering ? 'bg-primary/50 animate-pulse' : 'bg-primary'
-              }`}
-              style={{ width: `${Math.min(100, (currentTime / (duration || 1)) * 100)}%` }}
-            />
-          </div>
-        </div>
-
-        {/* Right Controls: Rewind, Speed, Forward, Stop */}
-        <div className="flex items-center gap-0.5 flex-shrink-0">
-          <button
-            type="button"
-            id="tts-skip-back-btn"
-            onClick={() => skip(-10)}
-            aria-label="Rewind 10 seconds"
-            title="Rewind 10s"
-            className="w-7 h-7 rounded-full flex items-center justify-center text-secondary hover:text-on-surface transition-colors cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[16px]">replay_10</span>
-          </button>
-
-          <button
-            type="button"
-            id="tts-speed-btn"
-            onClick={cycleSpeed}
-            className="h-6 px-1.5 rounded-full bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-label-nav text-[11px] font-semibold cursor-pointer"
-            title="Playback speed"
-          >
-            {speed}×
-          </button>
-
-          <button
-            type="button"
-            id="tts-skip-forward-btn"
-            onClick={() => skip(10)}
-            aria-label="Forward 10 seconds"
-            title="Forward 10s"
-            className="w-7 h-7 rounded-full flex items-center justify-center text-secondary hover:text-on-surface transition-colors cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[16px]">forward_10</span>
-          </button>
-
-          <button
-            type="button"
-            id="tts-stop-btn"
-            onClick={stopPlayback}
-            aria-label="Stop playback"
-            title="Stop"
-            className="w-7 h-7 rounded-full flex items-center justify-center text-secondary hover:text-on-surface transition-colors cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[16px]">stop</span>
-          </button>
-        </div>
-      </div>
-
-      {err && <p className="text-center text-xs text-error mt-1">{err}</p>}
+    <>
       <audio ref={audioRef} />
 
       {/* Voice Picker Modal */}
@@ -2535,7 +2502,197 @@ function DayTTS({
         selectedVoice={effectiveVoice}
         onSelectVoice={handleVoiceSelect}
       />
-    </aside>
+
+      {/* Full Control Floating Dock (Positioned cleanly ABOVE the footer) */}
+      {isExpanded && (
+        <aside
+          id="day-tts-player-dock"
+          className="fixed bottom-[68px] sm:bottom-[76px] left-1/2 -translate-x-1/2 z-40 w-[calc(100%-1.25rem)] max-w-[640px] pointer-events-auto animate-in fade-in slide-in-from-bottom-2 duration-200"
+        >
+          {/* Popover for Section Selection */}
+          {isSectionMenuOpen && (
+            <div
+              ref={sectionMenuRef}
+              id="tts-section-menu-popover"
+              className="mb-2 p-2 rounded-2xl bg-surface-container-lowest/95 backdrop-blur-xl border border-outline-variant/30 shadow-2xl flex flex-col gap-1 text-ui-label-xs animate-in fade-in slide-in-from-bottom-2 duration-150"
+            >
+              <div className="px-3 py-1.5 text-[11px] font-bold text-on-surface-variant uppercase tracking-wider flex items-center justify-between border-b border-outline-variant/10">
+                <span>Read Section On Demand</span>
+                <button
+                  type="button"
+                  onClick={() => setIsSectionMenuOpen(false)}
+                  className="text-on-surface-variant hover:text-on-surface"
+                >
+                  <span className="material-symbols-outlined text-[16px]">close</span>
+                </button>
+              </div>
+              {SECTION_OPTIONS.map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  id={`select-audio-section-${opt.id}`}
+                  onClick={() => {
+                    setIsSectionMenuOpen(false)
+                    handleSelectSection(opt.id)
+                  }}
+                  className={`flex items-center justify-between px-3 py-2 rounded-xl text-left transition-all cursor-pointer ${
+                    currentSection === opt.id
+                      ? 'bg-primary/10 text-primary font-bold'
+                      : 'hover:bg-surface-container text-on-surface'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[18px] opacity-80">{opt.icon}</span>
+                    <span>{opt.label}</span>
+                  </div>
+                  {currentSection === opt.id && (
+                    <span className="material-symbols-outlined text-[16px]">check</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Main Glassmorphic Dock */}
+          <div className="backdrop-blur-xl bg-surface-container-lowest/95 rounded-2xl sm:rounded-full px-3.5 py-2.5 sm:py-2 flex flex-col sm:flex-row items-center justify-between shadow-2xl border border-outline-variant/30 gap-2 sm:gap-2.5">
+            {/* Play/Pause Button & Selectors */}
+            <div className="flex items-center gap-1.5 w-full sm:w-auto justify-between sm:justify-start">
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  id="tts-play-pause-btn"
+                  onClick={togglePlay}
+                  disabled={ttsRendering}
+                  aria-label={isPlaying ? 'Pause Narration' : 'Play Narration'}
+                  className="w-9 h-9 rounded-full bg-primary text-on-primary flex items-center justify-center active:scale-95 transition-transform flex-shrink-0 shadow-sm cursor-pointer disabled:opacity-50"
+                >
+                  <span className="material-symbols-outlined text-[20px]">
+                    {ttsRendering ? 'sync' : isPlaying ? 'pause' : 'play_arrow'}
+                  </span>
+                </button>
+
+                {/* Quick Section Picker Pill */}
+                <button
+                  type="button"
+                  id="tts-section-picker-btn"
+                  onClick={() => setIsSectionMenuOpen(!isSectionMenuOpen)}
+                  className="h-7 px-2.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface text-[11px] font-semibold flex items-center gap-1 border border-outline-variant/20 transition-all cursor-pointer"
+                  title="Change section to read"
+                >
+                  <span className="material-symbols-outlined text-[14px] text-primary">
+                    {currentSectionMeta.icon}
+                  </span>
+                  <span className="truncate max-w-[95px]">{currentSectionMeta.label}</span>
+                  <span className="material-symbols-outlined text-[13px] text-secondary">
+                    {isSectionMenuOpen ? 'expand_less' : 'expand_more'}
+                  </span>
+                </button>
+              </div>
+
+              {/* Quick Voice Picker Pill */}
+              <button
+                type="button"
+                id="tts-voice-picker-btn"
+                onClick={handleOpenModal}
+                className="h-7 px-2.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface text-[11px] font-semibold flex items-center gap-1 border border-outline-variant/20 transition-all cursor-pointer"
+                title="Sample & choose AI voices"
+              >
+                <span className="material-symbols-outlined text-[14px] text-tertiary">graphic_eq</span>
+                <span className="truncate max-w-[105px]">
+                  {effectiveVoice?.friendly_name || effectiveVoice?.short_name || 'AI Voice'}
+                </span>
+                <span className="material-symbols-outlined text-[13px] text-secondary">tune</span>
+              </button>
+            </div>
+
+            {/* Center: Scrubber & Progress */}
+            <div className="flex-1 w-full sm:px-1.5 flex flex-col justify-center min-w-0">
+              <div className="flex items-center justify-between text-caption-caps font-caption-caps mb-1">
+                <span className="font-label-nav text-label-nav text-on-surface font-medium truncate">
+                  {ttsRendering
+                    ? 'Rendering narration…'
+                    : `${day.title || `Day ${day.day_number}`} · ${currentSectionMeta.label}`}
+                </span>
+                <span className="text-secondary tabular-nums ml-2 font-mono text-[11px]">
+                  {formatTime(currentTime)} / {formatTime(duration || 360)}
+                </span>
+              </div>
+              <div
+                id="tts-scrubber-track"
+                className="w-full bg-surface-container h-1.5 rounded-full overflow-hidden cursor-pointer"
+                onClick={handleSeek}
+              >
+                <div
+                  className={`h-full rounded-full transition-all duration-150 ${
+                    ttsRendering ? 'bg-primary/50 animate-pulse' : 'bg-primary'
+                  }`}
+                  style={{ width: `${Math.min(100, (currentTime / (duration || 1)) * 100)}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Right Controls: Rewind, Speed, Forward, Stop, and Minimize */}
+            <div className="flex items-center gap-0.5 flex-shrink-0">
+              <button
+                type="button"
+                id="tts-skip-back-btn"
+                onClick={() => skip(-10)}
+                aria-label="Rewind 10 seconds"
+                title="Rewind 10s"
+                className="w-7 h-7 rounded-full flex items-center justify-center text-secondary hover:text-on-surface transition-colors cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[16px]">replay_10</span>
+              </button>
+
+              <button
+                type="button"
+                id="tts-speed-btn"
+                onClick={cycleSpeed}
+                className="h-6 px-1.5 rounded-full bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-label-nav text-[11px] font-semibold cursor-pointer"
+                title="Playback speed"
+              >
+                {speed}×
+              </button>
+
+              <button
+                type="button"
+                id="tts-skip-forward-btn"
+                onClick={() => skip(10)}
+                aria-label="Forward 10 seconds"
+                title="Forward 10s"
+                className="w-7 h-7 rounded-full flex items-center justify-center text-secondary hover:text-on-surface transition-colors cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[16px]">forward_10</span>
+              </button>
+
+              <button
+                type="button"
+                id="tts-stop-btn"
+                onClick={stopPlayback}
+                aria-label="Stop playback"
+                title="Stop"
+                className="w-7 h-7 rounded-full flex items-center justify-center text-secondary hover:text-on-surface transition-colors cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[16px]">stop</span>
+              </button>
+
+              <button
+                type="button"
+                id="tts-minimize-btn"
+                onClick={() => setIsExpanded(false)}
+                aria-label="Minimize player"
+                title="Minimize player to footer"
+                className="w-7 h-7 rounded-full flex items-center justify-center text-secondary hover:text-on-surface transition-colors cursor-pointer ml-0.5"
+              >
+                <span className="material-symbols-outlined text-[18px]">keyboard_arrow_down</span>
+              </button>
+            </div>
+          </div>
+
+          {err && <p className="text-center text-xs text-error mt-1">{err}</p>}
+        </aside>
+      )}
+    </>
   )
 }
 
