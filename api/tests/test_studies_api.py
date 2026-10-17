@@ -509,3 +509,40 @@ def test_generate_closing_prayer_endpoint(client):
     assert day_res["blocks_json"]["closing_prayer"] == "Lord, we come in full reliance on You. Amen."
 
 
+def test_get_and_refresh_day_maps(client):
+    with patch("app.services.planner.complete", _smart_stub):
+        r = client.post("/api/studies", json={"topic": "Journey", "total_days": 1, "minutes_per_day": 15})
+        assert r.status_code == 202
+        sid = r.json()["study_id"]
+        for _ in range(50):
+            if client.get(f"/api/studies/{sid}").json()["status"] == "ready":
+                break
+            time.sleep(0.05)
+
+    # Update commentary mentioning biblical locations
+    client.put(f"/api/studies/{sid}/days/1", json={
+        "blocks_json": {
+            "commentary": "Jesus resolved to go to Jerusalem, passing near Jericho and Bethany."
+        }
+    })
+
+    # Fetch maps
+    maps_res = client.get(f"/api/studies/{sid}/days/1/maps")
+    assert maps_res.status_code == 200
+    data = maps_res.json()
+    assert data["status"] == "ready"
+    assert data["has_locations"] is True
+    location_names = [loc["name"].lower() for loc in data["locations"]]
+    assert "jerusalem" in location_names
+    assert "jericho" in location_names
+    assert "bethany" in location_names
+
+    # Refresh maps endpoint
+    refresh_res = client.post(f"/api/studies/{sid}/days/1/maps/refresh")
+    assert refresh_res.status_code == 200
+    refreshed_data = refresh_res.json()
+    assert refreshed_data["status"] == "ready"
+
+
+
+

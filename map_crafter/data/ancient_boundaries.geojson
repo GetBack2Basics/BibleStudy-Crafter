@@ -1,0 +1,350 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "prov_galilee",
+        "name": "Galilee (Galilaia)",
+        "period": "roman_judea",
+        "category": "province",
+        "color": "#c99a6b",
+        "fill_color": "rgba(201, 154, 107, 0.18)",
+        "stroke_color": "#8d5b28"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [35.10, 32.60],
+            [35.15, 32.95],
+            [35.45, 33.15],
+            [35.70, 33.05],
+            [35.65, 32.65],
+            [35.40, 32.55],
+            [35.10, 32.60]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "prov_samaria",
+        "name": "Samaria (Samareia)",
+        "period": "roman_judea",
+        "category": "province",
+        "color": "#799351",
+        "fill_color": "rgba(121, 147, 81, 0.16)",
+        "stroke_color": "#4e6629"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [34.90, 32.10],
+            [34.95, 32.55],
+            [35.40, 32.55],
+            [35.50, 32.15],
+            [35.25, 31.95],
+            [34.90, 32.10]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "prov_judea",
+        "name": "Judea (Ioudaia)",
+        "period": "roman_judea",
+        "category": "province",
+        "color": "#b85d43",
+        "fill_color": "rgba(184, 93, 67, 0.18)",
+        "stroke_color": "#7e2e1a"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [34.60, 31.25],
+            [34.80, 32.05],
+            [35.25, 31.95],
+            [35.50, 31.85],
+            [35.55, 31.20],
+            [35.10, 31.10],
+            [34.60, 31.25]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "prov_decapolis",
+        "name": "Decapolis (Ten Cities)",
+        "period": "roman_judea",
+        "category": "confederation",
+        "color": "#607d8b",
+        "fill_color": "rgba(96, 125, 139, 0.18)",
+        "stroke_color": "#37474f"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [35.65, 32.70],
+            [36.15, 32.90],
+            [36.35, 32.40],
+            [35.90, 32.15],
+            [35.60, 32.35],
+            [35.65, 32.70]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "prov_peraea",
+        "name": "Peraea (Beyond Jordan)",
+        "period": "roman_judea",
+        "category": "province",
+        "color": "#9c755f",
+        "fill_color": "rgba(156, 117, 95, 0.18)",
+        "stroke_color": "#5d4037"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [35.55, 31.80],
+            [35.60, 32.35],
+            [35.90, 32.15],
+            [35.80, 31.45],
+            [35.55, 31.80]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "road_via_maris",
+        "name": "Via Maris (Way of the Sea)",
+        "period": "all",
+        "category": "ancient_highway",
+        "color": "#8c4f2b",
+        "stroke_width": 3,
+        "stroke_dash": [3, 2]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [34.25, 31.10],
+          [34.50, 31.50],
+          [34.75, 32.05],
+          [34.90, 32.50],
+          [35.15, 32.65],
+          [35.55, 32.85],
+          [36.27, 33.51]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "road_kings_highway",
+        "name": "The King's Highway",
+        "period": "all",
+        "category": "ancient_highway",
+        "color": "#795548",
+        "stroke_width": 3,
+        "stroke_dash": [3, 2]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [35.00, 29.50],
+          [35.45, 30.30],
+          [35.70, 31.30],
+          [35.85, 31.90],
+          [35.90, 32.50],
+          [36.27, 33.51]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "water_sea_of_galilee",
+        "name": "Sea of Galilee (Yam Kinneret)",
+        "period": "all",
+        "category": "water_body",
+        "fill_color": "#1e88e5",
+        "fill_opacity": 0.70,
+        "stroke_color": "#0d47a1",
+        "stroke_width": 2
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [35.535, 32.880],
+            [35.565, 32.905],
+            [35.615, 32.895],
+            [35.655, 32.845],
+            [35.660, 32.785],
+            [35.640, 32.730],
+            [35.590, 32.705],
+            [35.560, 32.715],
+            [35.538, 32.760],
+            [35.525, 32.810],
+            [35.535, 32.880]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "water_galilee_deep_basin",
+        "name": "Galilee Deep Basin (-43m)",
+        "period": "all",
+        "category": "water_depth",
+        "fill_color": "#0d47a1",
+        "fill_opacity": 0.85
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [35.555, 32.850],
+            [35.595, 32.845],
+            [35.620, 32.800],
+            [35.605, 32.755],
+            [35.570, 32.750],
+            [35.545, 32.800],
+            [35.555, 32.850]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "water_dead_sea",
+        "name": "The Dead Sea (Salt Sea / Yam HaMelach)",
+        "period": "all",
+        "category": "water_body",
+        "fill_color": "#00838f",
+        "fill_opacity": 0.75,
+        "stroke_color": "#004d40",
+        "stroke_width": 2
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [35.545, 31.780],
+            [35.580, 31.750],
+            [35.575, 31.620],
+            [35.565, 31.460],
+            [35.500, 31.340],
+            [35.395, 31.310],
+            [35.365, 31.420],
+            [35.375, 31.560],
+            [35.420, 31.690],
+            [35.485, 31.765],
+            [35.545, 31.780]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "water_dead_sea_deep_abyss",
+        "name": "Dead Sea Deep Trench (-300m)",
+        "period": "all",
+        "category": "water_depth",
+        "fill_color": "#004d40",
+        "fill_opacity": 0.88
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [35.485, 31.660],
+            [35.535, 31.640],
+            [35.525, 31.490],
+            [35.445, 31.460],
+            [35.415, 31.570],
+            [35.485, 31.660]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "water_jordan_river",
+        "name": "Jordan River (Nahar HaYarden)",
+        "period": "all",
+        "category": "river",
+        "color": "#0288d1",
+        "stroke_width": 3.5
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [35.650, 33.250],
+          [35.615, 33.050],
+          [35.605, 32.900],
+          [35.575, 32.705],
+          [35.560, 32.550],
+          [35.575, 32.400],
+          [35.550, 32.250],
+          [35.535, 32.050],
+          [35.545, 31.850],
+          [35.545, 31.780]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "water_mediterranean_shelf",
+        "name": "The Great Sea (Mare Internum / Mediterranean)",
+        "period": "all",
+        "category": "water_body",
+        "fill_color": "#1976d2",
+        "fill_opacity": 0.55,
+        "stroke_color": "#0d47a1",
+        "stroke_width": 2
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [34.10, 31.20],
+            [34.35, 31.45],
+            [34.50, 31.65],
+            [34.75, 32.05],
+            [34.85, 32.30],
+            [34.90, 32.50],
+            [34.98, 32.82],
+            [35.08, 32.93],
+            [35.10, 33.10],
+            [35.20, 33.30],
+            [35.30, 33.55],
+            [35.50, 34.20],
+            [33.50, 34.20],
+            [33.50, 31.20],
+            [34.10, 31.20]
+          ]
+        ]
+      }
+    }
+  ]
+}

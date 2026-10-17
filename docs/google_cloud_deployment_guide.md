@@ -100,3 +100,43 @@ To populate the offline Bible corpus (KJV, WEB, BBE, etc.) on your Cloud SQL ins
 - **Zero-Key Out-of-the-Box**: Never hardcode API keys into container images.
 - **Serverless Secrets**: `SECRET_KEY` and database credentials are injected securely via Google Secret Manager.
 - **CORS Protection**: The API backend dynamically locks down CORS origins to only allow requests from your production web domain.
+
+---
+
+## 🗺️ 6. Biblical Map Crafter on Google Cloud Storage (GCS)
+
+A dedicated adaptation of [Highlight_Map_Crafter](https://github.com/GetBack2Basics/Highlight_Map_Crafter) is hosted as a serverless static web application on **Google Cloud Storage (GCS)** within the `biblestudy-crafter` GCP project.
+
+### 🌐 Live Map Crafter Studio (GCS)
+- **Public Admin & Template Studio**: [`https://storage.googleapis.com/biblestudy-map-crafter/index.html`](https://storage.googleapis.com/biblestudy-map-crafter/index.html)
+- **GCS Bucket**: `gs://biblestudy-map-crafter` (Region: `us-central1`, Uniform Bucket-Level Access, configured with web suffix `index.html`).
+
+### 📦 Pre-Loaded Data & Template Capabilities
+1. **Ancient Historical Template**:
+   - Vintage parchment & shaded physical relief cartography.
+   - Ancient provincial boundaries (*Roman Galilee, Samaria, Judea, Decapolis, Peraea*).
+   - Biblical highways (*Via Maris, King's Highway*).
+   - Historical toponym labels (*Salem, Natzeret, Kfar Nahum*).
+2. **Modern Satellite Template**:
+   - High-resolution contemporary satellite earth imagery (ESRI World Imagery).
+   - Present-day geopolitical borders and modern municipal designations.
+3. **Admin Studio Tools**:
+   - **➕ Add / Edit Sites**: Insert new archaeological sites, coordinates, elevations, and historical descriptions.
+   - **📍 Interactive Pin Relocation**: Drag pins directly on the MapLibre canvas to fine-tune placement.
+   - **🏔️ 3D Terrain Relief**: 3D DEM hillshading mesh via AWS Terrarium DEM.
+   - **📸 2-JPG Exporter**: Renders and downloads high-resolution **Ancient JPG** and **Current Modern JPG** for any study bounding box.
+
+### 🔄 How BibleStudy-Crafter Consumes the Maps
+When a study day is viewed:
+1. `geo_service.py` computes the bounding box for the day's mentioned places.
+2. It generates direct URLs for the **Ancient Physical Relief JPG** and **Modern Satellite JPG**.
+3. `BiblicalMapSection.tsx` displays these 2 real JPG plates in **Side-by-Side** and **Peel Slider** modes.
+4. Includes a direct **"Map Crafter Studio (GCS)"** admin deep-link to edit templates and data directly in the browser.
+
+### 🚀 Deploying Map Crafter Updates to GCS
+To sync local template or GeoJSON updates in `map_crafter/` to the live GCS bucket:
+```powershell
+powershell -ExecutionPolicy Bypass -File map_crafter\deploy_to_gcs.ps1
+```
+
+

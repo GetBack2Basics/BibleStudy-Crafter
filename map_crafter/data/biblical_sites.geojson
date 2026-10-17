@@ -1,0 +1,341 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "jerusalem",
+        "name": "Jerusalem",
+        "ancient_name": "Jerusalem / Salem / Zion / Jebus / Aelia Capitolina",
+        "modern_name": "Jerusalem (Al-Quds)",
+        "modern_country": "Israel / West Bank",
+        "period": "all",
+        "biblical_region": "Judea / Benjamin & Judah border",
+        "elevation_m": 754,
+        "category": "capital",
+        "description": "The City of David, site of Solomon's Temple, the crucifixion and resurrection of Jesus Christ."
+      },
+      "geometry": { "type": "Point", "coordinates": [35.2345, 31.7767] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "bethlehem",
+        "name": "Bethlehem",
+        "ancient_name": "Bethlehem Ephrathah / Beit Lahm",
+        "modern_name": "Bethlehem",
+        "modern_country": "West Bank",
+        "period": "monarchy,roman_judea",
+        "biblical_region": "Judea",
+        "elevation_m": 775,
+        "category": "town",
+        "description": "Birthplace of King David and Jesus Christ; burial place of Rachel."
+      },
+      "geometry": { "type": "Point", "coordinates": [35.2024, 31.7054] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "nazareth",
+        "name": "Nazareth",
+        "ancient_name": "Nazareth (Natzeret)",
+        "modern_name": "Nazareth (En-Nasira)",
+        "modern_country": "Israel",
+        "period": "roman_judea",
+        "biblical_region": "Lower Galilee",
+        "elevation_m": 350,
+        "category": "town",
+        "description": "Childhood hometown of Jesus and home of Mary and Joseph."
+      },
+      "geometry": { "type": "Point", "coordinates": [35.2979, 32.7019] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "capernaum",
+        "name": "Capernaum",
+        "ancient_name": "Capernaum (Kfar Nahum)",
+        "modern_name": "Kfar Nahum / Tell Hum",
+        "modern_country": "Israel",
+        "period": "roman_judea",
+        "biblical_region": "Galilee",
+        "elevation_m": -208,
+        "category": "ministry_hub",
+        "description": "Center of Jesus' Galilean ministry; site of Peter's house and the ancient synagogue."
+      },
+      "geometry": { "type": "Point", "coordinates": [35.5753, 32.8814] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "sea_of_galilee",
+        "name": "Sea of Galilee",
+        "ancient_name": "Lake of Gennesaret / Sea of Tiberias / Kinneret",
+        "modern_name": "Lake Kinneret",
+        "modern_country": "Israel",
+        "period": "all",
+        "biblical_region": "Galilee",
+        "elevation_m": -214,
+        "category": "water_body",
+        "description": "Freshwater lake where Jesus walked on water, calmed the storm, and called fishermen disciples."
+      },
+      "geometry": { "type": "Point", "coordinates": [35.5880, 32.8250] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "jericho",
+        "name": "Jericho",
+        "ancient_name": "Jericho (Ariha / Tell es-Sultan)",
+        "modern_name": "Jericho (Ariha)",
+        "modern_country": "West Bank",
+        "period": "conquest,monarchy,roman_judea",
+        "biblical_region": "Jordan Valley / Judea",
+        "elevation_m": -258,
+        "category": "ancient_city",
+        "description": "One of the oldest continuously inhabited cities; site of Joshua's conquest and Zacchaeus' encounter."
+      },
+      "geometry": { "type": "Point", "coordinates": [35.4500, 31.8667] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "jordan_river",
+        "name": "Jordan River (Baptism Site)",
+        "ancient_name": "Jordan River (Nahr al-Urdun)",
+        "modern_name": "Al-Maghtas / Qasr al-Yahud",
+        "modern_country": "Israel / Jordan / West Bank",
+        "period": "all",
+        "biblical_region": "Jordan Rift Valley",
+        "elevation_m": -390,
+        "category": "sacred_site",
+        "description": "Crossed by Joshua into the Promised Land; baptism site of Jesus by John the Baptist."
+      },
+      "geometry": { "type": "Point", "coordinates": [35.5469, 31.8389] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "dead_sea",
+        "name": "Dead Sea",
+        "ancient_name": "Salt Sea / Sea of the Arabah",
+        "modern_name": "Dead Sea",
+        "modern_country": "Israel / Jordan / West Bank",
+        "period": "all",
+        "biblical_region": "Judean Wilderness / Arabah",
+        "elevation_m": -430,
+        "category": "water_body",
+        "description": "Lowest land elevation on Earth; proximity to Sodom and Gomorrah, En Gedi, and Qumran (Dead Sea Scrolls)."
+      },
+      "geometry": { "type": "Point", "coordinates": [35.5000, 31.5000] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "bethany",
+        "name": "Bethany",
+        "ancient_name": "Bethany (Beit 'Aniya)",
+        "modern_name": "Al-Eizariya",
+        "modern_country": "West Bank",
+        "period": "roman_judea",
+        "biblical_region": "Judea / Mount of Olives slope",
+        "elevation_m": 680,
+        "category": "town",
+        "description": "Home of Mary, Martha, and Lazarus; site where Jesus raised Lazarus from the dead."
+      },
+      "geometry": { "type": "Point", "coordinates": [35.2606, 31.7711] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "caesarea_philippi",
+        "name": "Caesarea Philippi",
+        "ancient_name": "Caesarea Philippi (Paneas / Banias)",
+        "modern_name": "Banias Nature Reserve",
+        "modern_country": "Golan Heights / Israel",
+        "period": "roman_judea",
+        "biblical_region": "Northern Gaulanitis",
+        "elevation_m": 350,
+        "category": "sanctuary",
+        "description": "Where Peter confessed 'You are the Christ' near the springs of Mount Hermon."
+      },
+      "geometry": { "type": "Point", "coordinates": [35.6931, 33.2483] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "caesarea_maritima",
+        "name": "Caesarea Maritima",
+        "ancient_name": "Caesarea Maritima (Kaisareia)",
+        "modern_name": "Caesarea National Park",
+        "modern_country": "Israel",
+        "period": "roman_judea,early_church",
+        "biblical_region": "Sharon Plain Coast",
+        "elevation_m": 15,
+        "category": "port",
+        "description": "Roman capital of Judea where Cornelius was baptized and Paul was imprisoned."
+      },
+      "geometry": { "type": "Point", "coordinates": [34.8920, 32.5000] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "hebron",
+        "name": "Hebron",
+        "ancient_name": "Hebron (Kiriath-Arba / Mamre)",
+        "modern_name": "Hebron (Al-Khalil)",
+        "modern_country": "West Bank",
+        "period": "patriarchal,monarchy",
+        "biblical_region": "Judean Hill Country",
+        "elevation_m": 927,
+        "category": "ancient_city",
+        "description": "Cave of the Patriarchs (burial of Abraham, Sarah, Isaac, Jacob); David's first capital."
+      },
+      "geometry": { "type": "Point", "coordinates": [35.0998, 31.5298] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "shechem",
+        "name": "Shechem / Sychar",
+        "ancient_name": "Shechem (Tell Balata / Sychar)",
+        "modern_name": "Nablus / Jacob's Well",
+        "modern_country": "West Bank",
+        "period": "patriarchal,monarchy,roman_judea",
+        "biblical_region": "Samaria between Mt Ebal & Mt Gerizim",
+        "elevation_m": 500,
+        "category": "ancient_city",
+        "description": "Abraham's first altar in Canaan; Jacob's Well where Jesus spoke with the Samaritan woman."
+      },
+      "geometry": { "type": "Point", "coordinates": [35.2817, 32.2139] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "mount_carmel",
+        "name": "Mount Carmel",
+        "ancient_name": "Mount Carmel (Har HaKarmel)",
+        "modern_name": "Mount Carmel (Haifa)",
+        "modern_country": "Israel",
+        "period": "monarchy",
+        "biblical_region": "Northern Coast / Jezreel Ridge",
+        "elevation_m": 546,
+        "category": "mountain",
+        "description": "Site of Elijah's confrontation with the 450 prophets of Baal."
+      },
+      "geometry": { "type": "Point", "coordinates": [35.0886, 32.6719] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "mount_sinai",
+        "name": "Mount Sinai",
+        "ancient_name": "Mount Sinai / Mount Horeb",
+        "modern_name": "Jabal Musa / Saint Catherine",
+        "modern_country": "Egypt (Sinai Peninsula)",
+        "period": "exodus",
+        "biblical_region": "Sinai Peninsula",
+        "elevation_m": 2285,
+        "category": "mountain",
+        "description": "Where God gave Moses the Ten Commandments and the Law; Elijah later sheltered here."
+      },
+      "geometry": { "type": "Point", "coordinates": [33.9750, 28.5394] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "antioch",
+        "name": "Antioch (Syria)",
+        "ancient_name": "Antioch on the Orontes",
+        "modern_name": "Antakya",
+        "modern_country": "Turkey",
+        "period": "early_church",
+        "biblical_region": "Syria / Cilicia",
+        "elevation_m": 67,
+        "category": "apostolic_center",
+        "description": "First place believers were called 'Christians'; launching point for Paul's missionary journeys."
+      },
+      "geometry": { "type": "Point", "coordinates": [36.1606, 36.2021] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "damascus",
+        "name": "Damascus",
+        "ancient_name": "Damascus (Dimashq)",
+        "modern_name": "Damascus",
+        "modern_country": "Syria",
+        "period": "all",
+        "biblical_region": "Aram / Syria",
+        "elevation_m": 680,
+        "category": "ancient_city",
+        "description": "Site of Saul's conversion on the road to Damascus and the 'Street Called Straight'."
+      },
+      "geometry": { "type": "Point", "coordinates": [36.2765, 33.5138] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "ephesus",
+        "name": "Ephesus",
+        "ancient_name": "Ephesus (Ephesos)",
+        "modern_name": "Selcuk, Izmir",
+        "modern_country": "Turkey",
+        "period": "early_church",
+        "biblical_region": "Asia Minor",
+        "elevation_m": 12,
+        "category": "apostolic_center",
+        "description": "Metropolis of Asia Minor; site of Paul's 3-year ministry and John's exile home."
+      },
+      "geometry": { "type": "Point", "coordinates": [27.3639, 37.9497] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "athens",
+        "name": "Athens",
+        "ancient_name": "Athens (Athenai)",
+        "modern_name": "Athens",
+        "modern_country": "Greece",
+        "period": "early_church",
+        "biblical_region": "Achaia",
+        "elevation_m": 70,
+        "category": "metropolis",
+        "description": "Philosophical capital of Greece; Paul addressed philosophers on Mars Hill (Areopagus)."
+      },
+      "geometry": { "type": "Point", "coordinates": [23.7257, 37.9715] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "corinth",
+        "name": "Corinth",
+        "ancient_name": "Corinth (Korinthos)",
+        "modern_name": "Ancient Corinth",
+        "modern_country": "Greece",
+        "period": "early_church",
+        "biblical_region": "Achaia (Peloponnese)",
+        "elevation_m": 80,
+        "category": "apostolic_center",
+        "description": "Major maritime center; Paul stayed 18 months planting the church and writing letters."
+      },
+      "geometry": { "type": "Point", "coordinates": [22.8797, 37.9056] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "rome",
+        "name": "Rome",
+        "ancient_name": "Roma",
+        "modern_name": "Rome",
+        "modern_country": "Italy",
+        "period": "early_church",
+        "biblical_region": "Italia",
+        "elevation_m": 21,
+        "category": "imperial_capital",
+        "description": "Capital of the Roman Empire; Paul's imprisonment, ministry, and eventual martyrdom alongside Peter."
+      },
+      "geometry": { "type": "Point", "coordinates": [12.4964, 41.9028] }
+    }
+  ]
+}

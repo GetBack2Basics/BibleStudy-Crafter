@@ -1,0 +1,89 @@
+{
+  "templates": {
+    "ancient": {
+      "id": "ancient",
+      "name": "Historical Biblical Atlas",
+      "subtitle": "Topographic Physical Relief & Bathymetric Waters",
+      "basemap": "geolibre_ocean_topo",
+      "canvas_filter": "contrast(1.04) saturate(1.15)",
+      "show_boundaries": true,
+      "show_roads": true,
+      "show_terrain_dem": true,
+      "terrain_exaggeration": 2.2,
+      "label_field": "ancient_name",
+      "font_family": "Cinzel, 'Times New Roman', Georgia, serif",
+      "primary_color": "#8d4925",
+      "secondary_color": "#d7ccc8",
+      "pin_color": "#b71c1c",
+      "pin_symbol": "church"
+    },
+    "modern": {
+      "id": "modern",
+      "name": "Contemporary Satellite Context",
+      "subtitle": "Present-Day Terrain, Municipal Borders & Satellite Geopolitics",
+      "basemap": "esri_satellite",
+      "canvas_filter": "none",
+      "show_boundaries": false,
+      "show_roads": false,
+      "show_terrain_dem": true,
+      "terrain_exaggeration": 1.5,
+      "label_field": "modern_name",
+      "font_family": "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
+      "primary_color": "#00bcd4",
+      "secondary_color": "#263238",
+      "pin_color": "#00e5ff",
+      "pin_symbol": "location_pin"
+    }
+  },
+  "eras": [
+    { "id": "all", "name": "All Biblical Periods" },
+    { "id": "patriarchal", "name": "Patriarchal Era (~2000-1600 BC)" },
+    { "id": "exodus", "name": "Exodus & Wilderness Journey (~1446 BC)" },
+    { "id": "conquest", "name": "Conquest & Judges (~1400-1050 BC)" },
+    { "id": "monarchy", "name": "United Monarchy: David & Solomon (~1000 BC)" },
+    { "id": "divided_kingdom", "name": "Divided Kingdom & Exiles (~850-586 BC)" },
+    { "id": "roman_judea", "name": "Second Temple Roman Judea & Galilee (~30 AD)" },
+    { "id": "early_church", "name": "Apostolic Missions & Roman Empire (~50-95 AD)" }
+  ],
+  "basemaps": {
+    "geolibre_ocean_topo": {
+      "name": "GeoLibre Topographic Relief & Depth Bathymetry",
+      "tiles": ["https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}"],
+      "maxzoom": 19
+    },
+    "esri_physical": {
+      "name": "GeoLibre Physical Land Relief",
+      "tiles": ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}"],
+      "maxzoom": 18
+    },
+    "osm_terrain": {
+      "name": "GeoLibre World Topo (Classic)",
+      "tiles": ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"],
+      "maxzoom": 19
+    },
+    "esri_satellite": {
+      "name": "GeoLibre World Satellite",
+      "tiles": ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],
+      "maxzoom": 18
+    },
+    "opentopomap": {
+      "name": "OpenTopoMap (Topographic Relief)",
+      "tiles": ["https://tile.opentopomap.org/{z}/{x}/{y}.png"],
+      "maxzoom": 17
+    },
+    "osm_standard": {
+      "name": "OpenStreetMap Standard",
+      "tiles": ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+      "maxzoom": 19
+    },
+    "carto_voyager": {
+      "name": "CARTO Voyager (Modern Streets)",
+      "tiles": [
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png?api_key=cb1_42iq_1_31ec03187623b42c014a792b",
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png?api_key=cb1_42iq_1_31ec03187623b42c014a792b",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png?api_key=cb1_42iq_1_31ec03187623b42c014a792b"
+      ],
+      "maxzoom": 19
+    }
+  }
+}

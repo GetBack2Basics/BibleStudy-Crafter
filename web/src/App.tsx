@@ -10,6 +10,7 @@ import { studies as studyApi, bible, preferences, passages, TRADITIONS, voicePre
 import SourceReaderModal, { type AnySource } from './components/SourceReaderModal'
 import QuestionsSection from './components/QuestionsSection'
 import CommentarySection from './components/CommentarySection'
+import BiblicalMapSection from './components/BiblicalMapSection'
 import PrayerSection from './components/PrayerSection'
 import InfographicViewer from './components/InfographicViewer'
 import PromptCrafterModal from './components/PromptCrafterModal'
@@ -1934,6 +1935,18 @@ function DraftEditor({
           isReading={Boolean(isPlayingAudio && playingSection === 'commentary')}
         />
       </div>
+
+      {/* Biblical Geography & Setting: Historical Period & Modern Context Maps */}
+      {draft.commentary && (
+        <BiblicalMapSection
+          studyId={studyId}
+          dayNumber={day}
+          commentary={draft.commentary}
+          hasCommentary={Boolean(draft.commentary)}
+          cachedMaps={draft.maps}
+          onMapsLoaded={(maps) => setField({ maps })}
+        />
+      )}
 
       {/* Key Learnings & Infographic */}
       {draft.commentary && (

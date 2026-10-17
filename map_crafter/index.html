@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Biblical Map Crafter & Template Studio</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- MapLibre GL JS 4.x -->
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="style.css?v=20261017_draggable">
+</head>
+<body>
+  <div id="app-container">
+    <!-- Main Top Navigation -->
+    <header class="app-header">
+      <div class="brand-section">
+        <div class="brand-icon">🗺️</div>
+        <div class="brand-text">
+          <h1>Biblical Map Crafter</h1>
+          <span>MapLibre GL / GeoLibre Engine</span>
+        </div>
+      </div>
+
+      <!-- Active Template Switcher Pill -->
+      <div class="template-switcher">
+        <button id="btn-tmpl-ancient" class="template-btn active ancient" title="Switch to Ancient Historical Atlas styling">
+          <span>📜</span> Ancient Template
+        </button>
+        <button id="btn-tmpl-modern" class="template-btn" title="Switch to Present-Day Satellite styling">
+          <span>🛰️</span> Modern Template
+        </button>
+      </div>
+
+      <!-- Historical Era Filter -->
+      <select id="select-era" class="select-pill" title="Filter sites and boundaries by biblical epoch">
+        <option value="all">All Biblical Eras</option>
+        <option value="patriarchal">Patriarchal (~2000-1600 BC)</option>
+        <option value="exodus">Exodus & Wilderness (~1446 BC)</option>
+        <option value="monarchy">United Monarchy (~1000 BC)</option>
+        <option value="roman_judea" selected>Roman Judea & Galilee (~30 AD)</option>
+        <option value="early_church">Early Church / Paul (~50-95 AD)</option>
+      </select>
+
+      <!-- Basemap Selector -->
+      <select id="select-basemap" class="select-pill" title="Choose underlying cartographic layer">
+        <option value="geolibre_ocean_topo" selected>GeoLibre Topographic Relief & Depth Bathymetry</option>
+        <option value="esri_physical">GeoLibre Physical Land Relief</option>
+        <option value="osm_terrain">GeoLibre World Topo (Classic)</option>
+        <option value="esri_satellite">GeoLibre World Satellite</option>
+        <option value="opentopomap">OpenTopoMap (Topography)</option>
+        <option value="osm_standard">OpenStreetMap Standard</option>
+        <option value="carto_voyager">CARTO Voyager (Modern Streets)</option>
+      </select>
+
+
+      <!-- Action Tools -->
+      <div class="header-actions">
+        <button id="btn-toggle-3d" class="btn-pill" title="Toggle 3D Elevation & Hillshading">
+          <span>🏔️</span> 3D Relief
+        </button>
+        <button id="btn-export-dual" class="btn-pill btn-primary" title="Export both Ancient and Modern JPGs for this study view">
+          <span>📸</span> Export 2 JPGs
+        </button>
+        <button id="btn-add-site" class="btn-pill" title="Add a new biblical or archaeological site">
+          <span>➕</span> Add Site
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <div class="app-body" id="app-body">
+      <!-- Left Sidebar: Gazetteer & Sites List -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <input type="text" id="site-search" class="search-box" placeholder="🔍 Search biblical sites..." />
+            <button id="btn-collapse-sidebar" class="sidebar-icon-btn" title="Minimize Panel (◀)">◀</button>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--text-secondary);">
+            <span id="sites-count-label">Loading sites...</span>
+            <button id="btn-reset-view" class="btn-pill" style="padding: 2px 7px; font-size: 0.7rem;">📍 Fit View</button>
+          </div>
+        </div>
+
+        <div id="sites-list" class="sites-list">
+          <!-- Populated dynamically -->
+        </div>
+      </aside>
+
+      <!-- Sidebar Resizer Splitter with Toggle Button -->
+      <div id="sidebar-resizer" class="sidebar-resizer" title="Drag to resize panel">
+        <button id="btn-toggle-sidebar" class="sidebar-toggle-btn" title="Collapse / Expand Sites Panel">◀</button>
+      </div>
+
+      <!-- Center Map Canvas -->
+      <div id="map" class="ancient-canvas-filter">
+        <!-- Floating Active Template Badge -->
+        <div class="map-floating-status">
+          <span id="badge-active-template" class="status-badge ancient">📜 Historical Biblical Setting</span>
+          <span id="badge-active-era" style="font-size: 0.75rem; color: var(--text-secondary);">Roman Judea (~30 AD)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Export 2 JPGs (Ancient & Modern) -->
+  <div id="modal-export-jpg" class="modal-overlay">
+    <div class="modal-content" style="max-width: 820px;">
+      <div class="modal-header">
+        <h2>📸 Export Study Maps (2 High-Res JPGs)</h2>
+        <button class="close-btn" onclick="closeExportModal()">✕</button>
+      </div>
+
+      <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">
+        Capturing high-resolution cartographic renders for the current viewport and selected sites.
+        These 2 JPGs are directly consumed by BibleStudy-Crafter's Side-by-Side and Peel Slider components.
+      </p>
+
+      <div class="dual-jpg-preview">
+        <!-- Ancient JPG Preview -->
+        <div class="preview-card">
+          <div style="background: #3e2723; color: #d4a373; padding: 6px 12px; font-weight: 700; font-size: 0.8rem; font-family: var(--font-serif);">
+            📜 1. Ancient Historical Setting (JPG)
+          </div>
+          <img id="img-preview-ancient" src="" alt="Ancient map render" />
+          <div class="preview-card-body">
+            <span style="font-size: 0.75rem; color: var(--text-muted);">Parchment Palette with Ancient Toponyms & Provincial Borders</span>
+            <a id="btn-download-ancient" class="btn-pill" style="justify-content: center; margin-top: 4px;" download="ancient_map.jpg" href="#">
+              ⬇️ Download Ancient JPG
+            </a>
+          </div>
+        </div>
+
+        <!-- Modern JPG Preview -->
+        <div class="preview-card">
+          <div style="background: #0f2b38; color: #06b6d4; padding: 6px 12px; font-weight: 700; font-size: 0.8rem;">
+            🛰️ 2. Present-Day Satellite Context (JPG)
+          </div>
+          <img id="img-preview-modern" src="" alt="Modern map render" />
+          <div class="preview-card-body">
+            <span style="font-size: 0.75rem; color: var(--text-muted);">High-Res Satellite Earth with Modern Political Geopolitics</span>
+            <a id="btn-download-modern" class="btn-pill" style="justify-content: center; margin-top: 4px;" download="modern_map.jpg" href="#">
+              ⬇️ Download Modern JPG
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+        <button class="btn-pill" onclick="closeExportModal()">Close</button>
+        <button id="btn-download-both" class="btn-pill btn-primary" onclick="downloadBothJpgs()">
+          💾 Download Both JPGs (ZIP/Files)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Add / Edit Biblical Site -->
+  <div id="modal-add-site" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>➕ Add Biblical / Archaeological Site</h2>
+        <button class="close-btn" onclick="closeAddSiteModal()">✕</button>
+      </div>
+
+      <form id="form-add-site" style="display: flex; flex-direction: column; gap: 14px;">
+        <div class="form-group">
+          <label>Common Name *</label>
+          <input type="text" id="input-name" required placeholder="e.g. Capernaum" />
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label>Ancient Name / Toponym</label>
+            <input type="text" id="input-ancient-name" placeholder="e.g. Kfar Nahum / Capharnaum" />
+          </div>
+          <div class="form-group">
+            <label>Modern Name & Country</label>
+            <input type="text" id="input-modern-name" placeholder="e.g. Tell Hum (Israel)" />
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label>Longitude (East) *</label>
+            <input type="number" step="0.0001" id="input-lng" required placeholder="35.5753" />
+          </div>
+          <div class="form-group">
+            <label>Latitude (North) *</label>
+            <input type="number" step="0.0001" id="input-lat" required placeholder="32.8814" />
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label>Elevation (meters)</label>
+            <input type="number" id="input-elevation" placeholder="-208 (below sea level)" />
+          </div>
+          <div class="form-group">
+            <label>Biblical Period</label>
+            <select id="input-period">
+              <option value="roman_judea">Roman Judea & Galilee (~30 AD)</option>
+              <option value="monarchy">United Monarchy (~1000 BC)</option>
+              <option value="patriarchal">Patriarchal Era (~2000 BC)</option>
+              <option value="exodus">Exodus (~1446 BC)</option>
+              <option value="early_church">Early Church / Paul (~50 AD)</option>
+              <option value="all">All Periods</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Significance / Description</label>
+          <textarea id="input-desc" rows="3" placeholder="Biblical importance, events, archaeological findings..."></textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+          <button type="button" class="btn-pill" onclick="closeAddSiteModal()">Cancel</button>
+          <button type="submit" class="btn-pill btn-primary">Save Site</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Application Logic -->
+  <script src="app.js?v=20261017_draggable"></script>
+</body>
+</html>

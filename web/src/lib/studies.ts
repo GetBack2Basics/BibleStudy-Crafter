@@ -10,6 +10,38 @@ export type ScriptureBlock = {
   rationale: string
 }
 
+export interface BiblicalLocation {
+  name: string
+  ancient_name: string
+  modern_name: string
+  modern_country: string
+  lat: number
+  lng: number
+  period?: string
+  biblical_region?: string
+  description?: string
+  elevation_m?: number
+  scripture_ref?: string
+}
+
+export interface DayMapsOut {
+  status: string
+  has_locations: boolean
+  period: string
+  period_title: string
+  historical_summary: string
+  modern_summary: string
+  locations: BiblicalLocation[]
+  center: [number, number]
+  zoom: number
+  bounds?: [[number, number], [number, number]]
+  ancient_map_url?: string
+  modern_map_url?: string
+  map_crafter_url?: string
+  public_maps_refs?: Array<{ title: string; url: string }>
+  gcp_engine?: any
+}
+
 export type DayDraft = {
   heading: string
   opening_prayer: string
@@ -17,6 +49,7 @@ export type DayDraft = {
   commentary: string
   questions: string[]
   closing_prayer: string
+  maps?: DayMapsOut | null
 }
 
 export type DiscussionSource = {
@@ -306,6 +339,12 @@ export const studies = {
     const qs = params.toString() ? `?${params.toString()}` : ''
     return api.fetch(`/api/studies/sources/${safeB64}/text${qs}`).then(j)
   },
+
+  getMaps: (studyId: number, dayNumber: number): Promise<DayMapsOut> =>
+    api.fetch(`/api/studies/${studyId}/days/${dayNumber}/maps`).then(j),
+
+  refreshMaps: (studyId: number, dayNumber: number): Promise<DayMapsOut> =>
+    api.fetch(`/api/studies/${studyId}/days/${dayNumber}/maps/refresh`, { method: 'POST' }).then(j),
 }
 
 export interface SourceTextResult {

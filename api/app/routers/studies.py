@@ -23,6 +23,7 @@ from app.db import get_engine, get_session
 from app.models import Study, StudyDay, DayPassage, Asset, User
 from app.services import events
 from app.services import bible_service as bs
+from app.services import geo_service
 from app.services.llm import NoProviderAvailable
 from app.services.studies import generate_day as study_generate_day
 from app.services.studies import build_day_discussions
@@ -1058,3 +1059,98 @@ def upgrade_all_studies(session: Session = Depends(get_session)):
     from app.db import upgrade_existing_studies
     upgrade_existing_studies()
     return {"status": "ok", "message": "All existing studies successfully upgraded to the new format."}
+
+
+# ------------------------------------------------------------- Dual Biblical Maps
+@router.get("/{study_id}/days/{day_number}/maps")
+async def get_day_maps(
+    study_id: int,
+    day_number: int,
+    session: Session = Depends(get_session)
+):
+    """Returns resolved historical and modern geographic maps for the study day."""
+    s = session.get(Study, study_id)
+    if not s:
+        raise HTTPException(404, "Study not found")
+    day = session.exec(
+        select(StudyDay).where(StudyDay.study_id == study_id, StudyDay.day_number == day_number)
+    ).first()
+    if not day:
+        raise HTTPException(404, "Day not found")
+
+    blocks = day.blocks_json or {}
+    passages = []
+    if blocks.get("scripture"):
+        for item in blocks.get("scripture", []):
+            if isinstance(item, dict):
+                passages.append(item)
+    if not passages:
+        db_passages = session.exec(
+            select(DayPassage).where(DayPassage.study_day_id == day.id).order_by(DayPassage.order)
+        ).all()
+        for p in db_passages:
+            passages.append({"ref": p.ref, "text": p.text, "translation": p.translation})
+
+    commentary = str(blocks.get("commentary") or "")
+    saved_maps = blocks.get("maps")
+
+    # If already computed and cached in blocks_json, return it
+    if saved_maps and isinstance(saved_maps, dict) and saved_maps.get("status") == "ready":
+        return saved_maps
+
+    # Otherwise resolve and persist
+    resolved = geo_service.resolve_day_maps(commentary, passages)
+    day.blocks_json = {**blocks, "maps": resolved}
+    session.add(day)
+    session.commit()
+    session.refresh(day)
+    return resolved
+
+
+@router.post("/{study_id}/days/{day_number}/maps/refresh")
+async def refresh_day_maps(
+    study_id: int,
+    day_number: int,
+    session: Session = Depends(get_session)
+):
+    """Forces re-extraction and generation of historical and modern map context."""
+    s = session.get(Study, study_id)
+    if not s:
+        raise HTTPException(404, "Study not found")
+    day = session.exec(
+        select(StudyDay).where(StudyDay.study_id == study_id, StudyDay.day_number == day_number)
+    ).first()
+    if not day:
+        raise HTTPException(404, "Day not found")
+
+    blocks = day.blocks_json or {}
+    passages = []
+    if blocks.get("scripture"):
+        for item in blocks.get("scripture", []):
+            if isinstance(item, dict):
+                passages.append(item)
+    if not passages:
+        db_passages = session.exec(
+            select(DayPassage).where(DayPassage.study_day_id == day.id).order_by(DayPassage.order)
+        ).all()
+        for p in db_passages:
+            passages.append({"ref": p.ref, "text": p.text, "translation": p.translation})
+
+    commentary = str(blocks.get("commentary") or "")
+
+    resolved = geo_service.resolve_day_maps(commentary, passages)
+
+    # If external GCP engine is configured, attempt call
+    gcp_engine_data = await geo_service.call_gcp_map_engine(
+        resolved["locations"],
+        resolved["period"]
+    )
+    if gcp_engine_data:
+        resolved["gcp_engine"] = gcp_engine_data
+
+    day.blocks_json = {**blocks, "maps": resolved}
+    session.add(day)
+    session.commit()
+    session.refresh(day)
+    return resolved
+
