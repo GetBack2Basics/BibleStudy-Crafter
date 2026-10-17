@@ -44,6 +44,14 @@ export interface BiblicalLocation {
   }>
 }
 
+export interface HistoricalPlateRef {
+  title: string
+  url: string
+  source_name: string
+  source_url: string
+  attribution?: string
+}
+
 export interface DayMapsOut {
   status: string
   has_locations: boolean
@@ -58,7 +66,17 @@ export interface DayMapsOut {
   ancient_map_url?: string
   modern_map_url?: string
   map_crafter_url?: string
-  public_maps_refs?: Array<{ title: string; url: string }>
+  historical_plates?: {
+    bible_ca?: HistoricalPlateRef
+    knowing_the_bible?: HistoricalPlateRef
+  }
+  public_maps_refs?: Array<{
+    title: string
+    url: string
+    source_name?: string
+    source_url?: string
+    attribution?: string
+  }>
   gcp_engine?: any
   // OpenBible Book-Level KML & Chapter Preview
   book_name?: string
@@ -429,6 +447,7 @@ export interface RenderArtIn {
 
 export interface InfographicPillar {
   title: string
+  subtitle?: string
   icon: string
   insight: string
   scripture_ref: string

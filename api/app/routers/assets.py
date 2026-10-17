@@ -56,6 +56,7 @@ class RenderArtOut(BaseModel):
 
 class InfographicPillar(BaseModel):
     title: str
+    subtitle: str = ""
     icon: str
     insight: str
     scripture_ref: str = ""

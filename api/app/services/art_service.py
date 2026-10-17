@@ -215,20 +215,27 @@ Craft the optimal Cover Art and Infographic Poster prompts for this study day.""
 
 # -------------------------------------------------------- Structured Infographic
 
-INFOGRAPHIC_EXTRACTION_SYSTEM = """You are an expert biblical educator and visual communications designer.
+INFOGRAPHIC_EXTRACTION_SYSTEM = """You are an expert biblical educator, theologian, and visual communications designer.
 Your task is to extract structured, high-impact key learnings from a Bible study day's commentary and Scripture readings to build a clear, memorable infographic.
 
-Distill the content into exactly:
-1. "title": Short, powerful infographic title (3-6 words).
-2. "central_thesis": One memorable, impactful sentence summarizing the core theological insight.
-3. "pillars": Exactly 3 (or 4) core learning pillars. For each pillar provide:
-   - "title": Clear takeaway name (2-4 words).
-   - "icon": Material icon identifier (e.g. 'shield', 'water_drop', 'anchor', 'light_mode', 'favorite', 'menu_book', 'wb_sunny', 'psychology', 'church', 'handshake', 'explore', 'local_fire_department', 'all_inclusive', 'spa', 'balance').
-   - "insight": 1-2 sentence explanation of the takeaway.
-   - "scripture_ref": Relevant verse reference (e.g. "Romans 8:28").
-   - "key_phrase": Short poignant phrase (under 8 words) for visual emphasis.
-4. "key_verse": {{ "ref": str, "text": str }} - The most prominent memory verse for today.
-5. "practical_walkaway": One actionable, personal application step for the reader's daily life.
+Structure exactly 3 distinct learning pillars:
+1. Scripture Foundation: Historical context, cultural background, and spiritual meaning of the specific passage.
+2. Theological Core: Core doctrinal truth, God's nature, covenant, and redemptive purpose revealed in the text.
+3. Heart Application: Personal reflection, repentance, transformed living, and active trust in daily decisions.
+
+CRITICAL INSTRUCTIONS FOR EACH PILLAR (3-LINE STRUCTURE):
+- Line 1 ("insight"): The substantive explanation and summary. MUST be rich, context-specific, and deep. It must ACTUALLY summarise the historical/spiritual context, theological reality, or practical application. NEVER write a generic meta-description like "Exploring the historical meaning of [passage]" or "Reflecting on God's sovereignty". Provide the real, profound takeaway (1-2 articulate sentences).
+- Line 2 ("key_phrase"): A direct, memorable quote from the relevant Scripture verse in today's reading (under 25 words).
+- Line 3 ("subtitle"): The pillar role name ("Scripture Foundation", "Theological Core", or "Heart Application").
+- "title": Set to match the pillar role name ("Scripture Foundation", "Theological Core", or "Heart Application") for backward compatibility.
+- "scripture_ref": The exact chapter and verse reference for the quote (e.g. "Song of Solomon 1:13").
+- "icon": Material icon identifier (e.g. 'menu_book' for Scripture Foundation, 'psychology' for Theological Core, 'volunteer_activism' for Heart Application, or 'shield', 'anchor', 'light_mode', 'favorite', 'handshake').
+
+Also extract:
+- "title": Short, powerful infographic theme title (3-6 words).
+- "central_thesis": One memorable, impactful sentence summarizing the core theological insight.
+- "key_verse": {{ "ref": str, "text": str }} - The most prominent memory verse for today.
+- "practical_walkaway": One actionable, personal application step for the reader's daily life.
 
 Return ONLY valid JSON matching this schema:
 {{
@@ -237,6 +244,7 @@ Return ONLY valid JSON matching this schema:
   "pillars": [
     {{
       "title": str,
+      "subtitle": str,
       "icon": str,
       "insight": str,
       "scripture_ref": str,
@@ -287,28 +295,40 @@ Extract the key learning pillars, central thesis, key verse, and practical walka
         )
         data = res.data or {}
         pillars = data.get("pillars") or []
+        for p in pillars:
+            if isinstance(p, dict) and not p.get("subtitle"):
+                p["subtitle"] = p.get("title") or "Key Learning"
+
+        first_ref = scriptures[0].get("ref", "Key Scripture") if scriptures else "Key Scripture"
+        first_txt = scriptures[0].get("text", "")[:140] if scriptures else ""
+        second_ref = scriptures[-1].get("ref", first_ref) if scriptures else first_ref
+        second_txt = scriptures[-1].get("text", "")[:140] if scriptures else first_txt
+
         if not pillars or not isinstance(pillars, list):
             pillars = [
                 {
-                    "title": "Divine Revelation",
-                    "icon": "light_mode",
-                    "insight": "God reveals His character and promises through His living word.",
-                    "scripture_ref": scriptures[0].get("ref", "") if scriptures else "",
-                    "key_phrase": "God's word is living and active",
+                    "title": "Scripture Foundation",
+                    "subtitle": "Scripture Foundation",
+                    "icon": "menu_book",
+                    "insight": f"Rooted in {first_ref}, this passage uncovers sacred covenant promises and God's call to wholehearted trust.",
+                    "scripture_ref": first_ref,
+                    "key_phrase": first_txt or "Your word is a lamp to my feet and a light to my path.",
                 },
                 {
-                    "title": "Steadfast Faith",
-                    "icon": "anchor",
-                    "insight": "Anchoring our hope in God's faithfulness during trials.",
-                    "scripture_ref": scriptures[-1].get("ref", "") if scriptures else "",
-                    "key_phrase": "Anchor for the soul",
+                    "title": "Theological Core",
+                    "subtitle": "Theological Core",
+                    "icon": "psychology",
+                    "insight": f"Reveals God's unchanging sovereignty, enduring mercy, and the unshakeable foundation of grace in Christ.",
+                    "scripture_ref": second_ref,
+                    "key_phrase": second_txt or "The steadfast love of the Lord never ceases; his mercies never come to an end.",
                 },
                 {
-                    "title": "Transformed Living",
-                    "icon": "favorite",
-                    "insight": "Translating biblical truth into daily love, patience, and integrity.",
-                    "scripture_ref": "",
-                    "key_phrase": "Walk in truth and love",
+                    "title": "Heart Application",
+                    "subtitle": "Heart Application",
+                    "icon": "volunteer_activism",
+                    "insight": "Respond with humble prayer and courageous obedience, allowing God's peace to guide your daily decisions.",
+                    "scripture_ref": first_ref,
+                    "key_phrase": "Trust in the Lord with all your heart, and do not lean on your own understanding.",
                 },
             ]
 
@@ -331,30 +351,35 @@ Extract the key learning pillars, central thesis, key verse, and practical walka
         logger.exception("Failed to extract structured infographic: %s", exc)
         first_ref = scriptures[0].get("ref", "Scripture") if scriptures else "Scripture"
         first_txt = scriptures[0].get("text", "")[:140] if scriptures else ""
+        second_ref = scriptures[-1].get("ref", first_ref) if scriptures else first_ref
+        second_txt = scriptures[-1].get("text", "")[:140] if scriptures else first_txt
         return {
             "title": f"Key Learnings · {heading}",
             "central_thesis": f"Understanding God's truth through {study.topic} in Day {day.day_number}.",
             "pillars": [
                 {
                     "title": "Scripture Foundation",
+                    "subtitle": "Scripture Foundation",
                     "icon": "menu_book",
-                    "insight": f"Exploring the historical and spiritual meaning of {first_ref}.",
+                    "insight": f"Grounded in {first_ref}, uncovering the sacred historical context and the enduring spiritual truth of God's word.",
                     "scripture_ref": first_ref,
-                    "key_phrase": "Anchored in Scripture",
+                    "key_phrase": first_txt or "Thy word is a lamp unto my feet, and a light unto my path.",
                 },
                 {
                     "title": "Theological Core",
+                    "subtitle": "Theological Core",
                     "icon": "psychology",
-                    "insight": "Reflecting on God's sovereignty, mercy, and relational covenant with His people.",
-                    "scripture_ref": first_ref,
-                    "key_phrase": "Grace and Truth",
+                    "insight": f"Reflects God's holy sovereignty, covenant faithfulness, and grace revealed through {study.topic}.",
+                    "scripture_ref": second_ref,
+                    "key_phrase": second_txt or "The grass withers, the flower fades, but the word of our God will stand forever.",
                 },
                 {
                     "title": "Heart Application",
+                    "subtitle": "Heart Application",
                     "icon": "volunteer_activism",
-                    "insight": "Responding with prayer, humility, and active trust in daily decisions.",
+                    "insight": "Take this truth into daily life with genuine humility, active prayer, and compassionate love toward others.",
                     "scripture_ref": first_ref,
-                    "key_phrase": "Faith in Action",
+                    "key_phrase": "Trust in the Lord with all your heart, and do not lean on your own understanding.",
                 },
             ],
             "key_verse": {
@@ -381,7 +406,7 @@ def generate_svg_infographic(info_data: dict[str, Any], width: int = 1000, heigh
     pillar_cards_svg = []
     for idx, p in enumerate(pillars[:pillar_count]):
         px = 40 + idx * (card_width + 20)
-        p_title = _escape_xml(p.get("title", f"Pillar {idx+1}"))
+        p_subtitle = _escape_xml(p.get("subtitle") or p.get("title") or f"Pillar {idx+1}")
         p_phrase = _escape_xml(p.get("key_phrase", ""))
         p_insight = _escape_xml(p.get("insight", ""))
         p_ref = _escape_xml(p.get("scripture_ref", ""))
@@ -389,20 +414,31 @@ def generate_svg_infographic(info_data: dict[str, Any], width: int = 1000, heigh
         card_svg = f"""
         <g transform="translate({px}, 240)">
             <rect width="{card_width}" height="240" rx="16" fill="url(#cardGrad)" stroke="#6366f1" stroke-opacity="0.3" stroke-width="1.5" />
-            <circle cx="36" cy="36" r="20" fill="#6366f1" fill-opacity="0.2" />
-            <text x="36" y="42" font-family="system-ui, sans-serif" font-size="16" font-weight="bold" fill="#818cf8" text-anchor="middle">{idx+1}</text>
-            <text x="70" y="42" font-family="system-ui, sans-serif" font-size="16" font-weight="700" fill="#f8fafc">{p_title}</text>
             
-            {f'<rect x="20" y="70" width="{card_width-40}" height="30" rx="6" fill="#1e293b" fill-opacity="0.6" />' if p_phrase else ''}
-            {f'<text x="30" y="90" font-family="system-ui, sans-serif" font-size="12" font-weight="600" fill="#38bdf8" font-style="italic">"{p_phrase}"</text>' if p_phrase else ''}
+            <!-- Top bar: index & scripture ref -->
+            <circle cx="34" cy="30" r="14" fill="#6366f1" fill-opacity="0.25" />
+            <text x="34" y="35" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#818cf8" text-anchor="middle">{idx+1}</text>
+            {f'<text x="{card_width-20}" y="34" font-family="Georgia, serif" font-size="11" font-weight="600" fill="#a78bfa" text-anchor="end">📖 {p_ref}</text>' if p_ref else ''}
             
-            <foreignObject x="20" y="{110 if p_phrase else 75}" width="{card_width-40}" height="85">
-                <p xmlns="http://www.w3.org/1999/xhtml" style="margin:0; font-family: system-ui, sans-serif; font-size: 13px; line-height: 1.45; color: #cbd5e1;">
+            <!-- Line 1: Substantive insight summary -->
+            <foreignObject x="20" y="52" width="{card_width-40}" height="76">
+                <p xmlns="http://www.w3.org/1999/xhtml" style="margin:0; font-family: system-ui, -apple-system, sans-serif; font-size: 13px; font-weight: 600; line-height: 1.4; color: #f8fafc;">
                     {p_insight}
                 </p>
             </foreignObject>
             
-            {f'<text x="20" y="220" font-family="Georgia, serif" font-size="12" font-weight="600" fill="#a78bfa">📖 {p_ref}</text>' if p_ref else ''}
+            <!-- Line 2: Scripture verse quote -->
+            {f'''<foreignObject x="20" y="132" width="{card_width-40}" height="54">
+                <div xmlns="http://www.w3.org/1999/xhtml" style="margin:0; padding:5px 8px; background:rgba(30,41,59,0.7); border-radius:6px; border-left:3px solid #38bdf8;">
+                    <p style="margin:0; font-family: Georgia, serif; font-size: 11px; font-style: italic; color: #38bdf8; line-height: 1.35;">
+                        "{p_phrase}"
+                    </p>
+                </div>
+            </foreignObject>''' if p_phrase else ''}
+            
+            <!-- Line 3: Subtitle / pillar role -->
+            <line x1="20" y1="198" x2="{card_width-20}" y2="198" stroke="#334155" stroke-width="1" stroke-opacity="0.7" />
+            <text x="20" y="218" font-family="system-ui, sans-serif" font-size="10" font-weight="800" fill="#94a3b8" letter-spacing="1.2">{p_subtitle.upper()}</text>
         </g>
         """
         pillar_cards_svg.append(card_svg)

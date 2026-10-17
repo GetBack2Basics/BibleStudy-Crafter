@@ -79,7 +79,12 @@ export default function InfographicViewer({
   const handleCopySummary = async () => {
     if (!data) return
     const text = `📖 ${data.title}\n"${data.central_thesis}"\n\n` +
-      data.pillars.map((p, i) => `${i + 1}. ${p.title} (${p.scripture_ref || ''})\n   "${p.key_phrase}" — ${p.insight}`).join('\n\n') +
+      data.pillars.map((p, i) => {
+        const sub = p.subtitle || p.title || 'Key Principle'
+        const ref = p.scripture_ref ? ` (${p.scripture_ref})` : ''
+        const quote = p.key_phrase ? `\n   "${p.key_phrase}"` : ''
+        return `${i + 1}. ${p.insight}${quote}\n   [${sub}${ref}]`
+      }).join('\n\n') +
       `\n\n📌 Anchor Verse: ${data.key_verse?.ref} — "${data.key_verse?.text}"\n💡 Walkaway: ${data.practical_walkaway}`
     try {
       await navigator.clipboard.writeText(text)
@@ -325,8 +330,10 @@ export default function InfographicViewer({
 }
 
 function PillarCard({ pillar, index }: { pillar: InfographicPillar; index: number }) {
+  const subtitle = pillar.subtitle || pillar.title || 'Scripture Foundation'
+
   return (
-    <div className="flex flex-col justify-between rounded-2xl border border-outline-variant/30 bg-surface-container-high/60 p-4 transition-all hover:bg-surface-container-high hover:border-primary/40 shadow-xs">
+    <div className="flex flex-col justify-between rounded-2xl border border-outline-variant/30 bg-surface-container-high/60 p-4 md:p-5 transition-all hover:bg-surface-container-high hover:border-primary/40 shadow-xs">
       <div>
         {/* Top badge */}
         <div className="flex items-center justify-between gap-2 mb-3">
@@ -339,28 +346,32 @@ function PillarCard({ pillar, index }: { pillar: InfographicPillar; index: numbe
             </span>
           </div>
           {pillar.scripture_ref && (
-            <span className="rounded-full bg-secondary-container/60 px-2 py-0.5 font-serif text-[11px] font-semibold text-on-secondary-container">
+            <span className="rounded-full bg-secondary-container/60 px-2.5 py-0.5 font-serif text-[11px] font-semibold text-on-secondary-container">
               {pillar.scripture_ref}
             </span>
           )}
         </div>
 
-        {/* Title */}
-        <h5 className="font-headline-sm text-headline-sm font-bold text-on-surface">
-          {pillar.title}
+        {/* Line 1: Substantive Historical & Spiritual Summary (Prominent Header) */}
+        <h5 className="font-headline-sm text-headline-sm font-semibold text-on-surface leading-snug">
+          {pillar.insight}
         </h5>
 
-        {/* Highlight Phrase */}
+        {/* Line 2: Direct Scripture Quote */}
         {pillar.key_phrase && (
-          <div className="my-2 inline-block rounded-lg bg-primary/10 dark:bg-primary/20 px-2 py-1 text-ui-label-xs font-semibold text-primary italic">
-            "{pillar.key_phrase}"
+          <div className="my-3 rounded-xl border border-primary/20 bg-primary/5 dark:bg-primary/15 p-2.5">
+            <p className="font-serif italic text-ui-label-sm text-primary leading-relaxed">
+              "{pillar.key_phrase}"
+            </p>
           </div>
         )}
+      </div>
 
-        {/* Insight Description */}
-        <p className="font-body-reading text-ui-label-sm text-on-surface-variant leading-relaxed mt-1.5">
-          {pillar.insight}
-        </p>
+      {/* Line 3: Pillar Subtitle / Anchor Tag */}
+      <div className="mt-3 pt-2.5 border-t border-outline-variant/15 flex items-center justify-between">
+        <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant/80">
+          {subtitle}
+        </span>
       </div>
     </div>
   )
