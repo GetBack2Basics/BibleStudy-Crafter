@@ -1,0 +1,587 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+<name>All Bible Places in Rom</name>
+<description>From OpenBible.info; some data © OpenStreetMap contributors</description>
+<Style id="landpoint">
+	<IconStyle>
+		<scale>0.75</scale>
+		<Icon><href>https://maps.google.com/mapfiles/kml/paddle/red-circle.png</href></Icon>
+	</IconStyle>
+</Style>
+<Style id="waterpoint">
+	<IconStyle>
+		<scale>0.75</scale>
+		<Icon><href>https://maps.google.com/mapfiles/kml/paddle/blu-circle.png</href></Icon>
+	</IconStyle>
+</Style>
+<Style id="landrepresentativepoint">
+	<IconStyle>
+		<scale>0.75</scale>
+		<Icon><href>https://maps.google.com/mapfiles/kml/paddle/wht-circle.png</href></Icon>
+	</IconStyle>
+</Style>
+<Style id="waterrepresentativepoint">
+	<IconStyle>
+		<scale>0.75</scale>
+		<Icon><href>https://maps.google.com/mapfiles/kml/paddle/blu-circle.png</href></Icon>
+	</IconStyle>
+</Style>
+<Style id="landisobands">
+	<LineStyle>
+		<color>80333333</color>
+		<width>1</width>
+	</LineStyle>
+	<PolyStyle>
+		<color>80ffffff</color>
+		<fill>1</fill>
+		<outline>0</outline>
+	</PolyStyle>
+</Style>
+<Style id="waterisobands">
+	<LineStyle>
+		<color>cccc0000</color>
+		<width>1</width>
+	</LineStyle>
+	<PolyStyle>
+		<color>50cc0000</color>
+		<fill>1</fill>
+		<outline>1</outline>
+	</PolyStyle>
+</Style>
+<Style id="region">
+	<LineStyle>
+		<color>80333333</color>
+		<width>1</width>
+	</LineStyle>
+	<PolyStyle>
+		<color>33333333</color>
+		<fill>1</fill>
+		<outline>1</outline>
+	</PolyStyle>
+</Style>
+<Style id="water">
+	<LineStyle>
+		<color>cccc0000</color>
+		<width>2</width>
+	</LineStyle>
+	<PolyStyle>
+		<color>80cc0000</color>
+		<fill>1</fill>
+		<outline>1</outline>
+	</PolyStyle>
+</Style>
+<Style id="path">
+	<LineStyle>
+		<color>ff333333</color>
+		<width>1</width>
+	</LineStyle>
+</Style>
+<Folder>
+	<name>Achaia</name>
+	<description><![CDATA[Rom <a href="https://www.biblegateway.com/passage/?search=Rom.15.26&amp;version=ESV">15:26</a>]]></description>
+	<Placemark>
+		<name>Achaia</name>
+		<styleUrl>#region</styleUrl>
+		<Polygon>
+			<tesselate>1</tesselate>
+			<outerBoundaryIs>
+				<LinearRing>
+					<coordinates>19.193036,40.524494 19.465886,39.638205 20.205498,38.239651 20.587262,37.733004 21.557106,36.704092 23.033584,35.974715 25.207026,36.532457 25.863498,36.940073 25.655728,37.488102 24.558979,39.405269 23.010537,39.723406 21.830035,39.713948 21.108384,40.141021 20.516028,40.134024 19.193036,40.524494</coordinates>
+				</LinearRing>
+			</outerBoundaryIs>
+		</Polygon>
+	</Placemark>
+	<Placemark>
+		<name>Achaia</name>
+		<styleUrl>#landrepresentativepoint</styleUrl>
+		<Point>
+			<coordinates>22.54,38.72</coordinates>
+		</Point>
+	</Placemark>
+</Folder>
+<Folder>
+	<name>Asia</name>
+	<description><![CDATA[Rom <a href="https://www.biblegateway.com/passage/?search=Rom.16.5&amp;version=ESV">16:5</a>]]></description>
+	<Folder>
+		<name>Asia</name>
+		<Placemark>
+			<name>Asia (90% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>28.05658,36.59146 28.51801,36.77976 29.44086,37.15636 29.67157,37.34466 31.28656,38.66277 31.51728,38.85107 31.51728,39.03937 31.05585,39.60427 30.82514,39.79257 28.05658,40.54578 27.82587,40.54578 27.59516,40.54578 27.36444,40.54578 26.6723,40.35748 26.44159,40.16918 26.21088,39.98088 25.98016,39.79257 25.74945,39.41597 25.74945,39.22767 25.74945,39.03937 25.74945,38.85107 25.74945,38.66277 25.74945,38.47447 25.98016,37.34466 26.21088,36.59146 26.44159,36.40315 26.6723,36.40315 26.90302,36.40315 28.05658,36.59146</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Asia (80% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>25.74945,38.28617 25.98016,37.34466 26.21088,36.59146 26.90302,35.46165 27.13373,35.46165 27.59516,35.64995 31.74799,38.66277 31.9787,38.85107 31.74799,39.03937 31.05585,39.60427 30.82514,39.79257 28.05658,40.54578 27.82587,40.54578 27.59516,40.54578 27.36444,40.54578 26.6723,40.35748 26.44159,40.16918 26.21088,39.98088 25.98016,39.79257 25.74945,39.60427 25.74945,39.41597 25.74945,39.22767 25.74945,39.03937 25.74945,38.85107 25.74945,38.66277 25.74945,38.47447 25.74945,38.28617</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Asia (70% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>27.59516,40.54578 27.36444,40.54578 26.6723,40.35748 26.44159,40.16918 26.21088,39.98088 25.98016,39.79257 25.74945,39.60427 25.74945,39.41597 25.74945,39.22767 25.74945,39.03937 25.74945,38.85107 25.74945,38.66277 25.74945,38.47447 25.74945,38.28617 25.98016,37.34466 26.21088,36.59146 26.90302,35.46165 27.13373,35.46165 27.36444,35.46165 29.67157,37.15636 31.51728,38.47447 31.74799,38.66277 31.9787,38.85107 31.9787,39.03937 30.82514,39.79257 28.05658,40.54578 27.82587,40.54578 27.59516,40.54578</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Asia (60% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>27.59516,40.54578 27.36444,40.54578 26.6723,40.35748 26.44159,40.16918 26.21088,39.98088 25.98016,39.79257 25.74945,39.60427 25.74945,39.41597 25.74945,39.22767 25.74945,39.03937 25.74945,38.85107 25.74945,38.66277 25.74945,38.47447 25.74945,38.28617 25.98016,37.34466 26.21088,36.59146 26.90302,35.46165 27.13373,35.46165 27.36444,35.46165 31.9787,38.66277 32.20941,38.85107 32.20941,39.03937 30.82514,39.79257 28.05658,40.54578 27.82587,40.54578 27.59516,40.54578</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Asia (50% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>27.13373,35.46165 27.36444,35.46165 31.9787,38.66277 32.20941,38.85107 32.20941,39.03937 31.05585,39.79257 28.05658,40.54578 27.82587,40.54578 27.59516,40.54578 27.36444,40.54578 26.6723,40.35748 26.44159,40.16918 26.21088,39.98088 25.98016,39.79257 25.74945,39.60427 25.74945,39.41597 25.74945,39.22767 25.74945,39.03937 25.74945,38.85107 25.74945,38.66277 25.74945,38.47447 25.74945,38.28617 25.98016,37.34466 26.21088,36.59146 26.90302,35.46165 27.13373,35.46165</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Asia (40% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>27.59516,40.54578 27.36444,40.54578 26.6723,40.35748 26.44159,40.16918 26.21088,39.98088 25.98016,39.79257 25.74945,39.60427 25.74945,39.41597 25.74945,39.22767 25.74945,39.03937 25.74945,38.85107 25.74945,38.66277 25.74945,38.47447 25.74945,38.28617 25.98016,37.34466 26.21088,36.59146 26.90302,35.46165 27.13373,35.46165 27.36444,35.46165 31.74799,38.47447 31.9787,38.66277 32.20941,38.85107 32.20941,39.03937 31.05585,39.79257 30.36371,39.98088 28.05658,40.54578 27.82587,40.54578 27.59516,40.54578</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Asia (30% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>27.13373,35.46165 27.36444,35.46165 29.90228,37.15636 32.20941,38.66277 32.20941,38.85107 32.20941,39.03937 31.28656,39.79257 28.05658,40.54578 27.82587,40.54578 27.59516,40.54578 27.36444,40.54578 26.6723,40.35748 26.44159,40.16918 26.21088,39.98088 25.98016,39.79257 25.74945,39.60427 25.74945,39.41597 25.74945,39.22767 25.74945,39.03937 25.74945,38.85107 25.74945,38.66277 25.74945,38.47447 25.74945,38.28617 25.98016,37.34466 26.21088,36.59146 26.90302,35.46165 27.13373,35.46165</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Asia (20% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>25.98016,39.98088 24.59589,37.90956 24.36517,37.34466 24.36517,37.15636 24.36517,36.96806 24.36517,36.77976 24.36517,36.59146 26.90302,35.46165 27.13373,35.46165 27.36444,35.46165 29.90228,37.15636 32.20941,38.66277 32.20941,38.85107 32.20941,39.03937 31.28656,39.98088 28.05658,40.54578 27.82587,40.54578 27.59516,40.54578 27.36444,40.54578 26.6723,40.35748 25.98016,39.98088</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Asia (10% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>25.05731,39.98088 24.13446,36.77976 24.36517,36.59146 26.90302,35.46165 27.13373,35.46165 27.36444,35.46165 29.90228,37.15636 32.20941,38.66277 32.20941,38.85107 32.20941,39.03937 31.51728,39.98088 28.05658,40.54578 27.82587,40.54578 27.59516,40.54578 27.36444,40.54578 25.28803,40.16918 25.05731,39.98088</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Asia</name>
+			<styleUrl>#landrepresentativepoint</styleUrl>
+			<Point>
+				<coordinates>28.3,38.4</coordinates>
+			</Point>
+		</Placemark>
+	</Folder>
+</Folder>
+<Folder>
+	<name>Cenchreae (Cenchrea)</name>
+	<description><![CDATA[Rom <a href="https://www.biblegateway.com/passage/?search=Rom.16.1&amp;version=ESV">16:1</a>]]></description>
+	<Placemark>
+		<name>Cenchreae / Kechries</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>22.996816,37.884335</coordinates>
+		</Point>
+	</Placemark>
+</Folder>
+<Folder>
+	<name>Gomorrah</name>
+	<description><![CDATA[Rom <a href="https://www.biblegateway.com/passage/?search=Rom.9.29&amp;version=ESV">9:29</a>]]></description>
+	<Placemark>
+		<name>Gomorrah / in the region south of the Lisan</name>
+		<description>in the Valley of Siddim</description>
+		<styleUrl>#region</styleUrl>
+		<Polygon>
+			<tesselate>1</tesselate>
+			<outerBoundaryIs>
+				<LinearRing>
+					<coordinates>35.408824,31.314783 35.305248,30.924507 35.479241,30.90329 35.546828,31.303317 35.408824,31.314783</coordinates>
+				</LinearRing>
+			</outerBoundaryIs>
+		</Polygon>
+	</Placemark>
+	<Placemark>
+		<name>Gomorrah / in the region south of the Lisan</name>
+		<description>in the Valley of Siddim</description>
+		<styleUrl>#landrepresentativepoint</styleUrl>
+		<Point>
+			<coordinates>35.449223,31.20849</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Gomorrah / in the region north of the Dead Sea</name>
+		<styleUrl>#region</styleUrl>
+		<Polygon>
+			<tesselate>1</tesselate>
+			<outerBoundaryIs>
+				<LinearRing>
+					<coordinates>35.641497,31.738839 35.701387,31.844513 35.595213,31.965858 35.605654,32.028979 35.473661,32.0442 35.447941,31.960009 35.398864,31.951947 35.377756,31.918242 35.421166,31.893264 35.430094,31.847714 35.454051,31.779867 35.494221,31.751456 35.641497,31.738839</coordinates>
+				</LinearRing>
+			</outerBoundaryIs>
+		</Polygon>
+	</Placemark>
+	<Placemark>
+		<name>Gomorrah / in the region north of the Dead Sea</name>
+		<styleUrl>#landrepresentativepoint</styleUrl>
+		<Point>
+			<coordinates>35.595278,31.795</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Gomorrah / Numeira</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>35.529368,31.129757</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Gomorrah / Bab edh Dhra</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>35.523005,31.248729</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Gomorrah / Tall Iktanu</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>35.671878,31.819256</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Gomorrah / Tall Kafrayn</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>35.65296,31.85055</coordinates>
+		</Point>
+	</Placemark>
+</Folder>
+<Folder>
+	<name>Illyricum</name>
+	<description><![CDATA[Rom <a href="https://www.biblegateway.com/passage/?search=Rom.15.19&amp;version=ESV">15:19</a>]]></description>
+	<Folder>
+		<name>Illyricum</name>
+		<Placemark>
+			<name>Illyricum (80% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>17.12464,44.06862 17.12464,43.95523 17.27535,43.72843 17.57677,43.84183 17.42606,43.95523 17.12464,44.06862</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Illyricum (70% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>16.22038,44.8624 15.91897,44.749 16.5218,43.84183 16.67251,43.72843 16.82322,43.72843 16.97393,43.72843 17.12464,43.72843 17.27535,43.72843 17.42606,43.72843 17.57677,43.72843 17.72748,43.72843 18.0289,43.72843 18.1796,43.84183 16.67251,44.749 16.37109,44.8624 16.22038,44.8624</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Illyricum (60% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>16.97393,44.749 16.5218,44.8624 16.37109,44.8624 16.22038,44.8624 16.06967,44.8624 15.91897,44.749 15.91897,44.63561 16.37109,43.95523 16.5218,43.84183 16.67251,43.72843 17.27535,43.38825 17.42606,43.38825 17.57677,43.38825 17.72748,43.38825 18.63173,43.84183 18.48102,43.95523 18.33031,44.06862 16.97393,44.749</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Illyricum (50% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>16.06967,44.06862 16.22038,43.95523 16.37109,43.84183 16.5218,43.72843 16.97393,43.50164 18.1796,42.93466 18.33031,42.93466 18.63173,43.38825 18.63173,43.84183 18.63173,43.95523 18.48102,44.06862 17.57677,44.63561 17.12464,44.8624 16.22038,44.9758 16.06967,44.9758 15.91897,44.8624 15.76826,44.749 16.06967,44.06862</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Illyricum (40% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>15.76826,44.8624 15.61755,44.749 15.91897,44.29542 16.06967,44.06862 16.22038,43.95523 16.37109,43.84183 16.5218,43.72843 17.12464,43.38825 18.1796,42.82126 18.78244,42.59447 18.93315,42.70787 18.93315,42.82126 18.93315,42.93466 18.93315,43.72843 18.63173,44.06862 17.27535,44.8624 16.82322,44.9758 16.67251,44.9758 16.5218,44.9758 16.37109,44.9758 16.22038,44.9758 16.06967,44.9758 15.91897,44.9758 15.76826,44.8624</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Illyricum (30% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>15.91897,44.9758 15.61755,44.8624 15.61755,44.749 15.76826,44.18202 16.37109,43.72843 17.87819,42.93466 18.63173,42.59447 19.6867,42.36768 19.6867,42.48107 19.6867,42.59447 19.08386,43.72843 18.93315,43.84183 18.78244,43.95523 18.63173,44.06862 17.42606,44.8624 17.12464,44.9758 16.97393,44.9758 16.82322,44.9758 16.67251,44.9758 16.5218,44.9758 16.37109,44.9758 16.22038,44.9758 16.06967,44.9758 15.91897,44.9758</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Illyricum (20% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>16.37109,45.31599 15.31613,44.9758 15.46684,44.40881 15.76826,44.06862 15.91897,43.95523 16.06967,43.84183 18.63173,42.48107 19.08386,42.25428 19.6867,42.36768 19.83741,42.59447 19.83741,42.82126 19.23457,44.06862 18.1796,44.8624 16.37109,45.31599</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Illyricum (10% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>14.26116,45.31599 14.26116,45.20259 15.31613,44.06862 16.37109,43.50164 19.38528,42.02749 19.53599,42.14088 19.6867,42.25428 19.83741,42.36768 19.98812,42.48107 20.13882,42.59447 19.98812,43.04806 19.23457,44.18202 18.78244,44.8624 16.37109,45.54278 14.41187,45.42938 14.26116,45.31599</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Illyricum</name>
+			<styleUrl>#landrepresentativepoint</styleUrl>
+			<Point>
+				<coordinates>16.483056,43.539444</coordinates>
+			</Point>
+		</Placemark>
+	</Folder>
+</Folder>
+<Folder>
+	<name>Jerusalem</name>
+	<description><![CDATA[Rom <a href="https://www.biblegateway.com/passage/?search=Rom.15.19&amp;version=ESV">15:19</a>, <a href="https://www.biblegateway.com/passage/?search=Rom.15.25&amp;version=ESV">15:25</a>, <a href="https://www.biblegateway.com/passage/?search=Rom.15.26&amp;version=ESV">15:26</a>, <a href="https://www.biblegateway.com/passage/?search=Rom.15.27&amp;version=NET">15:27</a>, <a href="https://www.biblegateway.com/passage/?search=Rom.15.31&amp;version=ESV">15:31</a>]]></description>
+	<Placemark>
+		<name>Jerusalem</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>35.234167,31.776667</coordinates>
+		</Point>
+	</Placemark>
+</Folder>
+<Folder>
+	<name>Judea 1 (Judaea)</name>
+	<description><![CDATA[Rom <a href="https://www.biblegateway.com/passage/?search=Rom.15.31&amp;version=ESV">15:31</a>]]></description>
+	<Placemark>
+		<name>Judea 1 / Judea 1</name>
+		<styleUrl>#region</styleUrl>
+		<Polygon>
+			<tesselate>1</tesselate>
+			<outerBoundaryIs>
+				<LinearRing>
+					<coordinates>34.883215,32.562013 34.855042,32.412566 34.741444,32.044753 34.59465,31.777872 34.484398,31.617956 34.539955,31.211483 35.450015,31.243866 35.55086,31.531459 35.647488,31.595129 35.596268,32.711386 35.645996,32.866567 35.628623,33.104068 34.883215,32.562013</coordinates>
+				</LinearRing>
+			</outerBoundaryIs>
+		</Polygon>
+	</Placemark>
+	<Placemark>
+		<name>Judea 1 / Judea 1</name>
+		<styleUrl>#landrepresentativepoint</styleUrl>
+		<Point>
+			<coordinates>35.234167,31.776667</coordinates>
+		</Point>
+	</Placemark>
+</Folder>
+<Folder>
+	<name>Macedonia</name>
+	<description><![CDATA[Rom <a href="https://www.biblegateway.com/passage/?search=Rom.15.26&amp;version=ESV">15:26</a>]]></description>
+	<Placemark>
+		<name>Macedonia</name>
+		<styleUrl>#region</styleUrl>
+		<Polygon>
+			<tesselate>1</tesselate>
+			<outerBoundaryIs>
+				<LinearRing>
+					<coordinates>19.435595,40.392179 20.925919,40.292434 21.631536,39.967708 22.690401,40.035755 22.61989,40.113744 22.750642,40.442579 22.831701,40.37209 23.251951,40.193534 23.31789,39.929366 23.791315,39.861007 23.803805,39.949841 23.41974,40.19926 23.642845,40.188472 23.873873,39.925472 23.989156,39.896443 24.092459,39.972007 24.081142,40.096083 23.982696,40.190757 23.802165,40.267341 23.904409,40.292757 24.003015,40.265771 24.294196,40.101079 24.453972,40.140395 24.38777,40.25841 24.000989,40.494644 23.954488,40.41691 23.883055,40.496659 23.978651,40.537689 23.909404,40.595009 23.743447,40.696574 23.804003,40.747296 24.045438,40.695959 24.384515,40.824327 24.383585,40.880592 24.453255,40.917432 23.865836,41.500285 22.364147,41.878491 22.164235,42.252529 21.634339,41.906691 20.477368,41.9888 19.850333,41.98078 19.562901,41.784367 19.559572,41.596376 19.428309,41.605405 19.451865,41.547706 19.49872,41.524938 19.37244,41.417611 19.419533,41.297161 19.481821,41.281314 19.432468,41.151737 19.424211,41.009909 19.371979,40.9162 19.342793,40.817656 19.295655,40.637131 19.435595,40.392179</coordinates>
+				</LinearRing>
+			</outerBoundaryIs>
+		</Polygon>
+	</Placemark>
+	<Placemark>
+		<name>Macedonia</name>
+		<styleUrl>#landrepresentativepoint</styleUrl>
+		<Point>
+			<coordinates>22.54,41.6</coordinates>
+		</Point>
+	</Placemark>
+</Folder>
+<Folder>
+	<name>Rome</name>
+	<description><![CDATA[Rom <a href="https://www.biblegateway.com/passage/?search=Rom.1.7&amp;version=ESV">1:7</a>, <a href="https://www.biblegateway.com/passage/?search=Rom.1.15&amp;version=ESV">1:15</a>, <a href="https://www.biblegateway.com/passage/?search=Rom.15.24&amp;version=NLT">15:24</a>]]></description>
+	<Placemark>
+		<name>Rome</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>12.4852,41.8922</coordinates>
+		</Point>
+	</Placemark>
+</Folder>
+<Folder>
+	<name>Sodom</name>
+	<description><![CDATA[Rom <a href="https://www.biblegateway.com/passage/?search=Rom.9.29&amp;version=ESV">9:29</a>]]></description>
+	<Placemark>
+		<name>Sodom / in the region south of the Lisan</name>
+		<description>in the Valley of Siddim</description>
+		<styleUrl>#region</styleUrl>
+		<Polygon>
+			<tesselate>1</tesselate>
+			<outerBoundaryIs>
+				<LinearRing>
+					<coordinates>35.408824,31.314783 35.305248,30.924507 35.479241,30.90329 35.546828,31.303317 35.408824,31.314783</coordinates>
+				</LinearRing>
+			</outerBoundaryIs>
+		</Polygon>
+	</Placemark>
+	<Placemark>
+		<name>Sodom / in the region south of the Lisan</name>
+		<description>in the Valley of Siddim</description>
+		<styleUrl>#landrepresentativepoint</styleUrl>
+		<Point>
+			<coordinates>35.449223,31.20849</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Sodom / in the region north of the Dead Sea</name>
+		<styleUrl>#region</styleUrl>
+		<Polygon>
+			<tesselate>1</tesselate>
+			<outerBoundaryIs>
+				<LinearRing>
+					<coordinates>35.641497,31.738839 35.701387,31.844513 35.595213,31.965858 35.605654,32.028979 35.473661,32.0442 35.447941,31.960009 35.398864,31.951947 35.377756,31.918242 35.421166,31.893264 35.430094,31.847714 35.454051,31.779867 35.494221,31.751456 35.641497,31.738839</coordinates>
+				</LinearRing>
+			</outerBoundaryIs>
+		</Polygon>
+	</Placemark>
+	<Placemark>
+		<name>Sodom / in the region north of the Dead Sea</name>
+		<styleUrl>#landrepresentativepoint</styleUrl>
+		<Point>
+			<coordinates>35.595278,31.795</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Sodom / Bab edh Dhra</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>35.523005,31.248729</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Sodom / Tall el Hammam</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>35.67368,31.84018</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Sodom / Numeira</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>35.529368,31.129757</coordinates>
+		</Point>
+	</Placemark>
+</Folder>
+<Folder>
+	<name>Spain</name>
+	<description><![CDATA[Rom <a href="https://www.biblegateway.com/passage/?search=Rom.15.24&amp;version=ESV">15:24</a>, <a href="https://www.biblegateway.com/passage/?search=Rom.15.28&amp;version=ESV">15:28</a>]]></description>
+	<Placemark>
+		<name>Spain / Hispania</name>
+		<styleUrl>#region</styleUrl>
+		<Polygon>
+			<tesselate>1</tesselate>
+			<outerBoundaryIs>
+				<LinearRing>
+					<coordinates>-1.927994,43.341489 -3.510451,43.663214 -7.984571,43.909061 -9.592818,43.166065 -8.865002,41.04423 -9.805025,38.672948 -9.02412,38.356384 -9.233945,36.894223 -7.855718,36.6784 -7.323612,37.05308 -6.792985,36.894482 -5.997221,35.915235 -5.63588,35.930215 -5.314237,35.989189 -4.261698,36.51723 -2.034662,36.499076 -1.403817,37.232246 -0.504093,37.444006 0.362429,38.74489 -0.027561,39.330489 1.238274,40.847495 3.364906,41.814738 3.441922,42.317559 0.236568,42.641819 -1.927994,43.341489</coordinates>
+				</LinearRing>
+			</outerBoundaryIs>
+		</Polygon>
+	</Placemark>
+	<Placemark>
+		<name>Spain / Hispania</name>
+		<styleUrl>#landrepresentativepoint</styleUrl>
+		<Point>
+			<coordinates>-4.35,40.21</coordinates>
+		</Point>
+	</Placemark>
+</Folder>
+<Folder>
+	<name>Zion (Jerusalem)</name>
+	<description><![CDATA[Rom <a href="https://www.biblegateway.com/passage/?search=Rom.9.33&amp;version=ESV">9:33</a>, <a href="https://www.biblegateway.com/passage/?search=Rom.11.26&amp;version=ESV">11:26</a>]]></description>
+	<Placemark>
+		<name>Zion / Jerusalem</name>
+		<description>another name for Jerusalem</description>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>35.234167,31.776667</coordinates>
+		</Point>
+	</Placemark>
+</Folder>
+</Document>
+</kml>

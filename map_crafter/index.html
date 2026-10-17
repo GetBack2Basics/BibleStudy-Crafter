@@ -14,8 +14,11 @@
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 
+  <!-- toGeoJSON for authoritative OpenBible KML parsing -->
+  <script src="https://unpkg.com/@tmcw/togeojson@5.8.1/dist/togeojson.umd.js"></script>
+
   <!-- Custom CSS -->
-  <link rel="stylesheet" href="style.css?v=20261017_draggable">
+  <link rel="stylesheet" href="style.css?v=20261017_all_popups">
 </head>
 <body>
   <div id="app-container">
@@ -25,7 +28,9 @@
         <div class="brand-icon">🗺️</div>
         <div class="brand-text">
           <h1>Biblical Map Crafter</h1>
-          <span>MapLibre GL / GeoLibre Engine</span>
+          <span class="brand-copyright">
+            <a href="https://github.com/GetBack2Basics/BibleStudy-Crafter" target="_blank" rel="noopener noreferrer" title="View BibleStudy-Crafter on GitHub">© ® A project of GetBack2Basics</a>
+          </span>
         </div>
       </div>
 
@@ -47,6 +52,34 @@
         <option value="monarchy">United Monarchy (~1000 BC)</option>
         <option value="roman_judea" selected>Roman Judea & Galilee (~30 AD)</option>
         <option value="early_church">Early Church / Paul (~50-95 AD)</option>
+      </select>
+
+      <!-- Book KML Vector Overlay Selector -->
+      <select id="select-book-kml" class="select-pill" title="Overlay authoritative OpenBible KML vector boundaries & travel paths">
+        <option value="" selected>📁 Book KML: None</option>
+        <optgroup label="Gospels & Acts">
+          <option value="matt">📖 Matthew (KML)</option>
+          <option value="mark">📖 Mark (KML)</option>
+          <option value="luke">📖 Luke (KML)</option>
+          <option value="john">📖 John (KML)</option>
+          <option value="acts">📖 Acts (Paul's Journeys KML)</option>
+        </optgroup>
+        <optgroup label="Pentateuch & History">
+          <option value="gen">📖 Genesis (Patriarchs KML)</option>
+          <option value="exod">📖 Exodus (Wilderness KML)</option>
+          <option value="josh">📖 Joshua (Conquest KML)</option>
+          <option value="judg">📖 Judges (Tribal KML)</option>
+          <option value="1sam">📖 1 Samuel (Kingdom KML)</option>
+          <option value="2sam">📖 2 Samuel (David KML)</option>
+          <option value="1kgs">📖 1 Kings (Solomon KML)</option>
+          <option value="2kgs">📖 2 Kings (Exiles KML)</option>
+        </optgroup>
+        <optgroup label="Epistles & Apocalypse">
+          <option value="rom">📖 Romans (KML)</option>
+          <option value="1cor">📖 1 Corinthians (KML)</option>
+          <option value="gal">📖 Galatians (KML)</option>
+          <option value="rev">📖 Revelation (7 Churches KML)</option>
+        </optgroup>
       </select>
 
       <!-- Basemap Selector -->
@@ -230,7 +263,44 @@
     </div>
   </div>
 
+  <!-- Full Biblical Photo Lightbox Modal -->
+  <div id="modal-lightbox" class="lightbox-modal-backdrop" role="dialog" aria-modal="true" aria-label="Biblical Site Photograph">
+    <div class="lightbox-dialog">
+      <button class="lightbox-close-btn" onclick="closeLightbox()" title="Close photo view (Esc)" aria-label="Close">✕</button>
+      
+      <div class="lightbox-stage">
+        <button id="lightbox-prev" class="lightbox-nav-btn prev" onclick="navigateLightbox(-1)" title="Previous photograph (Left arrow)" aria-label="Previous photograph">‹</button>
+        <div class="lightbox-image-container">
+          <img id="lightbox-img" src="" alt="Biblical Site Photography" />
+          <div id="lightbox-spinner" class="lightbox-spinner"></div>
+        </div>
+        <button id="lightbox-next" class="lightbox-nav-btn next" onclick="navigateLightbox(1)" title="Next photograph (Right arrow)" aria-label="Next photograph">›</button>
+      </div>
+
+      <div class="lightbox-footer">
+        <div class="lightbox-meta-main">
+          <div class="lightbox-title-row">
+            <h3 id="lightbox-site-name" class="lightbox-site-name">Jerusalem</h3>
+            <span id="lightbox-counter" class="lightbox-counter-pill">1 / 4</span>
+          </div>
+          <p id="lightbox-caption" class="lightbox-caption">Aerial cityscape of the Old City and Temple Mount</p>
+        </div>
+
+        <div class="lightbox-attribution-box">
+          <div class="lightbox-credit-line">
+            <span class="lightbox-credit-label">Photo:</span>
+            <a id="lightbox-credit-link" href="#" target="_blank" rel="noopener noreferrer" class="lightbox-credit-link">© Photographer</a>
+            <span id="lightbox-license-badge" class="site-popup-license-badge">CC-BY-SA-4.0</span>
+          </div>
+          <a id="lightbox-commons-link" href="#" target="_blank" rel="noopener noreferrer" class="lightbox-commons-btn">
+            Wikimedia Commons ↗
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Application Logic -->
-  <script src="app.js?v=20261017_draggable"></script>
+  <script src="app.js?v=20261017_all_popups"></script>
 </body>
 </html>

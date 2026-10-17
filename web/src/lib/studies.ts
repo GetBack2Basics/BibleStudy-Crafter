@@ -22,6 +22,26 @@ export interface BiblicalLocation {
   description?: string
   elevation_m?: number
   scripture_ref?: string
+  // OpenBible authoritative geocoding & photo metadata
+  openbible_id?: string
+  openbible_slug?: string
+  openbible_url?: string
+  modern_basis_id?: string
+  confidence_score?: number
+  photo_url?: string
+  photo_credit?: string
+  photo_credit_url?: string
+  photo_license?: string
+  photo_caption?: string
+  photos?: Array<{
+    image_id?: string
+    thumb_url: string
+    full_url?: string
+    credit?: string
+    credit_url?: string
+    license?: string
+    caption?: string
+  }>
 }
 
 export interface DayMapsOut {
@@ -40,6 +60,12 @@ export interface DayMapsOut {
   map_crafter_url?: string
   public_maps_refs?: Array<{ title: string; url: string }>
   gcp_engine?: any
+  // OpenBible Book-Level KML & Chapter Preview
+  book_name?: string
+  chapter?: number
+  osis_code?: string
+  book_kml_url?: string
+  openbible_preview_url?: string
 }
 
 export type DayDraft = {

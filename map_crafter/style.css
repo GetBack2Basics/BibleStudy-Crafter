@@ -82,8 +82,19 @@ body {
 .brand-text span {
   font-size: 0.72rem;
   color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.02em;
+}
+
+.brand-copyright a {
+  color: var(--ancient-gold);
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.brand-copyright a:hover {
+  color: #fff;
+  text-decoration: underline;
 }
 
 /* Template Switcher Pill */
@@ -776,6 +787,29 @@ body {
   background: rgba(15, 23, 42, 0.6);
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+}
+
+.popup-btn-openbible {
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(212, 163, 115, 0.2);
+  color: #fed7aa;
+  border: 1px solid rgba(212, 163, 115, 0.4);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  transition: all 0.2s;
+  margin-right: auto;
+}
+
+.popup-btn-openbible:hover {
+  background: rgba(212, 163, 115, 0.35);
+  color: #fff;
 }
 
 .popup-btn-center {
@@ -793,3 +827,456 @@ body {
 .popup-btn-center:hover {
   opacity: 0.9;
 }
+
+/* OpenBible Photo Card in MapLibre Popup */
+.site-popup-photo-card {
+  position: relative;
+  width: 100%;
+  height: 125px;
+  overflow: hidden;
+  background: #0f172a;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.site-popup-photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.site-popup-photo-card:hover .site-popup-photo-img {
+  transform: scale(1.04);
+}
+
+.site-popup-photo-meta {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.2) 50%, transparent 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 6px 8px;
+  color: #fff;
+}
+
+.site-popup-photo-caption {
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.site-popup-photo-credit {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 2px;
+}
+
+.site-popup-photo-credit a {
+  color: #fed7aa;
+  text-decoration: underline;
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.site-popup-license-badge {
+  font-size: 0.6rem;
+  font-family: monospace;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 1px 4px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+/* Photo Carousel Controls in Map Popup */
+.site-popup-photo-card {
+  position: relative;
+  width: 100%;
+  height: 135px;
+  overflow: hidden;
+  background: #0f172a;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.site-popup-photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+  cursor: zoom-in;
+}
+
+.site-popup-photo-card:hover .site-popup-photo-img {
+  transform: scale(1.03);
+}
+
+.carousel-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  background: rgba(15, 23, 42, 0.78);
+  backdrop-filter: blur(4px);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1;
+  z-index: 10;
+  transition: all 0.2s ease;
+  user-select: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.carousel-nav-btn:hover {
+  background: rgba(183, 28, 28, 0.95);
+  border-color: #f87171;
+  color: #fff;
+  transform: translateY(-50%) scale(1.12);
+}
+
+.carousel-nav-btn.prev {
+  left: 6px;
+}
+
+.carousel-nav-btn.next {
+  right: 6px;
+}
+
+.carousel-counter-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #f1f5f9;
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 10px;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  z-index: 9;
+  pointer-events: none;
+}
+
+/* ==============================================================================
+   Fullscreen Biblical Photo Lightbox Modal
+   ============================================================================== */
+.lightbox-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(5, 8, 15, 0.94);
+  backdrop-filter: blur(10px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.lightbox-modal-backdrop.open {
+  display: flex;
+  opacity: 1;
+}
+
+.lightbox-dialog {
+  position: relative;
+  max-width: 92vw;
+  max-height: 94vh;
+  width: auto;
+  display: flex;
+  flex-direction: column;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  animation: lightboxScaleIn 0.25s ease-out;
+}
+
+@keyframes lightboxScaleIn {
+  from { transform: scale(0.96); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.lightbox-close-btn {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 25;
+  transition: all 0.2s ease;
+}
+
+.lightbox-close-btn:hover {
+  background: #ef4444;
+  border-color: #f87171;
+  transform: scale(1.1);
+}
+
+.lightbox-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #020617;
+  min-width: 320px;
+  max-width: 88vw;
+  max-height: 72vh;
+  overflow: hidden;
+}
+
+.lightbox-image-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+#lightbox-img {
+  max-width: 88vw;
+  max-height: 70vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  transition: opacity 0.2s ease;
+}
+
+.lightbox-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  font-size: 1.8rem;
+  font-weight: 300;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.lightbox-nav-btn:hover {
+  background: rgba(183, 28, 28, 0.95);
+  border-color: #f87171;
+  transform: translateY(-50%) scale(1.12);
+}
+
+.lightbox-nav-btn.prev {
+  left: 12px;
+}
+
+.lightbox-nav-btn.next {
+  right: 12px;
+}
+
+.lightbox-footer {
+  padding: 12px 18px;
+  background: #0f172a;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+@media (min-width: 640px) {
+  .lightbox-footer {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.lightbox-meta-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lightbox-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lightbox-site-name {
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fdf6e2;
+  margin: 0;
+}
+
+.lightbox-counter-pill {
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  padding: 1px 7px;
+  border-radius: 10px;
+}
+
+.lightbox-caption {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.35;
+}
+
+.lightbox-attribution-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.lightbox-credit-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: #cbd5e1;
+}
+
+.lightbox-credit-link {
+  color: #fed7aa;
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.lightbox-commons-btn {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(212, 163, 115, 0.2);
+  color: #fed7aa;
+  border: 1px solid rgba(212, 163, 115, 0.4);
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.lightbox-commons-btn:hover {
+  background: rgba(212, 163, 115, 0.35);
+  color: #fff;
+}
+
+/* ==============================================================================
+   KML Feature Attributes Popup Styling
+   ============================================================================== */
+.kml-popup .maplibregl-popup-content {
+  max-width: 300px;
+}
+
+.kml-feature-popup-card {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kml-popup-badge {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 7px;
+  border-radius: 4px;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.kml-popup-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #f8fafc;
+  line-height: 1.25;
+}
+
+.kml-popup-desc {
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: #cbd5e1;
+  max-height: 120px;
+  overflow-y: auto;
+  padding: 6px 0;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.12);
+}
+
+.kml-attrs-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kml-attrs-header {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+}
+
+.kml-attrs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.74rem;
+}
+
+.kml-attr-key {
+  color: #94a3b8;
+  font-weight: 600;
+  padding: 2px 6px 2px 0;
+  vertical-align: top;
+  width: 36%;
+  text-transform: capitalize;
+}
+
+.kml-attr-val {
+  color: #e2e8f0;
+  padding: 2px 0;
+  word-break: break-word;
+}
+

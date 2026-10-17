@@ -30,6 +30,20 @@ export default function BiblicalMapSection({
   const [isDraggingSlider, setIsDraggingSlider] = useState(false)
   const sliderContainerRef = useRef<HTMLDivElement>(null)
 
+  // Photo Carousel & Lightbox State
+  const [photoIndex, setPhotoIndex] = useState(0)
+  const [lightboxPhoto, setLightboxPhoto] = useState<{
+    url: string
+    caption?: string
+    credit?: string
+    credit_url?: string
+    license?: string
+  } | null>(null)
+
+  useEffect(() => {
+    setPhotoIndex(0)
+  }, [selectedPlace?.name])
+
   const loadMaps = async (forceRefresh = false) => {
     if (!hasCommentary) return
     setLoading(true)
@@ -181,6 +195,38 @@ export default function BiblicalMapSection({
               <span className="hidden sm:inline">Present Day</span>
             </button>
           </div>
+
+          {/* OpenBible Chapter Atlas */}
+          {mapsData?.openbible_preview_url && (
+            <a
+              href={mapsData.openbible_preview_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-2.5 py-1.5 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 text-xs font-semibold flex items-center gap-1.5 transition-colors border border-primary/30"
+              title={`Explore OpenBible interactive scholarly atlas for ${mapsData.book_name || 'Scripture'} ${mapsData.chapter || ''}`}
+            >
+              <I name="menu_book" cls="text-[16px]" />
+              <span className="hidden lg:inline">{mapsData.book_name || 'Book'} {mapsData.chapter || ''} OpenBible</span>
+              <span className="lg:hidden">Atlas</span>
+              <I name="open_in_new" cls="text-[13px]" />
+            </a>
+          )}
+
+          {/* Book KML Download */}
+          {mapsData?.book_kml_url && (
+            <a
+              href={mapsData.book_kml_url}
+              download={`${mapsData.osis_code || 'bible'}.kml`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-2.5 py-1.5 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-primary text-xs font-medium flex items-center gap-1.5 transition-colors border border-outline-variant/40"
+              title={`Download authoritative OpenBible vector KML file for ${mapsData.book_name || 'Book'} for Google Earth or GIS`}
+            >
+              <I name="download" cls="text-[16px] text-tertiary" />
+              <span className="hidden xl:inline">{mapsData.book_name || 'Book'} KML</span>
+              <span className="xl:hidden">KML</span>
+            </a>
+          )}
 
           {/* GCS Map Crafter Studio Admin Link */}
           <a
@@ -377,11 +423,119 @@ export default function BiblicalMapSection({
       {/* Selected Location Card & Archaeological Insight */}
       {selectedPlace && (
         <div className="bg-surface-container-low rounded-xl p-4 border border-outline-variant/30 flex flex-col md:flex-row md:items-start justify-between gap-4 transition-all animate-fadeIn">
+          {/* Left / Thumbnail Photo Preview with Multi-Photo Carousel */}
+          {(() => {
+            const photos = (selectedPlace.photos && selectedPlace.photos.length > 0)
+              ? selectedPlace.photos
+              : (selectedPlace.photo_url ? [{
+                  thumb_url: selectedPlace.photo_url,
+                  full_url: selectedPlace.photo_url,
+                  credit: selectedPlace.photo_credit,
+                  credit_url: selectedPlace.photo_credit_url,
+                  license: selectedPlace.photo_license,
+                  caption: selectedPlace.photo_caption,
+                }] : [])
+
+            if (photos.length === 0) return null
+            const curIdx = photoIndex % photos.length
+            const curPhoto = photos[curIdx] ?? photos[0]
+            const hasMultiple = photos.length > 1
+
+            return (
+              <div className="relative group shrink-0 w-full md:w-52 h-40 md:h-40 rounded-xl overflow-hidden border border-outline-variant/40 bg-surface-container shadow-xs">
+                <img
+                  src={curPhoto.thumb_url}
+                  alt={selectedPlace.name}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 cursor-zoom-in"
+                  loading="lazy"
+                  onClick={() => setLightboxPhoto({
+                    url: curPhoto.full_url || curPhoto.thumb_url,
+                    caption: curPhoto.caption || selectedPlace.name,
+                    credit: curPhoto.credit,
+                    credit_url: curPhoto.credit_url,
+                    license: curPhoto.license,
+                  })}
+                  title="Click to view full photograph"
+                />
+
+                {hasMultiple && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setPhotoIndex((prev) => (prev - 1 + photos.length) % photos.length)
+                      }}
+                      className="absolute left-1.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/60 hover:bg-primary text-white flex items-center justify-center text-sm font-bold shadow-md transition-all z-10"
+                      title="Previous photograph"
+                    >
+                      ‹
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setPhotoIndex((prev) => (prev + 1) % photos.length)
+                      }}
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/60 hover:bg-primary text-white flex items-center justify-center text-sm font-bold shadow-md transition-all z-10"
+                      title="Next photograph"
+                    >
+                      ›
+                    </button>
+                    <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded-full bg-black/70 text-[9px] font-mono text-white/90 z-10 pointer-events-none">
+                      {curIdx + 1} / {photos.length}
+                    </div>
+                  </>
+                )}
+
+                <div
+                  className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent flex flex-col justify-end p-2.5 text-white cursor-pointer"
+                  onClick={() => setLightboxPhoto({
+                    url: curPhoto.full_url || curPhoto.thumb_url,
+                    caption: curPhoto.caption || selectedPlace.name,
+                    credit: curPhoto.credit,
+                    credit_url: curPhoto.credit_url,
+                    license: curPhoto.license,
+                  })}
+                >
+                  {curPhoto.caption && (
+                    <span className="text-[10px] font-medium leading-tight line-clamp-1">
+                      {curPhoto.caption}
+                    </span>
+                  )}
+                  {curPhoto.credit && (
+                    <div className="flex items-center justify-between text-[8px] text-white/80 mt-1">
+                      {curPhoto.credit_url ? (
+                        <a
+                          href={curPhoto.credit_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline hover:text-tertiary truncate max-w-[130px]"
+                          onClick={(e) => e.stopPropagation()}
+                          title={`View photo on Wikimedia Commons by ${curPhoto.credit}`}
+                        >
+                          © {curPhoto.credit}
+                        </a>
+                      ) : (
+                        <span className="truncate max-w-[130px]">© {curPhoto.credit}</span>
+                      )}
+                      {curPhoto.license && (
+                        <span className="text-[7.5px] uppercase font-mono bg-black/40 px-1 py-0.5 rounded">
+                          {curPhoto.license}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          })()}
+
           <div className="flex items-start gap-3 flex-1">
             <div className="w-9 h-9 rounded-xl bg-tertiary/15 text-tertiary flex items-center justify-center mt-0.5 shrink-0">
               <I name="pin_drop" cls="text-[20px]" />
             </div>
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1 w-full">
               <div className="flex flex-wrap items-center gap-2">
                 <h4 className="font-headline-sm text-headline-sm font-bold text-on-surface">
                   {selectedPlace.name}
@@ -392,6 +546,12 @@ export default function BiblicalMapSection({
                 {selectedPlace.elevation_m !== undefined && (
                   <span className="text-[11px] text-outline font-mono">
                     Alt: {selectedPlace.elevation_m}m {selectedPlace.elevation_m < 0 ? '(Below Sea Level)' : ''}
+                  </span>
+                )}
+                {selectedPlace.confidence_score !== undefined && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/25">
+                    <I name="verified" cls="text-[12px]" />
+                    Score {selectedPlace.confidence_score}
                   </span>
                 )}
               </div>
@@ -433,8 +593,34 @@ export default function BiblicalMapSection({
             </div>
           </div>
 
-          {/* Quick coordinate pill & direct JPG access */}
+          {/* Quick coordinate pill & direct actions */}
           <div className="shrink-0 flex flex-wrap sm:flex-col items-center sm:items-end gap-2 text-xs">
+            {selectedPlace.openbible_url && (
+              <a
+                href={selectedPlace.openbible_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-tertiary/15 hover:bg-tertiary/25 text-tertiary border border-tertiary/40 transition-colors text-xs font-semibold shadow-2xs"
+                title="View authoritative OpenBible.info scholarly dossier with textual references and modern identifications"
+              >
+                <I name="auto_stories" cls="text-[15px]" />
+                <span>OpenBible Dossier</span>
+                <I name="open_in_new" cls="text-[12px]" />
+              </a>
+            )}
+            {selectedPlace.photo_credit_url && (
+              <a
+                href={selectedPlace.photo_credit_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface-variant border border-outline-variant/40 transition-colors text-xs font-medium"
+                title="View full-resolution photo and licensing details on Wikimedia Commons"
+              >
+                <I name="photo_camera" cls="text-[15px] text-primary" />
+                <span>Wikimedia Photo</span>
+                <I name="open_in_new" cls="text-[12px]" />
+              </a>
+            )}
             {mapsData?.ancient_map_url && (
               <a
                 href={mapsData.ancient_map_url}
@@ -474,10 +660,35 @@ export default function BiblicalMapSection({
 
       {/* Cartographic Reference Footer */}
       <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-secondary border-t border-outline-variant/20 pt-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <I name="hub" cls="text-[15px] text-tertiary" />
           <span>
-            Map Engine: <a href={mapsData?.map_crafter_url || "https://storage.googleapis.com/biblestudy-map-crafter/index.html"} target="_blank" rel="noopener noreferrer" className="font-semibold underline text-tertiary hover:text-primary">Biblical Map Crafter (GCS)</a> + High-Res Satellite & Physical Plates
+            Authoritative Geospatial Data:{' '}
+            <a
+              href="https://www.openbible.info/geo/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold underline text-primary hover:text-primary-dark"
+              title="OpenBible.info Bible Geocoding Project (CC BY 4.0)"
+            >
+              OpenBible.info
+            </a>{' '}
+            (<a
+              href="https://github.com/openbibleinfo/Bible-Geocoding-Data"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline text-secondary hover:text-on-surface"
+            >
+              GitHub Open Data
+            </a>) +{' '}
+            <a
+              href={mapsData?.map_crafter_url || "https://storage.googleapis.com/biblestudy-map-crafter/index.html"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold underline text-tertiary hover:text-primary"
+            >
+              Biblical Map Crafter (GCS)
+            </a>
           </span>
         </div>
 
@@ -503,6 +714,69 @@ export default function BiblicalMapSection({
           </a>
         </div>
       </div>
+
+      {/* Fullscreen Photograph Lightbox Modal */}
+      {lightboxPhoto && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-4"
+          onClick={() => setLightboxPhoto(null)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="relative max-w-4xl max-h-[90vh] flex flex-col bg-surface-container rounded-2xl overflow-hidden shadow-2xl border border-outline-variant/30 animate-fadeIn"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setLightboxPhoto(null)}
+              className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-black/70 hover:bg-error text-white flex items-center justify-center text-sm font-bold transition-all shadow-md"
+              title="Close (Esc)"
+            >
+              ✕
+            </button>
+            <div className="bg-black flex items-center justify-center max-h-[70vh] overflow-hidden">
+              <img
+                src={lightboxPhoto.url}
+                alt={lightboxPhoto.caption || selectedPlace?.name || 'Biblical Site'}
+                className="max-h-[70vh] w-auto object-contain"
+              />
+            </div>
+            <div className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-surface-container-low border-t border-outline-variant/20">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-sm font-bold text-on-surface">
+                  {selectedPlace?.name}
+                </span>
+                {lightboxPhoto.caption && (
+                  <span className="text-xs text-on-surface-variant">
+                    {lightboxPhoto.caption}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2 text-xs text-outline flex-wrap">
+                {lightboxPhoto.credit && (
+                  <span>© {lightboxPhoto.credit}</span>
+                )}
+                {lightboxPhoto.license && (
+                  <span className="text-[9px] uppercase font-mono px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface">
+                    {lightboxPhoto.license}
+                  </span>
+                )}
+                {lightboxPhoto.credit_url && (
+                  <a
+                    href={lightboxPhoto.credit_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline font-semibold ml-1 inline-flex items-center gap-0.5"
+                  >
+                    <span>Commons</span>
+                    <I name="open_in_new" cls="text-[12px]" />
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   )
 }

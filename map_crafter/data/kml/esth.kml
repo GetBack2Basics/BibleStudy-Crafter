@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+<name>All Bible Places in Esth</name>
+<description>From OpenBible.info; some data © OpenStreetMap contributors</description>
+<Style id="landpoint">
+	<IconStyle>
+		<scale>0.75</scale>
+		<Icon><href>https://maps.google.com/mapfiles/kml/paddle/red-circle.png</href></Icon>
+	</IconStyle>
+</Style>
+<Style id="waterpoint">
+	<IconStyle>
+		<scale>0.75</scale>
+		<Icon><href>https://maps.google.com/mapfiles/kml/paddle/blu-circle.png</href></Icon>
+	</IconStyle>
+</Style>
+<Style id="landrepresentativepoint">
+	<IconStyle>
+		<scale>0.75</scale>
+		<Icon><href>https://maps.google.com/mapfiles/kml/paddle/wht-circle.png</href></Icon>
+	</IconStyle>
+</Style>
+<Style id="waterrepresentativepoint">
+	<IconStyle>
+		<scale>0.75</scale>
+		<Icon><href>https://maps.google.com/mapfiles/kml/paddle/blu-circle.png</href></Icon>
+	</IconStyle>
+</Style>
+<Style id="landisobands">
+	<LineStyle>
+		<color>80333333</color>
+		<width>1</width>
+	</LineStyle>
+	<PolyStyle>
+		<color>80ffffff</color>
+		<fill>1</fill>
+		<outline>0</outline>
+	</PolyStyle>
+</Style>
+<Style id="waterisobands">
+	<LineStyle>
+		<color>cccc0000</color>
+		<width>1</width>
+	</LineStyle>
+	<PolyStyle>
+		<color>50cc0000</color>
+		<fill>1</fill>
+		<outline>1</outline>
+	</PolyStyle>
+</Style>
+<Style id="region">
+	<LineStyle>
+		<color>80333333</color>
+		<width>1</width>
+	</LineStyle>
+	<PolyStyle>
+		<color>33333333</color>
+		<fill>1</fill>
+		<outline>1</outline>
+	</PolyStyle>
+</Style>
+<Style id="water">
+	<LineStyle>
+		<color>cccc0000</color>
+		<width>2</width>
+	</LineStyle>
+	<PolyStyle>
+		<color>80cc0000</color>
+		<fill>1</fill>
+		<outline>1</outline>
+	</PolyStyle>
+</Style>
+<Style id="path">
+	<LineStyle>
+		<color>ff333333</color>
+		<width>1</width>
+	</LineStyle>
+</Style>
+<Folder>
+	<name>Babylon 1</name>
+	<description><![CDATA[Esth <a href="https://www.biblegateway.com/passage/?search=Esth.2.6&amp;version=ESV">2:6</a>]]></description>
+	<Placemark>
+		<name>Babylon 1</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>44.422222,32.543333</coordinates>
+		</Point>
+	</Placemark>
+</Folder>
+<Folder>
+	<name>Ethiopia (Cush)</name>
+	<description><![CDATA[Esth <a href="https://www.biblegateway.com/passage/?search=Esth.1.1&amp;version=ESV">1:1</a>, <a href="https://www.biblegateway.com/passage/?search=Esth.8.9&amp;version=ESV">8:9</a>]]></description>
+	<Folder>
+		<name>Ethiopia</name>
+		<Placemark>
+			<name>Ethiopia (40% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>33.00266,20.46017 32.28674,20.34302 32.40606,20.34302 32.88334,20.34302 33.00266,20.34302 33.12198,20.34302 33.24131,20.34302 33.36063,20.34302 33.47995,20.34302 33.47995,20.46017 33.36063,20.46017 33.24131,20.46017 33.12198,20.46017 33.00266,20.46017</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Ethiopia (30% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>31.69014,20.92875 31.33218,20.8116 31.33218,20.69446 31.33218,20.57731 31.33218,20.46017 31.33218,20.34302 31.4515,20.34302 31.57082,20.34302 31.69014,20.34302 31.80946,20.34302 31.92878,20.34302 32.0481,20.34302 32.16742,20.34302 32.28674,20.34302 32.40606,20.34302 32.52538,20.34302 32.6447,20.34302 32.76402,20.34302 32.88334,20.34302 33.00266,20.34302 33.12198,20.34302 33.24131,20.34302 33.36063,20.34302 33.47995,20.34302 33.59927,20.34302 33.71859,20.34302 34.43451,20.69446 34.43451,20.8116 34.43451,20.92875 34.31519,20.92875 34.19587,20.92875 34.07655,20.92875 33.95723,20.92875 33.83791,20.92875 33.71859,20.92875 33.59927,20.92875 33.47995,20.92875 33.36063,20.92875 33.24131,20.92875 33.12198,20.92875 33.00266,20.92875 32.88334,20.92875 32.0481,20.92875 31.92878,20.92875 31.80946,20.92875 31.69014,20.92875</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Ethiopia (20% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>31.21286,20.8116 31.21286,20.69446 31.21286,20.57731 31.21286,20.46017 31.21286,20.34302 32.16742,19.99158 32.28674,19.99158 32.40606,19.99158 32.52538,19.99158 33.59927,20.10873 34.43451,20.34302 34.43451,20.46017 34.43451,20.57731 34.43451,20.69446 34.43451,20.8116 34.43451,20.92875 32.0481,21.0459 31.92878,21.0459 31.80946,21.0459 31.69014,21.0459 31.33218,20.92875 31.21286,20.8116</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Ethiopia (10% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>31.21286,20.92875 31.21286,20.8116 31.21286,20.69446 31.21286,20.57731 31.21286,20.46017 31.21286,20.34302 31.33218,20.10873 33.47995,16.82865 35.86636,13.54857 35.98568,13.43142 36.105,13.31427 36.22432,13.19713 36.34364,13.07998 36.46296,12.96284 36.58228,12.84569 36.7016,12.72855 36.82092,12.6114 36.94024,12.6114 37.05956,12.6114 37.17888,12.6114 37.2982,12.6114 37.41753,12.6114 37.53685,12.6114 37.65617,12.6114 37.77549,12.6114 37.89481,12.6114 38.01413,12.6114 38.13345,12.6114 38.25277,12.6114 34.91179,20.92875 34.43451,21.0459 31.92878,21.28019 31.80946,21.28019 31.69014,21.28019 31.33218,21.0459 31.21286,20.92875</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Ethiopia</name>
+			<styleUrl>#landrepresentativepoint</styleUrl>
+			<Point>
+				<coordinates>33.75075,16.935139</coordinates>
+			</Point>
+		</Placemark>
+	</Folder>
+</Folder>
+<Folder>
+	<name>India</name>
+	<description><![CDATA[Esth <a href="https://www.biblegateway.com/passage/?search=Esth.1.1&amp;version=ESV">1:1</a>, <a href="https://www.biblegateway.com/passage/?search=Esth.8.9&amp;version=ESV">8:9</a>]]></description>
+	<Folder>
+		<name>India</name>
+		<Placemark>
+			<name>India (50% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>68.53543,30.18073 67.18668,28.53455 67.41147,28.53455 67.63627,28.53455 67.86106,28.53455 68.08585,28.74033 69.4346,30.18073 68.98502,30.3865 68.76023,30.3865 68.53543,30.18073</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>India (40% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>66.96189,28.12301 66.96189,27.91724 67.18668,27.09415 69.88419,29.76919 69.65939,29.97496 69.4346,30.18073 69.20981,30.3865 68.98502,30.3865 68.76023,30.3865 68.53543,30.3865 67.63627,29.35764 67.41147,28.9461 67.18668,28.53455 66.96189,28.12301</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>India (30% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>66.96189,28.53455 66.7371,27.91724 66.5123,27.29992 66.5123,27.09415 66.7371,26.88837 67.18668,26.6826 67.41147,26.6826 69.65939,27.09415 70.33377,29.56342 70.33377,29.97496 69.4346,30.3865 68.76023,30.59228 68.53543,30.59228 68.31064,30.3865 67.86106,29.76919 67.41147,29.15187 66.96189,28.53455</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>India (20% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>68.76023,30.79805 68.53543,30.59228 68.31064,30.3865 68.08585,30.18073 66.5123,28.74033 66.28751,28.53455 66.06272,27.29992 66.28751,26.6826 66.5123,26.47683 67.18668,26.27106 70.78335,27.09415 70.55856,30.3865 68.76023,30.79805</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>India (10% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>66.06272,25.85951 66.5123,25.65374 68.08585,25.44797 71.90732,27.09415 71.90732,27.29992 71.90732,27.50569 71.90732,27.71146 71.00815,31.82691 70.55856,32.03268 70.10898,32.23846 69.4346,32.44423 69.20981,32.44423 68.53543,31.62114 65.83793,28.12301 65.61314,27.09415 65.83793,26.06529 66.06272,25.85951</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>India</name>
+			<styleUrl>#landrepresentativepoint</styleUrl>
+			<Point>
+				<coordinates>67.4308,23.9944</coordinates>
+			</Point>
+		</Placemark>
+	</Folder>
+</Folder>
+<Folder>
+	<name>Jerusalem</name>
+	<description><![CDATA[Esth <a href="https://www.biblegateway.com/passage/?search=Esth.2.6&amp;version=ESV">2:6</a>]]></description>
+	<Placemark>
+		<name>Jerusalem</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>35.234167,31.776667</coordinates>
+		</Point>
+	</Placemark>
+</Folder>
+<Folder>
+	<name>Media</name>
+	<description><![CDATA[Esth <a href="https://www.biblegateway.com/passage/?search=Esth.1.3&amp;version=ESV">1:3</a>, <a href="https://www.biblegateway.com/passage/?search=Esth.1.14&amp;version=ESV">1:14</a>, <a href="https://www.biblegateway.com/passage/?search=Esth.1.18&amp;version=ESV">1:18</a>, <a href="https://www.biblegateway.com/passage/?search=Esth.1.19&amp;version=ESV">1:19</a>, <a href="https://www.biblegateway.com/passage/?search=Esth.10.2&amp;version=ESV">10:2</a>]]></description>
+	<Placemark>
+		<name>Media</name>
+		<styleUrl>#region</styleUrl>
+		<Polygon>
+			<tesselate>1</tesselate>
+			<outerBoundaryIs>
+				<LinearRing>
+					<coordinates>50.011002,30.088045 51.274977,27.694685 51.968945,27.609028 52.543486,27.20282 53.574455,26.563513 54.784824,26.32797 56.551349,26.977192 57.236117,25.52583 59.106793,29.245149 67.553301,30.971734 67.40204,33.293338 63.109926,39.492965 53.925093,36.989022 51.826439,36.676968 50.475233,37.138887 50.333849,37.458567 49.23762,37.615969 49.058806,38.442823 45.126246,41.165846 43.314852,41.359638 41.52824,40.338099 36.877553,40.513882 36.556185,41.467699 35.460059,42.142747 33.730665,39.348271 34.945889,38.788819 39.839415,37.914506 40.277386,36.597958 45.212807,36.061842 47.519954,34.14296 49.578808,32.720199 50.59391,30.775085 50.011002,30.088045</coordinates>
+				</LinearRing>
+			</outerBoundaryIs>
+		</Polygon>
+	</Placemark>
+	<Placemark>
+		<name>Media</name>
+		<styleUrl>#landrepresentativepoint</styleUrl>
+		<Point>
+			<coordinates>48.516247,34.8065</coordinates>
+		</Point>
+	</Placemark>
+</Folder>
+<Folder>
+	<name>Persia</name>
+	<description><![CDATA[Esth <a href="https://www.biblegateway.com/passage/?search=Esth.1.3&amp;version=ESV">1:3</a>, <a href="https://www.biblegateway.com/passage/?search=Esth.1.14&amp;version=ESV">1:14</a>, <a href="https://www.biblegateway.com/passage/?search=Esth.1.18&amp;version=ESV">1:18</a>, <a href="https://www.biblegateway.com/passage/?search=Esth.1.19&amp;version=ESV">1:19</a>, <a href="https://www.biblegateway.com/passage/?search=Esth.10.2&amp;version=ESV">10:2</a>]]></description>
+	<Placemark>
+		<name>Persia</name>
+		<styleUrl>#region</styleUrl>
+		<Polygon>
+			<tesselate>1</tesselate>
+			<outerBoundaryIs>
+				<LinearRing>
+					<coordinates>19.281637,30.344789 24.870895,29.874138 27.765873,24.801406 35.133366,24.834799 33.928451,27.562402 35.051118,27.912821 36.067704,26.588351 38.111265,30.316388 48.200555,29.359618 50.0109,30.054956 51.250362,27.820882 51.999263,27.65919 52.584781,27.249457 53.563237,26.608391 54.728962,26.334982 55.513094,24.445857 57.527362,24.01887 57.871288,25.514723 61.314435,24.943996 66.393209,25.26517 67.40305,23.821546 74.239945,38.864371 63.081788,45.504229 54.507128,40.936195 52.607329,40.840325 52.574363,40.142645 53.621131,38.799241 53.838753,36.982827 51.93599,36.65353 50.537845,37.191198 50.361964,37.498044 49.38577,37.760674 49.130487,38.448562 49.732987,40.023965 50.796143,40.249826 39.103957,43.781886 39.95883,43.130825 41.059,42.756807 41.478048,42.407075 41.41844,41.680981 40.361413,41.108863 39.424011,41.209596 38.366685,41.078506 37.140124,41.441058 35.220971,42.24115 33.377734,42.137573 31.374579,41.536212 30.337588,41.34405 28.859068,41.525334 28.285077,42.282551 28.323265,43.093523 28.981475,43.429017 29.573529,44.584264 30.036384,45.385739 28.971232,45.469121 26.570637,42.217827 22.227236,41.245734 21.693215,39.942999 23.556409,39.259642 25.630399,38.798067 27.717529,35.756611 28.327411,35.696775 28.714711,36.522239 29.460897,35.996951 30.580662,36.114446 30.706141,36.73143 31.979882,36.395889 32.440068,35.938579 34.105132,36.184061 34.696407,36.669549 35.75873,36.526315 35.669798,35.800357 35.730964,34.581282 34.263983,31.578669 32.597228,31.165005 31.986028,31.632916 30.897487,31.683922 29.932792,31.482931 29.064815,30.975565 25.958571,31.819939 25.455467,31.672813 25.093411,32.110492 23.336963,32.458281 23.286584,32.827328 21.641729,33.049836 20.038928,32.440661 19.699796,31.499928 20.001914,31.042997 19.281637,30.344789</coordinates>
+				</LinearRing>
+			</outerBoundaryIs>
+		</Polygon>
+	</Placemark>
+	<Placemark>
+		<name>Persia</name>
+		<styleUrl>#landrepresentativepoint</styleUrl>
+		<Point>
+			<coordinates>48.516247,34.8065</coordinates>
+		</Point>
+	</Placemark>
+</Folder>
+<Folder>
+	<name>Susa (Shushan)</name>
+	<description><![CDATA[Esth <a href="https://www.biblegateway.com/passage/?search=Esth.1.2&amp;version=ESV">1:2</a>, <a href="https://www.biblegateway.com/passage/?search=Esth.1.5&amp;version=ESV">1:5</a>, <a href="https://www.biblegateway.com/passage/?search=Esth.2.3&amp;version=ESV">2:3</a>, <a href="https://www.biblegateway.com/passage/?search=Esth.2.5&amp;version=ESV">2:5</a>, <a href="https://www.biblegateway.com/passage/?search=Esth.2.8&amp;version=ESV">2:8</a>, <a href="https://www.biblegateway.com/passage/?search=Esth.3.15&amp;version=ESV">3:15</a>, <a href="https://www.biblegateway.com/passage/?search=Esth.4.8&amp;version=ESV">4:8</a>, <a href="https://www.biblegateway.com/passage/?search=Esth.4.16&amp;version=ESV">4:16</a>, <a href="https://www.biblegateway.com/passage/?search=Esth.8.14&amp;version=ESV">8:14</a>, <a href="https://www.biblegateway.com/passage/?search=Esth.8.15&amp;version=ESV">8:15</a>, <a href="https://www.biblegateway.com/passage/?search=Esth.9.6&amp;version=ESV">9:6</a>, <a href="https://www.biblegateway.com/passage/?search=Esth.9.11&amp;version=ESV">9:11</a>, <a href="https://www.biblegateway.com/passage/?search=Esth.9.12&amp;version=ESV">9:12</a>, <a href="https://www.biblegateway.com/passage/?search=Esth.9.13&amp;version=ESV">9:13</a>, <a href="https://www.biblegateway.com/passage/?search=Esth.9.14&amp;version=ESV">9:14</a>, <a href="https://www.biblegateway.com/passage/?search=Esth.9.15&amp;version=ESV">9:15</a>, <a href="https://www.biblegateway.com/passage/?search=Esth.9.18&amp;version=ESV">9:18</a>]]></description>
+	<Placemark>
+		<name>Susa / Shush</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>48.25778,32.18922</coordinates>
+		</Point>
+	</Placemark>
+</Folder>
+</Document>
+</kml>

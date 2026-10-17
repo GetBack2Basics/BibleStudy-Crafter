@@ -36,3 +36,15 @@ def test_resolve_day_maps():
     assert "rome" in [loc["name"].lower() for loc in res["locations"]]
     assert len(res["center"]) == 2
     assert "public_maps_refs" in res
+
+    # Verify OpenBible Authoritative integration
+    assert res.get("book_kml_url") == "https://a.openbible.info/geo/kmls/rom.kml"
+    assert "https://www.openbible.info/geo/preview/rom.1" in (res.get("openbible_preview_url") or "")
+    
+    # Verify location photo and OpenBible metadata
+    rome_loc = next(loc for loc in res["locations"] if loc["name"].lower() == "rome")
+    assert rome_loc.get("openbible_id") == "afc8e7a"
+    assert "https://www.openbible.info/geo/ancient/afc8e7a/rome" in (rome_loc.get("openbible_url") or "")
+    assert rome_loc.get("photo_url") is not None
+    assert rome_loc.get("photo_credit") is not None
+

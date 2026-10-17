@@ -1,0 +1,1344 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+<name>All Bible Places in Obad</name>
+<description>From OpenBible.info; some data © OpenStreetMap contributors</description>
+<Style id="landpoint">
+	<IconStyle>
+		<scale>0.75</scale>
+		<Icon><href>https://maps.google.com/mapfiles/kml/paddle/red-circle.png</href></Icon>
+	</IconStyle>
+</Style>
+<Style id="waterpoint">
+	<IconStyle>
+		<scale>0.75</scale>
+		<Icon><href>https://maps.google.com/mapfiles/kml/paddle/blu-circle.png</href></Icon>
+	</IconStyle>
+</Style>
+<Style id="landrepresentativepoint">
+	<IconStyle>
+		<scale>0.75</scale>
+		<Icon><href>https://maps.google.com/mapfiles/kml/paddle/wht-circle.png</href></Icon>
+	</IconStyle>
+</Style>
+<Style id="waterrepresentativepoint">
+	<IconStyle>
+		<scale>0.75</scale>
+		<Icon><href>https://maps.google.com/mapfiles/kml/paddle/blu-circle.png</href></Icon>
+	</IconStyle>
+</Style>
+<Style id="landisobands">
+	<LineStyle>
+		<color>80333333</color>
+		<width>1</width>
+	</LineStyle>
+	<PolyStyle>
+		<color>80ffffff</color>
+		<fill>1</fill>
+		<outline>0</outline>
+	</PolyStyle>
+</Style>
+<Style id="waterisobands">
+	<LineStyle>
+		<color>cccc0000</color>
+		<width>1</width>
+	</LineStyle>
+	<PolyStyle>
+		<color>50cc0000</color>
+		<fill>1</fill>
+		<outline>1</outline>
+	</PolyStyle>
+</Style>
+<Style id="region">
+	<LineStyle>
+		<color>80333333</color>
+		<width>1</width>
+	</LineStyle>
+	<PolyStyle>
+		<color>33333333</color>
+		<fill>1</fill>
+		<outline>1</outline>
+	</PolyStyle>
+</Style>
+<Style id="water">
+	<LineStyle>
+		<color>cccc0000</color>
+		<width>2</width>
+	</LineStyle>
+	<PolyStyle>
+		<color>80cc0000</color>
+		<fill>1</fill>
+		<outline>1</outline>
+	</PolyStyle>
+</Style>
+<Style id="path">
+	<LineStyle>
+		<color>ff333333</color>
+		<width>1</width>
+	</LineStyle>
+</Style>
+<Folder>
+	<name>Canaan</name>
+	<description><![CDATA[Obad <a href="https://www.biblegateway.com/passage/?search=Obad.1.20&amp;version=NIV">20</a>]]></description>
+	<Folder>
+		<name>Canaan</name>
+		<Placemark>
+			<name>Canaan (90% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>35.16601,32.36806 34.96148,31.95699 34.96148,31.89826 35.16601,31.89826 35.23418,32.19189 35.23418,32.25061 35.23418,32.36806 35.23418,32.42678 35.16601,32.36806</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Canaan (80% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>35.37053,32.9553 34.96148,31.95699 34.89331,31.66337 35.02966,31.72209 35.09783,31.78082 35.16601,31.89826 35.30236,32.30933 35.37053,32.89657 35.37053,32.9553</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Canaan (70% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.89331,31.72209 34.89331,31.66337 34.96148,31.66337 35.02966,31.66337 35.16601,31.72209 35.37053,32.19189 35.57506,33.24892 35.57506,33.30764 35.57506,33.36637 35.50688,33.30764 35.37053,33.01402 34.96148,32.13316 34.89331,31.95699 34.89331,31.89826 34.89331,31.72209</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Canaan (60% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.82513,31.60464 35.09783,31.4872 35.16601,31.54592 35.23418,31.66337 35.43871,32.42678 35.64323,33.36637 35.57506,33.36637 35.50688,33.36637 34.96148,32.13316 34.75696,31.66337 34.82513,31.60464</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Canaan (50% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.82513,31.89826 34.68878,31.54592 34.89331,31.4872 35.02966,31.4872 35.09783,31.4872 35.16601,31.4872 35.23418,31.60464 35.50688,32.48551 35.64323,33.36637 35.57506,33.42509 35.43871,33.42509 34.89331,32.07444 34.82513,31.89826</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Canaan (40% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.68878,31.4872 34.75696,31.2523 35.16601,31.42847 35.23418,31.54592 35.57506,32.48551 35.77958,33.19019 35.64323,33.36637 35.57506,33.42509 35.50688,33.42509 35.43871,33.42509 34.89331,32.13316 34.68878,31.66337 34.68878,31.54592 34.68878,31.4872</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Canaan (30% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.62061,31.36975 34.62061,31.31102 34.75696,31.2523 34.82513,31.2523 35.16601,31.42847 35.23418,31.4872 35.57506,32.42678 35.77958,33.07275 35.77958,33.13147 35.77958,33.19019 35.77958,33.24892 35.77958,33.30764 35.64323,33.42509 35.57506,33.42509 35.50688,33.42509 35.43871,33.42509 34.89331,32.13316 34.75696,31.83954 34.68878,31.66337 34.62061,31.36975</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Canaan (20% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>35.84776,34.12978 35.43871,33.42509 34.82513,32.07444 34.62061,31.54592 34.62061,31.4872 34.62061,31.42847 34.62061,31.36975 34.62061,31.31102 34.62061,31.2523 34.82513,31.19358 34.89331,31.19358 34.96148,31.19358 35.16601,31.36975 35.23418,31.4872 35.50688,32.01571 35.64323,32.48551 35.71141,32.7204 35.77958,32.9553 35.84776,33.19019 36.05228,34.1885 35.98411,34.1885 35.91593,34.1885 35.84776,34.12978</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Canaan (10% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.68878,30.84123 34.75696,30.84123 34.82513,30.84123 35.16601,31.19358 36.52951,33.89488 36.12046,34.1885 35.98411,34.24723 35.91593,34.24723 35.84776,34.1885 35.77958,34.12978 35.71141,34.01233 34.68878,32.13316 34.62061,31.95699 34.48426,31.2523 34.68878,30.84123</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Canaan</name>
+			<styleUrl>#landrepresentativepoint</styleUrl>
+			<Point>
+				<coordinates>35.333333,32.766667</coordinates>
+			</Point>
+		</Placemark>
+	</Folder>
+</Folder>
+<Folder>
+	<name>Edom</name>
+	<description><![CDATA[Obad <a href="https://www.biblegateway.com/passage/?search=Obad.1.1&amp;version=ESV">1</a>, <a href="https://www.biblegateway.com/passage/?search=Obad.1.2&amp;version=NLT">2</a>, <a href="https://www.biblegateway.com/passage/?search=Obad.1.6&amp;version=ESV">6</a>, <a href="https://www.biblegateway.com/passage/?search=Obad.1.8&amp;version=ESV">8</a>, <a href="https://www.biblegateway.com/passage/?search=Obad.1.18&amp;version=ESV">18</a>]]></description>
+	<Folder>
+		<name>Edom</name>
+		<Placemark>
+			<name>Edom (90% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>35.41521,30.181 35.48269,30.181 35.55017,30.181 35.61765,30.181 35.68513,30.23982 35.75262,30.29864 35.8201,30.41629 35.88758,30.53394 35.95506,30.65159 36.02254,30.76924 35.88758,30.82806 35.75262,30.88688 35.61765,30.94571 35.55017,30.94571 35.48269,30.94571 35.28024,30.82806 35.21276,30.71041 35.21276,30.65159 35.21276,30.59276 35.21276,30.53394 35.21276,30.47512 35.34773,30.181 35.41521,30.181</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Edom (80% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>35.14528,30.47512 35.28024,30.181 35.34773,30.12217 35.55017,30.06335 35.61765,30.12217 35.68513,30.181 36.02254,30.71041 36.02254,30.76924 36.02254,30.82806 35.61765,31.00453 35.48269,31.00453 35.0778,30.71041 35.14528,30.47512</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Edom (70% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>35.0778,30.76924 35.0778,30.71041 35.14528,30.41629 35.28024,30.181 35.34773,30.12217 35.48269,30.06335 35.55017,30.06335 35.61765,30.06335 35.95506,30.59276 36.02254,30.71041 36.02254,30.76924 36.02254,30.82806 35.61765,31.00453 35.55017,31.00453 35.48269,31.00453 35.41521,31.00453 35.14528,30.82806 35.0778,30.76924</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Edom (60% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>35.01032,30.76924 35.01032,30.71041 35.01032,30.65159 35.01032,30.53394 35.01032,30.47512 35.34773,30.06335 35.41521,30.06335 35.48269,30.06335 35.55017,30.06335 35.61765,30.06335 36.02254,30.47512 36.02254,30.53394 36.02254,30.59276 36.02254,30.71041 36.02254,30.76924 36.02254,30.82806 35.95506,30.88688 35.68513,31.00453 35.61765,31.00453 35.55017,31.00453 35.48269,31.00453 35.41521,31.00453 35.01032,30.76924</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Edom (50% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.94283,30.76924 34.94283,30.71041 34.94283,30.65159 34.94283,30.53394 34.94283,30.47512 34.94283,30.41629 35.14528,29.9457 35.61765,30.00453 36.02254,30.47512 36.09003,30.88688 35.95506,30.94571 35.68513,31.00453 35.61765,31.00453 35.55017,31.00453 35.48269,31.00453 35.41521,31.00453 34.94283,30.76924</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Edom (40% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>35.0778,29.82805 35.14528,29.82805 35.55017,29.9457 35.61765,30.00453 35.68513,30.06335 36.02254,30.41629 36.15751,30.76924 36.15751,30.82806 36.15751,30.88688 35.95506,30.94571 35.68513,31.00453 35.61765,31.00453 35.55017,31.00453 35.48269,31.00453 35.41521,31.00453 35.28024,30.94571 34.94283,30.76924 34.87535,30.41629 35.0778,29.82805</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Edom (30% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.53794,30.47512 34.53794,30.41629 34.94283,29.53393 35.01032,29.53393 35.0778,29.53393 35.34773,29.65158 35.41521,29.71041 35.48269,29.76923 35.95506,30.23982 36.09003,30.41629 36.15751,30.59276 36.22499,30.76924 36.22499,30.82806 36.15751,30.88688 35.95506,30.94571 35.75262,31.00453 35.68513,31.00453 35.61765,31.00453 35.55017,31.00453 35.48269,31.00453 35.41521,31.00453 35.34773,31.00453 34.87535,30.76924 34.60543,30.53394 34.53794,30.47512</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Edom (20% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.47046,30.53394 34.40298,30.47512 34.87535,29.53393 34.94283,29.47511 35.01032,29.47511 35.0778,29.47511 35.41521,29.65158 36.15751,30.41629 36.29247,30.76924 36.29247,30.82806 36.22499,31.00453 35.75262,31.06336 35.68513,31.06336 35.61765,31.06336 35.55017,31.06336 35.48269,31.06336 35.41521,31.06336 35.28024,31.00453 35.14528,30.94571 34.87535,30.82806 34.47046,30.53394</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Edom (10% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.3355,30.47512 34.3355,30.41629 34.47046,30.12217 34.74039,29.59276 34.80787,29.53393 34.87535,29.47511 35.01032,29.41629 35.0778,29.41629 35.41521,29.59276 36.22499,30.23982 36.29247,30.59276 36.35995,31.00453 36.29247,31.06336 35.88758,31.12218 35.8201,31.12218 35.34773,31.06336 34.60543,30.82806 34.53794,30.76924 34.47046,30.71041 34.3355,30.53394 34.3355,30.47512</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Edom</name>
+			<styleUrl>#landrepresentativepoint</styleUrl>
+			<Point>
+				<coordinates>35.603919,30.745843</coordinates>
+			</Point>
+		</Placemark>
+	</Folder>
+</Folder>
+<Folder>
+	<name>Gilead 1</name>
+	<description><![CDATA[Obad <a href="https://www.biblegateway.com/passage/?search=Obad.1.19&amp;version=ESV">19</a>]]></description>
+	<Folder>
+		<name>Gilead 1 / Gilead 1</name>
+		<Placemark>
+			<name>Gilead 1 (90% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>35.69601,32.20091 35.69601,32.159 35.69601,32.09612 35.69601,32.07517 35.69601,31.97038 35.69601,31.94942 35.72062,31.94942 35.74523,31.97038 35.96671,32.26379 35.99132,32.36857 35.96671,32.41049 35.86827,32.57815 35.84366,32.57815 35.81906,32.57815 35.76984,32.55719 35.74523,32.51528 35.69601,32.36857 35.69601,32.34762 35.69601,32.32666 35.69601,32.3057 35.69601,32.28474 35.69601,32.26379 35.69601,32.20091</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Gilead 1 (80% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>35.69601,32.36857 35.69601,32.34762 35.69601,32.32666 35.69601,32.3057 35.69601,32.28474 35.69601,32.26379 35.69601,32.22187 35.69601,32.20091 35.69601,32.17996 35.69601,32.159 35.69601,32.11708 35.69601,32.09612 35.69601,32.07517 35.69601,32.05421 35.69601,32.01229 35.69601,31.97038 35.69601,31.94942 35.72062,31.94942 35.74523,31.97038 35.76984,31.99134 35.96671,32.26379 35.99132,32.34762 35.99132,32.36857 35.99132,32.38953 35.99132,32.41049 35.96671,32.47336 35.86827,32.57815 35.84366,32.57815 35.81906,32.57815 35.76984,32.55719 35.74523,32.51528 35.72062,32.47336 35.69601,32.41049 35.69601,32.36857</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Gilead 1 (70% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>35.69601,32.36857 35.69601,32.34762 35.69601,32.32666 35.69601,32.3057 35.69601,32.28474 35.69601,32.26379 35.69601,32.24283 35.69601,32.22187 35.69601,32.20091 35.69601,32.17996 35.69601,32.159 35.69601,32.13804 35.69601,32.11708 35.69601,32.09612 35.69601,32.07517 35.69601,32.05421 35.69601,32.03325 35.69601,32.01229 35.69601,31.99134 35.69601,31.97038 35.69601,31.94942 35.72062,31.94942 35.74523,31.97038 35.76984,31.99134 36.01593,32.3057 36.01593,32.34762 36.01593,32.36857 36.01593,32.38953 36.01593,32.41049 35.99132,32.47336 35.86827,32.59911 35.84366,32.59911 35.76984,32.57815 35.74523,32.53623 35.72062,32.49432 35.69601,32.41049 35.69601,32.36857</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Gilead 1 (60% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>35.69601,32.43145 35.6714,32.03325 35.69601,31.92846 35.74523,31.94942 35.76984,31.97038 35.99132,32.26379 36.01593,32.3057 36.04054,32.34762 36.01593,32.41049 35.99132,32.47336 35.86827,32.59911 35.84366,32.59911 35.81906,32.59911 35.79445,32.59911 35.76984,32.57815 35.74523,32.53623 35.72062,32.49432 35.69601,32.43145</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Gilead 1 (50% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>35.79445,32.62006 35.76984,32.59911 35.72062,32.53623 35.6714,32.36857 35.6714,32.28474 35.6714,32.07517 35.6714,32.05421 35.6714,32.03325 35.6714,31.99134 35.69601,31.92846 35.72062,31.92846 35.74523,31.94942 35.76984,31.97038 35.84366,32.05421 36.04054,32.3057 36.06514,32.34762 36.04054,32.41049 35.99132,32.47336 35.89288,32.57815 35.86827,32.59911 35.84366,32.62006 35.79445,32.62006</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Gilead 1 (40% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>35.86827,32.62006 35.84366,32.62006 35.81906,32.62006 35.79445,32.62006 35.76984,32.62006 35.6714,32.53623 35.64679,32.05421 35.6714,31.94942 35.69601,31.92846 35.72062,31.92846 35.79445,31.97038 36.06514,32.3057 36.08975,32.41049 36.01593,32.51528 35.86827,32.62006</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Gilead 1 (30% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>35.6714,31.92846 35.69601,31.90751 35.72062,31.90751 35.81906,31.94942 36.08975,32.3057 36.11436,32.41049 36.06514,32.49432 36.04054,32.51528 36.01593,32.53623 35.86827,32.62006 35.84366,32.62006 35.81906,32.62006 35.79445,32.62006 35.76984,32.62006 35.6714,32.53623 35.64679,32.05421 35.6714,31.92846</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Gilead 1 (20% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>35.6714,32.57815 35.64679,32.38953 35.64679,32.36857 35.64679,32.09612 35.64679,32.07517 35.64679,32.05421 35.64679,32.03325 35.64679,32.01229 35.6714,31.86559 35.69601,31.82368 35.74523,31.80272 35.9421,31.92846 36.11436,32.3057 36.13897,32.41049 36.06514,32.53623 36.04054,32.55719 35.84366,32.66198 35.74523,32.62006 35.6714,32.57815</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Gilead 1 (10% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>35.64679,31.88655 35.6714,31.78176 35.86827,31.69793 35.9421,31.7608 36.26202,32.34762 36.16358,32.53623 35.89288,32.66198 35.86827,32.66198 35.84366,32.66198 35.81906,32.66198 35.72062,32.64102 35.6714,32.59911 35.64679,32.41049 35.62219,32.01229 35.64679,31.88655</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Gilead 1 / Gilead 1</name>
+			<styleUrl>#landrepresentativepoint</styleUrl>
+			<Point>
+				<coordinates>35.69211,32.187016</coordinates>
+			</Point>
+		</Placemark>
+	</Folder>
+</Folder>
+<Folder>
+	<name>Halah</name>
+	<description><![CDATA[Obad <a href="https://www.biblegateway.com/passage/?search=Obad.1.20&amp;version=NRSV">20</a>]]></description>
+	<Placemark>
+		<name>Halah / about 60 km around Al Abbasiyah</name>
+		<description>about 60 km around Halahha</description>
+		<styleUrl>#region</styleUrl>
+		<Polygon>
+			<tesselate>1</tesselate>
+			<outerBoundaryIs>
+				<LinearRing>
+					<coordinates>43.19459,36.97132 43.124,36.96835 43.05419,36.95945 42.98596,36.94473 42.92006,36.92436 42.85722,36.89856 42.79815,36.86762 42.74349,36.83188 42.69386,36.79174 42.64979,36.74766 42.61176,36.70011 42.58018,36.64963 42.55539,36.59677 42.53764,36.54212 42.52713,36.48628 42.52394,36.42985 42.5281,36.37347 42.53954,36.31775 42.55813,36.2633 42.58364,36.2107 42.61579,36.16054 42.65422,36.11335 42.6985,36.06964 42.74813,36.0299 42.80258,35.99455 42.86126,35.96397 42.92352,35.93848 42.9887,35.91837 43.05609,35.90385 43.12497,35.89507 43.19459,35.89214 43.26421,35.89507 43.33309,35.90385 43.40048,35.91837 43.46566,35.93848 43.52792,35.96397 43.5866,35.99455 43.64105,36.0299 43.69068,36.06964 43.73496,36.11335 43.77339,36.16054 43.80554,36.2107 43.83105,36.2633 43.84964,36.31775 43.86108,36.37347 43.86524,36.42985 43.86205,36.48628 43.85154,36.54212 43.83379,36.59677 43.809,36.64963 43.77742,36.70011 43.73939,36.74766 43.69532,36.79174 43.64569,36.83188 43.59103,36.86762 43.53196,36.89856 43.46912,36.92436 43.40322,36.94473 43.33499,36.95945 43.26518,36.96835 43.19459,36.97132</coordinates>
+				</LinearRing>
+			</outerBoundaryIs>
+		</Polygon>
+	</Placemark>
+	<Placemark>
+		<name>Halah / about 60 km around Al Abbasiyah</name>
+		<description>about 60 km around Halahha</description>
+		<styleUrl>#landrepresentativepoint</styleUrl>
+		<Point>
+			<coordinates>43.19459,36.43173</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Halah / along the Khabur River</name>
+		<description>along the Habor</description>
+		<styleUrl>#path</styleUrl>
+		<LineString>
+			<tesselate>1</tesselate>
+			<coordinates>39.715023,37.561921 39.710524,37.517291 39.664917,37.50079 39.649575,37.472816 39.586897,37.437692 39.557766,37.31318 39.572037,37.279709 39.589082,37.283987 39.604438,37.265785 39.616421,37.236236 39.599817,37.225062 39.652323,37.172797 39.651987,37.153147 39.685891,37.148539 39.715228,37.119774 39.698672,37.079074 39.732136,37.074855 39.729493,37.022026 39.76063,36.988638 39.792293,36.997864 39.792958,36.962134 39.862826,36.952286 39.929004,36.891243 39.962173,36.893968 40.007694,36.859096 39.994225,36.839144 40.007774,36.828108 40.073944,36.821318 40.055294,36.7909 40.091673,36.730311 40.173641,36.720124 40.256565,36.653401 40.327428,36.678964 40.34499,36.659887 40.367268,36.664235 40.354744,36.641929 40.412497,36.587249 40.487608,36.567341 40.578333,36.564206 40.594125,36.577441 40.622106,36.542349 40.695679,36.523695 40.725361,36.49227 40.796745,36.504711 40.864377,36.429362 40.857447,36.408014 40.811312,36.40891 40.808606,36.37918 40.829527,36.366309 40.785024,36.346073 40.763544,36.302715 40.794744,36.289952 40.803627,36.262135 40.769491,36.236658 40.784426,36.228488 40.773935,36.217778 40.742368,36.224369 40.723529,36.207957 40.738676,36.1834 40.721681,36.185202 40.726428,36.167593 40.700052,36.157691 40.696178,36.125084 40.7143,36.109999 40.704133,36.084161 40.741688,36.064441 40.760628,36.017568 40.779871,36.00845 40.771205,35.9988 40.811471,35.994252 40.855989,35.963964 40.887474,35.810061 40.85091,35.766615 40.756887,35.740771 40.733494,35.708093 40.723022,35.676167 40.74448,35.664871 40.736223,35.602932 40.673223,35.540938 40.686441,35.531858 40.666357,35.526968 40.674768,35.493712 40.645414,35.466453 40.651422,35.451213 40.609365,35.436528 40.609365,35.400576 40.558836,35.355947 40.571943,35.329182 40.542074,35.295984 40.569025,35.262632 40.549584,35.244111 40.514608,35.242726 40.495554,35.209071 40.462852,35.195816 40.425993,35.125721</coordinates>
+		</LineString>
+	</Placemark>
+	<Placemark>
+		<name>Halah / along the Khabur River</name>
+		<description>along the Habor</description>
+		<styleUrl>#landrepresentativepoint</styleUrl>
+		<Point>
+			<coordinates>40.427284,35.130298</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Halah / within 10 km of Tell Halaf</name>
+		<description>within 10 km of Gozan</description>
+		<styleUrl>#region</styleUrl>
+		<Polygon>
+			<tesselate>1</tesselate>
+			<outerBoundaryIs>
+				<LinearRing>
+					<coordinates>40.03967,36.91672 40.02791,36.91622 40.01628,36.91475 40.00491,36.91231 39.99392,36.90893 39.98344,36.90466 39.97357,36.89952 39.96443,36.89359 39.95611,36.88693 39.94871,36.87961 39.94231,36.87171 39.93698,36.86332 39.93278,36.85453 39.92975,36.84543 39.92792,36.83613 39.92732,36.82673 39.92795,36.81733 39.9298,36.80804 39.93286,36.79895 39.93708,36.79016 39.94243,36.78178 39.94884,36.77389 39.95624,36.76658 39.96456,36.75993 39.97369,36.75401 39.98355,36.74889 39.99402,36.74462 40.00499,36.74125 40.01634,36.73882 40.02794,36.73735 40.03967,36.73685 40.0514,36.73735 40.063,36.73882 40.07435,36.74125 40.08532,36.74462 40.09579,36.74889 40.10565,36.75401 40.11478,36.75993 40.1231,36.76658 40.1305,36.77389 40.13691,36.78178 40.14226,36.79016 40.14648,36.79895 40.14954,36.80804 40.15139,36.81733 40.15202,36.82673 40.15142,36.83613 40.14959,36.84543 40.14656,36.85453 40.14236,36.86332 40.13703,36.87171 40.13063,36.87961 40.12323,36.88693 40.11491,36.89359 40.10577,36.89952 40.0959,36.90466 40.08542,36.90893 40.07443,36.91231 40.06306,36.91475 40.05143,36.91622 40.03967,36.91672</coordinates>
+				</LinearRing>
+			</outerBoundaryIs>
+		</Polygon>
+	</Placemark>
+	<Placemark>
+		<name>Halah / within 10 km of Tell Halaf</name>
+		<description>within 10 km of Gozan</description>
+		<styleUrl>#landrepresentativepoint</styleUrl>
+		<Point>
+			<coordinates>40.03967,36.826785</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Halah / Nimrud</name>
+		<description>another name for Calah</description>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>43.328889,36.098056</coordinates>
+		</Point>
+	</Placemark>
+</Folder>
+<Folder>
+	<name>Jerusalem</name>
+	<description><![CDATA[Obad <a href="https://www.biblegateway.com/passage/?search=Obad.1.11&amp;version=ESV">11</a>, <a href="https://www.biblegateway.com/passage/?search=Obad.1.20&amp;version=ESV">20</a>, <a href="https://www.biblegateway.com/passage/?search=Obad.1.21&amp;version=NLT">21</a>]]></description>
+	<Placemark>
+		<name>Jerusalem</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>35.234167,31.776667</coordinates>
+		</Point>
+	</Placemark>
+</Folder>
+<Folder>
+	<name>Mount Esau (Esau)</name>
+	<description><![CDATA[Obad <a href="https://www.biblegateway.com/passage/?search=Obad.1.8&amp;version=ESV">8</a>, <a href="https://www.biblegateway.com/passage/?search=Obad.1.9&amp;version=ESV">9</a>, <a href="https://www.biblegateway.com/passage/?search=Obad.1.19&amp;version=ESV">19</a>, <a href="https://www.biblegateway.com/passage/?search=Obad.1.21&amp;version=ESV">21</a>]]></description>
+	<Folder>
+		<name>Mount Esau / region around Jebel esh Shera</name>
+		<description>another name for Mount Seir 1</description>
+		<Placemark>
+			<name>Mount Esau (70% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>35.47591,30.60323 35.40916,30.45801 35.40916,30.42896 35.47591,30.42896 35.50929,30.48705 35.57605,30.63228 35.54267,30.63228 35.50929,30.63228 35.47591,30.60323</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Mount Esau (60% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>35.47591,30.60323 35.44253,30.54514 35.37578,30.39992 35.3424,30.31278 35.3424,30.22565 35.37578,30.22565 35.44253,30.34183 35.50929,30.45801 35.57605,30.60323 35.57605,30.63228 35.54267,30.63228 35.50929,30.63228 35.47591,30.60323</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Mount Esau (50% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>35.44253,30.13851 35.50929,30.16756 35.54267,30.22565 35.60943,30.5161 35.60943,30.60323 35.57605,30.63228 35.54267,30.66132 35.47591,30.63228 35.37578,30.5161 35.3424,30.45801 35.30902,30.37087 35.27564,30.1966 35.30902,30.10947 35.3424,30.10947 35.44253,30.13851</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Mount Esau (40% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>35.30902,30.08042 35.44253,30.05138 35.47591,30.05138 35.50929,30.10947 35.54267,30.1966 35.57605,30.28374 35.6428,30.48705 35.6428,30.5161 35.6428,30.60323 35.60943,30.66132 35.54267,30.71941 35.37578,30.57419 35.3424,30.48705 35.24226,30.16756 35.30902,30.08042</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Mount Esau (30% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>35.30902,30.39992 35.24226,30.1966 35.24226,30.16756 35.24226,30.13851 35.24226,30.10947 35.30902,30.08042 35.40916,30.05138 35.44253,30.05138 35.47591,30.05138 35.50929,30.08042 35.57605,30.28374 35.6428,30.48705 35.67618,30.60323 35.6428,30.71941 35.57605,30.7775 35.47591,30.71941 35.40916,30.66132 35.37578,30.57419 35.3424,30.48705 35.30902,30.39992</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Mount Esau (20% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>35.50929,30.89368 35.47591,30.86463 35.20889,30.31278 35.17551,29.96424 35.17551,29.9352 35.17551,29.90615 35.17551,29.87711 35.17551,29.84807 35.27564,29.78998 35.3424,29.76093 35.37578,29.76093 35.6428,30.1966 35.74294,30.83559 35.74294,30.86463 35.70956,30.89368 35.67618,30.92272 35.6428,30.92272 35.50929,30.89368</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Mount Esau (10% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>35.10875,29.61571 35.24226,29.58666 35.27564,29.58666 35.30902,29.58666 35.60943,30.05138 35.6428,30.10947 35.77632,30.37087 35.84307,30.5161 35.77632,30.89368 35.74294,30.92272 35.57605,30.98081 35.54267,30.98081 35.50929,30.98081 35.17551,30.31278 35.10875,30.13851 35.07537,29.64475 35.10875,29.61571</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Mount Esau / region around Jebel esh Shera</name>
+			<description>another name for Mount Seir 1</description>
+			<styleUrl>#landrepresentativepoint</styleUrl>
+			<Point>
+				<coordinates>35.3166,30.1843</coordinates>
+			</Point>
+		</Placemark>
+	</Folder>
+	<Placemark>
+		<name>Mount Esau / mountains southwest of the Dead Sea</name>
+		<description>another name for Mount Seir 1</description>
+		<styleUrl>#region</styleUrl>
+		<Polygon>
+			<tesselate>1</tesselate>
+			<outerBoundaryIs>
+				<LinearRing>
+					<coordinates>34.731301,30.892764 34.962267,30.730447 35.292225,31.000641 35.039238,31.14647 34.731301,30.892764</coordinates>
+				</LinearRing>
+			</outerBoundaryIs>
+		</Polygon>
+	</Placemark>
+	<Placemark>
+		<name>Mount Esau / mountains southwest of the Dead Sea</name>
+		<description>another name for Mount Seir 1</description>
+		<styleUrl>#landrepresentativepoint</styleUrl>
+		<Point>
+			<coordinates>35.134722,30.885</coordinates>
+		</Point>
+	</Placemark>
+</Folder>
+<Folder>
+	<name>Mount Zion (Zion)</name>
+	<description><![CDATA[Obad <a href="https://www.biblegateway.com/passage/?search=Obad.1.17&amp;version=ESV">17</a>, <a href="https://www.biblegateway.com/passage/?search=Obad.1.21&amp;version=ESV">21</a>]]></description>
+	<Placemark>
+		<name>Mount Zion</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>35.228611,31.771667</coordinates>
+		</Point>
+	</Placemark>
+</Folder>
+<Folder>
+	<name>Negeb (Negev, South)</name>
+	<description><![CDATA[Obad <a href="https://www.biblegateway.com/passage/?search=Obad.1.19&amp;version=ESV">19</a>, <a href="https://www.biblegateway.com/passage/?search=Obad.1.20&amp;version=ESV">20</a>]]></description>
+	<Folder>
+		<name>Negeb</name>
+		<Placemark>
+			<name>Negeb (90% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.61892,31.20876 34.61892,31.1819 34.68121,31.04757 34.71235,31.02071 34.77464,30.99384 34.80579,30.99384 34.83693,30.99384 34.99265,31.07444 34.99265,31.1013 34.99265,31.15503 34.99265,31.1819 34.96151,31.20876 34.93036,31.20876 34.89922,31.20876 34.86807,31.20876 34.83693,31.20876 34.80579,31.20876 34.77464,31.20876 34.7435,31.20876 34.71235,31.20876 34.68121,31.20876 34.65006,31.20876 34.61892,31.20876</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Negeb (80% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.61892,31.20876 34.61892,31.1819 34.61892,31.07444 34.61892,31.04757 34.61892,31.02071 34.80579,30.91325 35.0238,31.07444 35.08608,31.15503 35.08608,31.1819 34.99265,31.20876 34.86807,31.23563 34.61892,31.20876</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Negeb (70% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.68121,31.28936 34.61892,31.28936 34.58778,31.04757 34.58778,31.02071 34.58778,30.99384 34.77464,30.91325 34.80579,30.91325 34.83693,30.91325 34.93036,30.99384 34.96151,31.02071 35.0238,31.07444 35.08608,31.15503 35.08608,31.1819 34.86807,31.28936 34.68121,31.28936</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Negeb (60% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.55663,31.04757 34.55663,30.99384 34.77464,30.91325 34.80579,30.91325 34.83693,30.91325 34.86807,30.91325 35.0238,30.99384 35.11723,31.1819 34.86807,31.28936 34.83693,31.28936 34.80579,31.28936 34.77464,31.28936 34.7435,31.28936 34.71235,31.28936 34.68121,31.28936 34.65006,31.28936 34.61892,31.28936 34.55663,31.04757</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Negeb (50% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.80579,31.28936 34.77464,31.28936 34.7435,31.28936 34.71235,31.28936 34.68121,31.28936 34.65006,31.28936 34.61892,31.28936 34.49434,30.99384 34.71235,30.85952 34.7435,30.85952 34.77464,30.85952 34.96151,30.85952 35.05494,30.91325 35.08608,30.99384 35.11723,31.07444 35.11723,31.15503 35.11723,31.1819 35.11723,31.20876 35.08608,31.26249 34.89922,31.28936 34.86807,31.28936 34.83693,31.28936 34.80579,31.28936</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Negeb (40% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.49434,30.99384 34.71235,30.83265 34.7435,30.83265 34.77464,30.83265 34.99265,30.85952 35.05494,30.91325 35.08608,30.94011 35.11723,30.99384 35.14837,31.07444 35.14837,31.1013 35.14837,31.12817 35.11723,31.26249 34.89922,31.28936 34.86807,31.28936 34.83693,31.28936 34.80579,31.28936 34.77464,31.28936 34.7435,31.28936 34.71235,31.28936 34.68121,31.28936 34.65006,31.28936 34.61892,31.28936 34.58778,31.28936 34.49434,31.20876 34.4632,31.1819 34.49434,30.99384</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Negeb (30% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.40091,30.99384 34.49434,30.83265 34.52549,30.83265 34.55663,30.83265 34.58778,30.83265 34.61892,30.83265 34.65006,30.83265 34.68121,30.83265 34.71235,30.83265 34.7435,30.83265 34.77464,30.83265 34.80579,30.83265 34.83693,30.83265 34.86807,30.83265 34.89922,30.83265 34.96151,30.83265 35.08608,30.91325 35.11723,30.96698 35.14837,31.07444 35.14837,31.1013 35.14837,31.12817 35.11723,31.28936 34.77464,31.34309 34.7435,31.34309 34.71235,31.34309 34.68121,31.34309 34.65006,31.34309 34.61892,31.34309 34.58778,31.31622 34.49434,31.23563 34.4632,31.20876 34.43205,31.1819 34.40091,30.99384</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Negeb (20% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.4632,31.26249 34.40091,31.1819 34.40091,30.99384 34.49434,30.83265 34.71235,30.80579 34.7435,30.80579 34.77464,30.80579 34.80579,30.80579 34.83693,30.80579 34.89922,30.80579 34.99265,30.83265 35.08608,30.91325 35.11723,30.94011 35.14837,31.02071 35.17952,31.1013 35.17952,31.23563 35.17952,31.28936 34.86807,31.34309 34.83693,31.34309 34.80579,31.34309 34.77464,31.34309 34.7435,31.34309 34.71235,31.34309 34.68121,31.34309 34.65006,31.34309 34.61892,31.34309 34.58778,31.34309 34.55663,31.34309 34.52549,31.34309 34.4632,31.26249</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Negeb (10% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.30748,30.6446 34.30748,30.61773 34.36977,30.53714 34.86807,30.45654 34.89922,30.45654 34.93036,30.4834 34.96151,30.51027 35.14837,30.83265 35.27295,31.07444 35.27295,31.1013 35.27295,31.34309 34.65006,31.36995 34.4632,31.34309 34.36977,31.26249 34.30748,30.6446</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Negeb</name>
+			<styleUrl>#landrepresentativepoint</styleUrl>
+			<Point>
+				<coordinates>34.840833,31.244722</coordinates>
+			</Point>
+		</Placemark>
+	</Folder>
+</Folder>
+<Folder>
+	<name>Philistia</name>
+	<description><![CDATA[Obad <a href="https://www.biblegateway.com/passage/?search=Obad.1.19&amp;version=NKJV">19</a>]]></description>
+	<Folder>
+		<name>Philistia</name>
+		<Placemark>
+			<name>Philistia (90% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.75318,32.05441 34.17615,31.29657 34.24404,31.26742 34.27798,31.26742 34.31192,31.26742 34.34587,31.26742 34.37981,31.26742 34.41375,31.26742 34.54952,31.29657 34.58347,31.32571 34.61741,31.35486 34.65135,31.38401 34.82107,31.64634 34.85501,31.70464 34.85501,31.73378 34.85501,31.76293 34.85501,31.79208 34.85501,31.82123 34.85501,31.85038 34.85501,31.87952 34.85501,31.90867 34.85501,31.93782 34.85501,31.96697 34.85501,31.99612 34.82107,32.05441 34.78712,32.08356 34.75318,32.05441</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Philistia (80% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.75318,32.05441 34.17615,31.29657 34.24404,31.26742 34.27798,31.26742 34.31192,31.26742 34.34587,31.26742 34.37981,31.26742 34.41375,31.26742 34.44769,31.26742 34.51558,31.26742 34.54952,31.29657 34.58347,31.32571 34.61741,31.35486 34.65135,31.38401 34.6853,31.41316 34.82107,31.64634 34.85501,31.70464 34.88895,31.85038 34.85501,31.99612 34.82107,32.05441 34.78712,32.08356 34.75318,32.05441</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Philistia (70% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.75318,32.05441 34.17615,31.29657 34.24404,31.26742 34.44769,31.23827 34.51558,31.23827 34.54952,31.26742 34.58347,31.29657 34.6853,31.41316 34.78712,31.58804 34.82107,31.64634 34.85501,31.70464 34.88895,31.85038 34.85501,31.99612 34.82107,32.05441 34.78712,32.08356 34.75318,32.05441</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Philistia (60% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.85501,32.02526 34.82107,32.05441 34.78712,32.08356 34.75318,32.05441 34.17615,31.29657 34.24404,31.26742 34.41375,31.23827 34.44769,31.23827 34.48164,31.23827 34.51558,31.23827 34.54952,31.23827 34.65135,31.35486 34.82107,31.61719 34.85501,31.67549 34.88895,31.79208 34.88895,31.82123 34.88895,31.85038 34.88895,31.87952 34.88895,31.90867 34.88895,31.93782 34.85501,32.02526</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Philistia (50% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.78712,32.08356 34.75318,32.05441 34.17615,31.29657 34.21009,31.26742 34.31192,31.23827 34.34587,31.23827 34.37981,31.23827 34.41375,31.23827 34.44769,31.23827 34.48164,31.23827 34.51558,31.23827 34.54952,31.23827 34.58347,31.23827 34.61741,31.26742 34.75318,31.5006 34.78712,31.5589 34.82107,31.61719 34.85501,31.67549 34.88895,31.79208 34.88895,31.82123 34.88895,31.85038 34.88895,31.87952 34.88895,31.90867 34.88895,31.93782 34.88895,31.96697 34.85501,32.05441 34.78712,32.08356</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Philistia (40% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.78712,32.08356 34.75318,32.05441 34.17615,31.29657 34.21009,31.26742 34.27798,31.20912 34.58347,31.23827 34.61741,31.26742 34.65135,31.32571 34.75318,31.5006 34.78712,31.5589 34.82107,31.61719 34.85501,31.67549 34.88895,31.79208 34.9229,32.02526 34.9229,32.05441 34.9229,32.08356 34.9229,32.11271 34.78712,32.08356</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Philistia (30% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.78712,32.08356 34.75318,32.05441 33.83672,31.15083 33.87067,31.12168 33.90461,31.12168 33.93855,31.12168 33.97249,31.12168 34.00644,31.12168 34.04038,31.12168 34.58347,31.20912 34.65135,31.29657 34.82107,31.58804 34.85501,31.64634 34.88895,31.76293 34.9229,32.02526 34.9229,32.05441 34.9229,32.08356 34.9229,32.11271 34.78712,32.08356</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Philistia (20% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>33.83672,31.15083 33.83672,31.12168 33.87067,31.09253 33.90461,31.06338 33.93855,31.03423 33.97249,31.00509 34.00644,30.97594 34.04038,30.94679 34.07432,30.91764 34.10827,30.88849 34.14221,30.85935 34.17615,30.85935 34.61741,31.20912 34.78712,31.47145 34.85501,31.64634 34.88895,31.73378 34.9229,31.99612 34.9229,32.02526 34.9229,32.05441 34.9229,32.08356 34.9229,32.11271 34.88895,32.11271 34.78712,32.08356 34.75318,32.05441 33.83672,31.15083</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Philistia (10% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>33.83672,31.15083 33.83672,31.12168 33.87067,31.09253 33.90461,31.06338 33.93855,31.03423 33.97249,31.00509 34.00644,30.97594 34.04038,30.94679 34.07432,30.91764 34.10827,30.88849 34.14221,30.85935 34.17615,30.85935 34.24404,30.88849 34.51558,31.03423 34.58347,31.12168 34.75318,31.38401 34.78712,31.4423 34.82107,31.5006 34.95684,31.79208 34.95684,32.05441 34.95684,32.08356 34.95684,32.14185 34.95684,32.171 34.9229,32.171 34.88895,32.171 34.85501,32.171 34.82107,32.171 34.78712,32.14185 33.83672,31.15083</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Philistia</name>
+			<styleUrl>#landrepresentativepoint</styleUrl>
+			<Point>
+				<coordinates>34.545833,31.663889</coordinates>
+			</Point>
+		</Placemark>
+	</Folder>
+</Folder>
+<Folder>
+	<name>Samaria 1</name>
+	<description><![CDATA[Obad <a href="https://www.biblegateway.com/passage/?search=Obad.1.19&amp;version=ESV">19</a>]]></description>
+	<Placemark>
+		<name>Samaria 1</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>35.195,32.276111</coordinates>
+		</Point>
+	</Placemark>
+</Folder>
+<Folder>
+	<name>Sepharad</name>
+	<description><![CDATA[Obad <a href="https://www.biblegateway.com/passage/?search=Obad.1.20&amp;version=ESV">20</a>]]></description>
+	<Placemark>
+		<name>Sepharad / Sardis</name>
+		<description>another name for Sardis</description>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>28.040278,38.488333</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Sepharad / in Asia Minor</name>
+		<description>another name for Saparda</description>
+		<styleUrl>#region</styleUrl>
+		<Polygon>
+			<tesselate>1</tesselate>
+			<outerBoundaryIs>
+				<LinearRing>
+					<coordinates>41.443745,41.477736 40.193087,41.05055 39.396161,41.262838 38.29866,41.036232 36.783151,41.487219 36.050399,41.796322 35.1128,42.205988 33.284948,42.108625 31.207261,41.242446 29.415421,41.394121 28.772172,40.88419 27.097272,40.50613 26.266071,40.175571 25.845718,39.222393 26.529583,37.743166 28.056268,36.541477 29.503444,36.008826 30.539958,36.04547 30.791287,36.78345 32.785773,35.819706 34.6964,36.674644 35.62556,36.432044 35.897228,35.949509 41.443745,41.477736</coordinates>
+				</LinearRing>
+			</outerBoundaryIs>
+		</Polygon>
+	</Placemark>
+	<Placemark>
+		<name>Sepharad / in Asia Minor</name>
+		<description>another name for Saparda</description>
+		<styleUrl>#landrepresentativepoint</styleUrl>
+		<Point>
+			<coordinates>32,39</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Sepharad / in Hispania</name>
+		<description>in Spain</description>
+		<styleUrl>#region</styleUrl>
+		<Polygon>
+			<tesselate>1</tesselate>
+			<outerBoundaryIs>
+				<LinearRing>
+					<coordinates>-1.927994,43.341489 -3.510451,43.663214 -7.984571,43.909061 -9.592818,43.166065 -8.865002,41.04423 -9.805025,38.672948 -9.02412,38.356384 -9.233945,36.894223 -7.855718,36.6784 -7.323612,37.05308 -6.792985,36.894482 -5.997221,35.915235 -5.63588,35.930215 -5.314237,35.989189 -4.261698,36.51723 -2.034662,36.499076 -1.403817,37.232246 -0.504093,37.444006 0.362429,38.74489 -0.027561,39.330489 1.238274,40.847495 3.364906,41.814738 3.441922,42.317559 0.236568,42.641819 -1.927994,43.341489</coordinates>
+				</LinearRing>
+			</outerBoundaryIs>
+		</Polygon>
+	</Placemark>
+	<Placemark>
+		<name>Sepharad / in Hispania</name>
+		<description>in Spain</description>
+		<styleUrl>#landrepresentativepoint</styleUrl>
+		<Point>
+			<coordinates>-4.35,40.21</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Sepharad / within 15 km of the Bosporus</name>
+		<styleUrl>#region</styleUrl>
+		<Polygon>
+			<tesselate>1</tesselate>
+			<outerBoundaryIs>
+				<LinearRing>
+					<coordinates>29.07528,41.25434 29.05652,41.2536 29.03797,41.25139 29.01983,41.24773 29.00231,41.24266 28.98558,41.23623 28.96985,41.22853 28.95528,41.21963 28.94202,41.20963 28.93023,41.19864 28.92004,41.18679 28.91156,41.1742 28.90487,41.161 28.90005,41.14736 28.89715,41.13341 28.89621,41.11931 28.89723,41.10521 28.9002,41.09126 28.90508,41.07763 28.91183,41.06446 28.92036,41.05189 28.93058,41.04006 28.94239,41.0291 28.95564,41.01913 28.9702,41.01026 28.9859,41.00258 29.00258,40.99619 29.02005,40.99114 29.03812,40.98749 29.0566,40.98528 29.07528,40.98455 29.09396,40.98528 29.11243,40.98749 29.1305,40.99114 29.14797,40.99619 29.16465,41.00258 29.18036,41.01026 29.19491,41.01913 29.20817,41.0291 29.21997,41.04006 29.23019,41.05189 29.23873,41.06446 29.24547,41.07763 29.25036,41.09126 29.25333,41.10521 29.25434,41.11931 29.2534,41.13341 29.25051,41.14736 29.24569,41.161 29.239,41.1742 29.23051,41.18679 29.22032,41.19864 29.20853,41.20963 29.19528,41.21963 29.18071,41.22853 29.16497,41.23623 29.14825,41.24266 29.13072,41.24773 29.11258,41.25139 29.09403,41.2536 29.07528,41.25434</coordinates>
+				</LinearRing>
+			</outerBoundaryIs>
+		</Polygon>
+	</Placemark>
+	<Placemark>
+		<name>Sepharad / within 15 km of the Bosporus</name>
+		<styleUrl>#landrepresentativepoint</styleUrl>
+		<Point>
+			<coordinates>29.075278,41.119444</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Sepharad / in Media</name>
+		<styleUrl>#region</styleUrl>
+		<Polygon>
+			<tesselate>1</tesselate>
+			<outerBoundaryIs>
+				<LinearRing>
+					<coordinates>50.011002,30.088045 51.274977,27.694685 51.968945,27.609028 52.543486,27.20282 53.574455,26.563513 54.784824,26.32797 56.551349,26.977192 57.236117,25.52583 59.106793,29.245149 67.553301,30.971734 67.40204,33.293338 63.109926,39.492965 53.925093,36.989022 51.826439,36.676968 50.475233,37.138887 50.333849,37.458567 49.23762,37.615969 49.058806,38.442823 45.126246,41.165846 43.314852,41.359638 41.52824,40.338099 36.877553,40.513882 36.556185,41.467699 35.460059,42.142747 33.730665,39.348271 34.945889,38.788819 39.839415,37.914506 40.277386,36.597958 45.212807,36.061842 47.519954,34.14296 49.578808,32.720199 50.59391,30.775085 50.011002,30.088045</coordinates>
+				</LinearRing>
+			</outerBoundaryIs>
+		</Polygon>
+	</Placemark>
+	<Placemark>
+		<name>Sepharad / in Media</name>
+		<styleUrl>#landrepresentativepoint</styleUrl>
+		<Point>
+			<coordinates>48.516247,34.8065</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Sepharad / Sparta</name>
+		<description>another name for Sparta</description>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>22.423611,37.081944</coordinates>
+		</Point>
+	</Placemark>
+</Folder>
+<Folder>
+	<name>Shephelah (Lowland)</name>
+	<description><![CDATA[Obad <a href="https://www.biblegateway.com/passage/?search=Obad.1.19&amp;version=ESV">19</a>]]></description>
+	<Folder>
+		<name>Shephelah</name>
+		<Placemark>
+			<name>Shephelah (90% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.91332,31.56756 34.92944,31.59513 34.96169,31.73298 34.97782,31.8019 34.96169,31.81569 34.92944,31.82947 34.89719,31.77433 34.84881,31.69162 34.83269,31.66406 34.83269,31.65027 34.83269,31.58135 34.84881,31.53999 34.86494,31.53999 34.88106,31.53999 34.89719,31.55378 34.91332,31.56756</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Shephelah (80% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.80043,31.59513 34.78431,31.53999 34.86494,31.51242 34.89719,31.53999 34.91332,31.55378 34.92944,31.58135 34.94557,31.65027 34.97782,31.78812 34.97782,31.8019 34.97782,31.81569 34.97782,31.82947 34.94557,31.84325 34.92944,31.84325 34.91332,31.82947 34.83269,31.69162 34.80043,31.59513</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Shephelah (70% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.92944,31.85704 34.91332,31.82947 34.89719,31.8019 34.83269,31.69162 34.81656,31.66406 34.80043,31.63649 34.78431,31.59513 34.76818,31.52621 34.76818,31.51242 34.76818,31.49864 34.86494,31.49864 34.91332,31.55378 34.92944,31.58135 34.94557,31.6227 34.96169,31.67784 34.97782,31.77433 34.97782,31.78812 34.97782,31.8019 34.97782,31.81569 34.97782,31.82947 34.92944,31.85704</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Shephelah (60% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.96169,31.87082 34.92944,31.85704 34.91332,31.84325 34.88106,31.8019 34.78431,31.60892 34.76818,31.56756 34.76818,31.55378 34.76818,31.53999 34.76818,31.52621 34.76818,31.51242 34.76818,31.49864 34.78431,31.45729 34.86494,31.49864 34.88106,31.51242 34.91332,31.53999 34.94557,31.58135 34.97782,31.71919 34.99395,31.82947 34.97782,31.87082 34.96169,31.87082</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Shephelah (50% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.88106,31.8019 34.81656,31.67784 34.78431,31.60892 34.76818,31.56756 34.75206,31.52621 34.75206,31.51242 34.75206,31.49864 34.75206,31.47107 34.80043,31.4435 34.84881,31.47107 34.88106,31.49864 34.89719,31.51242 34.94557,31.58135 34.97782,31.66406 35.01007,31.78812 35.01007,31.8019 35.01007,31.81569 35.01007,31.82947 34.97782,31.87082 34.96169,31.87082 34.94557,31.87082 34.92944,31.87082 34.88106,31.8019</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Shephelah (40% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.7198,31.47107 34.7198,31.41593 34.76818,31.37458 34.80043,31.40215 34.88106,31.47107 34.92944,31.52621 34.94557,31.56756 34.97782,31.66406 34.99395,31.71919 35.01007,31.77433 35.0262,31.82947 35.0262,31.84325 34.99395,31.88461 34.92944,31.89839 34.84881,31.76055 34.78431,31.6227 34.7198,31.47107</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Shephelah (30% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.70368,31.42972 34.73593,31.34701 34.75206,31.34701 34.81656,31.37458 34.88106,31.45729 34.92944,31.52621 34.94557,31.56756 34.96169,31.60892 35.01007,31.73298 35.0262,31.82947 35.0262,31.84325 35.0262,31.85704 34.99395,31.91218 34.92944,31.89839 34.86494,31.8019 34.76818,31.60892 34.70368,31.42972</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Shephelah (20% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.75206,31.60892 34.70368,31.42972 34.70368,31.41593 34.7198,31.34701 34.73593,31.34701 34.75206,31.34701 34.76818,31.34701 34.83269,31.34701 34.86494,31.37458 34.96169,31.55378 34.97782,31.60892 35.0262,31.78812 35.0262,31.8019 35.0262,31.81569 35.0262,31.82947 35.0262,31.84325 35.0262,31.85704 35.0262,31.87082 34.99395,31.92596 34.97782,31.92596 34.96169,31.92596 34.94557,31.92596 34.91332,31.88461 34.88106,31.84325 34.86494,31.81569 34.75206,31.60892</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Shephelah (10% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.60692,31.42972 34.60692,31.41593 34.62305,31.40215 34.70368,31.34701 34.73593,31.33322 34.75206,31.33322 34.84881,31.34701 34.86494,31.36079 34.88106,31.37458 34.92944,31.4435 34.97782,31.59513 35.01007,31.71919 35.04232,31.84325 35.04232,31.85704 35.01007,31.92596 34.97782,31.99489 34.92944,31.95353 34.91332,31.92596 34.89719,31.89839 34.63917,31.48486 34.60692,31.42972</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Shephelah</name>
+			<styleUrl>#landrepresentativepoint</styleUrl>
+			<Point>
+				<coordinates>34.875,31.691667</coordinates>
+			</Point>
+		</Placemark>
+	</Folder>
+</Folder>
+<Folder>
+	<name>Teman</name>
+	<description><![CDATA[Obad <a href="https://www.biblegateway.com/passage/?search=Obad.1.9&amp;version=ESV">9</a>]]></description>
+	<Placemark>
+		<name>Teman / Tawilan</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>35.484847,30.330994</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Teman / about 30 km around Buseira</name>
+		<description>about 30 km around Bozrah 1</description>
+		<styleUrl>#region</styleUrl>
+		<Polygon>
+			<tesselate>1</tesselate>
+			<outerBoundaryIs>
+				<LinearRing>
+					<coordinates>35.60392,31.01564 35.57101,31.01416 35.53847,31.00973 35.50665,31.0024 35.47591,30.99225 35.44658,30.9794 35.41898,30.96398 35.39343,30.94617 35.37019,30.92616 35.34953,30.90418 35.33168,30.88046 35.31681,30.85526 35.30511,30.82887 35.29668,30.80157 35.29163,30.77367 35.29,30.74547 35.29181,30.71727 35.29704,30.68939 35.30562,30.66213 35.31747,30.63579 35.33244,30.61066 35.35037,30.58701 35.37107,30.56511 35.3943,30.54518 35.41982,30.52744 35.44734,30.5121 35.47656,30.49931 35.50717,30.48922 35.53883,30.48193 35.5712,30.47752 35.60392,30.47605 35.63664,30.47752 35.66901,30.48193 35.70067,30.48922 35.73128,30.49931 35.7605,30.5121 35.78802,30.52744 35.81354,30.54518 35.83677,30.56511 35.85747,30.58701 35.8754,30.61066 35.89037,30.63579 35.90222,30.66213 35.9108,30.68939 35.91603,30.71727 35.91784,30.74547 35.91621,30.77367 35.91116,30.80157 35.90273,30.82887 35.89103,30.85526 35.87616,30.88046 35.8583,30.90418 35.83765,30.92616 35.81441,30.94617 35.78886,30.96398 35.76126,30.9794 35.73193,30.99225 35.70119,31.0024 35.66937,31.00973 35.63682,31.01416 35.60392,31.01564</coordinates>
+				</LinearRing>
+			</outerBoundaryIs>
+		</Polygon>
+	</Placemark>
+	<Placemark>
+		<name>Teman / about 30 km around Buseira</name>
+		<description>about 30 km around Bozrah 1</description>
+		<styleUrl>#landrepresentativepoint</styleUrl>
+		<Point>
+			<coordinates>35.603919,30.745843</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Teman / Carcaria</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>35.560833,30.531389</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Teman / Buseira</name>
+		<description>another name for Bozrah 1</description>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>35.603919,30.745843</coordinates>
+		</Point>
+	</Placemark>
+	<Folder>
+		<name>Teman / Edom</name>
+		<description>another name for Edom</description>
+		<Placemark>
+			<name>Teman (90% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>35.41521,30.181 35.48269,30.181 35.55017,30.181 35.61765,30.181 35.68513,30.23982 35.75262,30.29864 35.8201,30.41629 35.88758,30.53394 35.95506,30.65159 36.02254,30.76924 35.88758,30.82806 35.75262,30.88688 35.61765,30.94571 35.55017,30.94571 35.48269,30.94571 35.28024,30.82806 35.21276,30.71041 35.21276,30.65159 35.21276,30.59276 35.21276,30.53394 35.21276,30.47512 35.34773,30.181 35.41521,30.181</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Teman (80% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>35.14528,30.47512 35.28024,30.181 35.34773,30.12217 35.55017,30.06335 35.61765,30.12217 35.68513,30.181 36.02254,30.71041 36.02254,30.76924 36.02254,30.82806 35.61765,31.00453 35.48269,31.00453 35.0778,30.71041 35.14528,30.47512</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Teman (70% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>35.0778,30.76924 35.0778,30.71041 35.14528,30.41629 35.28024,30.181 35.34773,30.12217 35.48269,30.06335 35.55017,30.06335 35.61765,30.06335 35.95506,30.59276 36.02254,30.71041 36.02254,30.76924 36.02254,30.82806 35.61765,31.00453 35.55017,31.00453 35.48269,31.00453 35.41521,31.00453 35.14528,30.82806 35.0778,30.76924</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Teman (60% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>35.01032,30.76924 35.01032,30.71041 35.01032,30.65159 35.01032,30.53394 35.01032,30.47512 35.34773,30.06335 35.41521,30.06335 35.48269,30.06335 35.55017,30.06335 35.61765,30.06335 36.02254,30.47512 36.02254,30.53394 36.02254,30.59276 36.02254,30.71041 36.02254,30.76924 36.02254,30.82806 35.95506,30.88688 35.68513,31.00453 35.61765,31.00453 35.55017,31.00453 35.48269,31.00453 35.41521,31.00453 35.01032,30.76924</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Teman (50% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.94283,30.76924 34.94283,30.71041 34.94283,30.65159 34.94283,30.53394 34.94283,30.47512 34.94283,30.41629 35.14528,29.9457 35.61765,30.00453 36.02254,30.47512 36.09003,30.88688 35.95506,30.94571 35.68513,31.00453 35.61765,31.00453 35.55017,31.00453 35.48269,31.00453 35.41521,31.00453 34.94283,30.76924</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Teman (40% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>35.0778,29.82805 35.14528,29.82805 35.55017,29.9457 35.61765,30.00453 35.68513,30.06335 36.02254,30.41629 36.15751,30.76924 36.15751,30.82806 36.15751,30.88688 35.95506,30.94571 35.68513,31.00453 35.61765,31.00453 35.55017,31.00453 35.48269,31.00453 35.41521,31.00453 35.28024,30.94571 34.94283,30.76924 34.87535,30.41629 35.0778,29.82805</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Teman (30% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.53794,30.47512 34.53794,30.41629 34.94283,29.53393 35.01032,29.53393 35.0778,29.53393 35.34773,29.65158 35.41521,29.71041 35.48269,29.76923 35.95506,30.23982 36.09003,30.41629 36.15751,30.59276 36.22499,30.76924 36.22499,30.82806 36.15751,30.88688 35.95506,30.94571 35.75262,31.00453 35.68513,31.00453 35.61765,31.00453 35.55017,31.00453 35.48269,31.00453 35.41521,31.00453 35.34773,31.00453 34.87535,30.76924 34.60543,30.53394 34.53794,30.47512</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Teman (20% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.47046,30.53394 34.40298,30.47512 34.87535,29.53393 34.94283,29.47511 35.01032,29.47511 35.0778,29.47511 35.41521,29.65158 36.15751,30.41629 36.29247,30.76924 36.29247,30.82806 36.22499,31.00453 35.75262,31.06336 35.68513,31.06336 35.61765,31.06336 35.55017,31.06336 35.48269,31.06336 35.41521,31.06336 35.28024,31.00453 35.14528,30.94571 34.87535,30.82806 34.47046,30.53394</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Teman (10% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>34.3355,30.47512 34.3355,30.41629 34.47046,30.12217 34.74039,29.59276 34.80787,29.53393 34.87535,29.47511 35.01032,29.41629 35.0778,29.41629 35.41521,29.59276 36.22499,30.23982 36.29247,30.59276 36.35995,31.00453 36.29247,31.06336 35.88758,31.12218 35.8201,31.12218 35.34773,31.06336 34.60543,30.82806 34.53794,30.76924 34.47046,30.71041 34.3355,30.53394 34.3355,30.47512</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Teman / Edom</name>
+			<description>another name for Edom</description>
+			<styleUrl>#landrepresentativepoint</styleUrl>
+			<Point>
+				<coordinates>35.603919,30.745843</coordinates>
+			</Point>
+		</Placemark>
+	</Folder>
+	<Placemark>
+		<name>Teman / Gharandal</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>35.655084,30.715067</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Teman / Ma’an</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>35.733333,30.193333</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Teman / Tuwaneh</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>35.725924,30.750651</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Teman / Udruh</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>35.595687,30.328929</coordinates>
+		</Point>
+	</Placemark>
+</Folder>
+<Folder>
+	<name>Zarephath</name>
+	<description><![CDATA[Obad <a href="https://www.biblegateway.com/passage/?search=Obad.1.20&amp;version=ESV">20</a>]]></description>
+	<Placemark>
+		<name>Zarephath / Sarepta</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>35.295136,33.464227</coordinates>
+		</Point>
+	</Placemark>
+</Folder>
+</Document>
+</kml>

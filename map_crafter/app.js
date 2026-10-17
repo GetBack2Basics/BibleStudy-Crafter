@@ -13,6 +13,8 @@ let map = null;
 let currentTemplate = 'ancient'; // 'ancient' | 'modern'
 let currentBasemap = 'geolibre_ocean_topo'; // GeoLibre Topographic Terrain with Ocean Depth Bathymetry
 let currentEra = 'roman_judea';
+let currentBookKml = null;
+let bookKmlGeoJSON = null;
 let is3DEnabled = false;
 
 let templatesConfig = null;
@@ -22,6 +24,11 @@ let boundariesGeoJSON = null;
 let markersList = [];
 let capturedAncientJpg = null;
 let capturedModernJpg = null;
+
+// Photo Carousel & Lightbox State
+let siteActivePhotoIndices = {};
+let currentLightboxSite = null;
+let currentLightboxIndex = 0;
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', async () => {
@@ -58,6 +65,11 @@ function parseUrlParameters() {
     currentEra = params.get('period');
     const eraSelect = document.getElementById('select-era');
     if (eraSelect) eraSelect.value = currentEra;
+  }
+  if (params.get('book')) {
+    currentBookKml = params.get('book').toLowerCase();
+    const bookSelect = document.getElementById('select-book-kml');
+    if (bookSelect) bookSelect.value = currentBookKml;
   }
 }
 
@@ -103,6 +115,10 @@ function initMap() {
     addBoundariesLayers();
     renderMarkers();
     applyTemplate(currentTemplate);
+    setupVectorClickEngine();
+    if (currentBookKml) {
+      loadBookKML(currentBookKml);
+    }
   });
 }
 
@@ -392,9 +408,49 @@ function renderMarkers() {
       <span class="site-label-text">${shortName}</span>
     `;
 
-    // Rich Interactive Popup with ALL available details (Draggable)
+    const photos = Array.isArray(props.photos) && props.photos.length > 0 ? props.photos : (props.photo_url ? [{
+      thumb_url: props.photo_url,
+      full_url: props.photo_url,
+      credit: props.photo_credit,
+      credit_url: props.photo_credit_url,
+      license: props.photo_license,
+      caption: props.photo_caption
+    }] : []);
+
+    const activePhotoIdx = siteActivePhotoIndices[props.id] || 0;
+    const primary = photos[activePhotoIdx] || photos[0];
+    const hasMultiple = photos.length > 1;
+
+    // Rich Interactive Popup with Authoritative OpenBible Photos & Details (Draggable)
     const popupHtml = `
       <div class="site-popup-card ${isAncient ? 'ancient-popup' : 'modern-popup'}">
+        ${primary ? `
+        <div class="site-popup-photo-card" id="popup-photo-card-${props.id}">
+          <img src="${primary.thumb_url}" 
+               alt="${escapeHtml(props.name)}" 
+               class="site-popup-photo-img" 
+               id="popup-photo-img-${props.id}"
+               onclick="openLightbox('${props.id}', event)"
+               title="Click to view full image"
+               loading="lazy" />
+
+          ${hasMultiple ? `
+            <button type="button" class="carousel-nav-btn prev" onclick="navigatePopupPhoto('${props.id}', -1, event)" title="Previous photo" aria-label="Previous photo">‹</button>
+            <button type="button" class="carousel-nav-btn next" onclick="navigatePopupPhoto('${props.id}', 1, event)" title="Next photo" aria-label="Next photo">›</button>
+            <div class="carousel-counter-badge" id="popup-counter-${props.id}">${activePhotoIdx + 1} / ${photos.length}</div>
+          ` : ''}
+
+          <div class="site-popup-photo-meta" onclick="openLightbox('${props.id}', event)" title="Click to view full image">
+            <span class="site-popup-photo-caption" id="popup-caption-${props.id}">${escapeHtml(primary.caption || props.name)}</span>
+            <div class="site-popup-photo-credit" onclick="event.stopPropagation()">
+              <span id="popup-credit-container-${props.id}">
+                ${primary.credit_url ? `<a href="${primary.credit_url}" target="_blank" rel="noopener noreferrer">© ${escapeHtml(primary.credit || 'Wikimedia Commons')}</a>` : `<span>© ${escapeHtml(primary.credit || 'Wikimedia Commons')}</span>`}
+              </span>
+              <span class="site-popup-license-badge" id="popup-license-${props.id}">${primary.license || 'CC'}</span>
+            </div>
+          </div>
+        </div>` : ''}
+
         <div class="site-popup-header" title="Click and drag to move popup">
           <div style="display: flex; align-items: center; gap: 4px;">
             <span class="popup-drag-handle" title="Drag to move popup">⠿</span>
@@ -435,6 +491,10 @@ function renderMarkers() {
         </div>
 
         <div class="site-popup-footer">
+          ${props.openbible_url ? `
+          <a href="${props.openbible_url}" target="_blank" rel="noopener noreferrer" class="popup-btn-openbible" title="View authoritative scholarly dossier on OpenBible.info">
+            📖 OpenBible ↗
+          </a>` : ''}
           <button class="popup-btn-center" onclick="map.flyTo({ center: [${lng}, ${lat}], zoom: 12, pitch: 45, duration: 1000 })">
             🔍 Zoom & Center
           </button>
@@ -444,7 +504,7 @@ function renderMarkers() {
 
     const popup = new maplibregl.Popup({
       offset: 10,
-      maxWidth: '250px',
+      maxWidth: '280px',
       className: 'biblical-maplibre-popup',
       closeOnClick: true,
       closeButton: true,
@@ -478,11 +538,16 @@ function renderSidebarList() {
     const card = document.createElement('div');
     card.className = 'site-card';
     card.innerHTML = `
-      <div class="site-card-title">
-        <span>${props.name}</span>
-        <span style="font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.08);">${props.modern_country}</span>
+      <div style="display: flex; gap: 8px; align-items: flex-start;">
+        ${props.photo_url ? `<img src="${props.photo_url}" alt="${props.name}" style="width: 44px; height: 44px; border-radius: 6px; object-fit: cover; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.12);" loading="lazy" />` : ''}
+        <div style="flex: 1; min-width: 0;">
+          <div class="site-card-title">
+            <span style="font-weight: 700;">${props.name}</span>
+            <span style="font-size: 0.65rem; padding: 1px 5px; border-radius: 4px; background: rgba(255,255,255,0.08);">${props.modern_country}</span>
+          </div>
+          <div class="site-card-ancient">${props.ancient_name}</div>
+        </div>
       </div>
-      <div class="site-card-ancient">${props.ancient_name}</div>
       <div class="site-card-modern">${props.modern_name} (${lat.toFixed(3)}°N, ${lng.toFixed(3)}°E)</div>
       <div class="site-card-desc">${props.description || ''}</div>
     `;
@@ -583,6 +648,11 @@ function setupUIEventListeners() {
   // Basemap Selector
   document.getElementById('select-basemap')?.addEventListener('change', (e) => {
     switchBasemap(e.target.value, false);
+  });
+
+  // Book KML Overlay Selector
+  document.getElementById('select-book-kml')?.addEventListener('change', (e) => {
+    loadBookKML(e.target.value);
   });
 
   // 3D Toggle
@@ -876,9 +946,34 @@ function setupSidebarResizer() {
   });
 }
 
-// 14. Global Outside-Click & Escape Dismiss
+// HTML & Text Sanitation Helpers
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function cleanDescriptionHtml(html) {
+  if (!html) return '';
+  return String(html).replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+}
+
+// 14. Global Outside-Click & Keyboard Listeners
 function setupGlobalPopupDismiss() {
   document.addEventListener('pointerdown', (e) => {
+    // If clicking inside the lightbox modal, handle backdrop dismiss
+    const lightboxModal = document.getElementById('modal-lightbox');
+    if (lightboxModal && lightboxModal.classList.contains('open')) {
+      if (e.target === lightboxModal) {
+        closeLightbox();
+      }
+      return;
+    }
+
     const activePopup = document.querySelector('.maplibregl-popup');
     if (!activePopup) return;
 
@@ -893,8 +988,21 @@ function setupGlobalPopupDismiss() {
   });
 
   window.addEventListener('keydown', (e) => {
+    const lightboxModal = document.getElementById('modal-lightbox');
+    const isLightboxOpen = lightboxModal && lightboxModal.classList.contains('open');
+
     if (e.key === 'Escape') {
-      closeAllPopups();
+      if (isLightboxOpen) {
+        closeLightbox();
+      } else {
+        closeAllPopups();
+        closeExportModal();
+        closeAddSiteModal();
+      }
+    } else if (e.key === 'ArrowLeft' && isLightboxOpen) {
+      navigateLightbox(-1);
+    } else if (e.key === 'ArrowRight' && isLightboxOpen) {
+      navigateLightbox(1);
     }
   });
 }
@@ -908,3 +1016,603 @@ function closeAllPopups() {
   });
 }
 window.closeAllPopups = closeAllPopups;
+
+// 15. Photo Carousel Navigation in Popups
+function navigatePopupPhoto(siteId, delta, event) {
+  if (event) {
+    event.stopPropagation();
+    event.preventDefault();
+  }
+  const feat = sitesGeoJSON?.features?.find((f) => f.properties.id === siteId);
+  if (!feat) return;
+  const props = feat.properties;
+  const photos = Array.isArray(props.photos) && props.photos.length > 0 ? props.photos : [];
+  if (photos.length <= 1) return;
+
+  let curIdx = siteActivePhotoIndices[siteId] || 0;
+  curIdx = (curIdx + delta + photos.length) % photos.length;
+  siteActivePhotoIndices[siteId] = curIdx;
+
+  const photo = photos[curIdx];
+  const imgEl = document.getElementById(`popup-photo-img-${siteId}`);
+  const counterEl = document.getElementById(`popup-counter-${siteId}`);
+  const captionEl = document.getElementById(`popup-caption-${siteId}`);
+  const creditContainer = document.getElementById(`popup-credit-container-${siteId}`);
+  const licenseEl = document.getElementById(`popup-license-${siteId}`);
+
+  if (imgEl && photo) {
+    imgEl.src = photo.thumb_url;
+  }
+  if (counterEl) {
+    counterEl.textContent = `${curIdx + 1} / ${photos.length}`;
+  }
+  if (captionEl) {
+    captionEl.textContent = photo.caption || props.name;
+  }
+  if (creditContainer) {
+    creditContainer.innerHTML = photo.credit_url
+      ? `<a href="${photo.credit_url}" target="_blank" rel="noopener noreferrer">© ${escapeHtml(photo.credit || 'Wikimedia Commons')}</a>`
+      : `<span>© ${escapeHtml(photo.credit || 'Wikimedia Commons')}</span>`;
+  }
+  if (licenseEl && photo.license) {
+    licenseEl.textContent = photo.license;
+  }
+}
+window.navigatePopupPhoto = navigatePopupPhoto;
+
+// 16. Fullscreen Biblical Photo Lightbox Modal
+function openLightbox(siteId, event) {
+  if (event) {
+    event.stopPropagation();
+    event.preventDefault();
+  }
+  const feat = sitesGeoJSON?.features?.find((f) => f.properties.id === siteId);
+  if (!feat) return;
+  const props = feat.properties;
+  const photos = Array.isArray(props.photos) && props.photos.length > 0 ? props.photos : (props.photo_url ? [{
+    thumb_url: props.photo_url,
+    full_url: props.photo_url,
+    credit: props.photo_credit,
+    credit_url: props.photo_credit_url,
+    license: props.photo_license,
+    caption: props.photo_caption
+  }] : []);
+
+  if (photos.length === 0) return;
+
+  currentLightboxSite = { ...props, photos };
+  currentLightboxIndex = siteActivePhotoIndices[siteId] || 0;
+
+  renderLightbox();
+  const modal = document.getElementById('modal-lightbox');
+  if (modal) {
+    modal.classList.add('open');
+  }
+}
+window.openLightbox = openLightbox;
+
+function renderLightbox() {
+  if (!currentLightboxSite) return;
+  const photos = currentLightboxSite.photos || [];
+  const photo = photos[currentLightboxIndex] || photos[0];
+  if (!photo) return;
+
+  const imgEl = document.getElementById('lightbox-img');
+  const siteNameEl = document.getElementById('lightbox-site-name');
+  const captionEl = document.getElementById('lightbox-caption');
+  const counterEl = document.getElementById('lightbox-counter');
+  const creditLinkEl = document.getElementById('lightbox-credit-link');
+  const licenseBadgeEl = document.getElementById('lightbox-license-badge');
+  const commonsLinkEl = document.getElementById('lightbox-commons-link');
+  const prevBtn = document.getElementById('lightbox-prev');
+  const nextBtn = document.getElementById('lightbox-next');
+
+  if (imgEl) {
+    imgEl.src = photo.full_url || photo.thumb_url;
+    imgEl.alt = `${currentLightboxSite.name} — ${photo.caption || ''}`;
+  }
+  if (siteNameEl) siteNameEl.textContent = currentLightboxSite.name;
+  if (captionEl) captionEl.textContent = photo.caption || currentLightboxSite.name;
+  if (counterEl) {
+    counterEl.textContent = `${currentLightboxIndex + 1} / ${photos.length}`;
+    counterEl.style.display = photos.length > 1 ? 'inline-block' : 'none';
+  }
+  if (creditLinkEl) {
+    creditLinkEl.textContent = `© ${photo.credit || 'Wikimedia Commons'}`;
+    creditLinkEl.href = photo.credit_url || photo.full_url || '#';
+  }
+  if (licenseBadgeEl) {
+    licenseBadgeEl.textContent = photo.license || 'CC';
+  }
+  if (commonsLinkEl) {
+    commonsLinkEl.href = photo.credit_url || photo.full_url || '#';
+    commonsLinkEl.style.display = (photo.credit_url || photo.full_url) ? 'inline-flex' : 'none';
+  }
+  if (prevBtn) prevBtn.style.display = photos.length > 1 ? 'flex' : 'none';
+  if (nextBtn) nextBtn.style.display = photos.length > 1 ? 'flex' : 'none';
+}
+
+function navigateLightbox(delta) {
+  if (!currentLightboxSite) return;
+  const photos = currentLightboxSite.photos || [];
+  if (photos.length <= 1) return;
+  currentLightboxIndex = (currentLightboxIndex + delta + photos.length) % photos.length;
+  // Synchronize state with marker popup
+  if (currentLightboxSite.id) {
+    siteActivePhotoIndices[currentLightboxSite.id] = currentLightboxIndex;
+    navigatePopupPhoto(currentLightboxSite.id, 0);
+  }
+  renderLightbox();
+}
+window.navigateLightbox = navigateLightbox;
+
+function closeLightbox() {
+  const modal = document.getElementById('modal-lightbox');
+  if (modal) {
+    modal.classList.remove('open');
+  }
+}
+window.closeLightbox = closeLightbox;
+
+// 17. Authoritative Vector Interaction Engine: Points, Lines & Polygons (Main Map & KML)
+const MAIN_MAP_DESCRIPTIONS = {
+  prov_galilee: "Northern region of ancient Israel; heartland of Jesus' earthly ministry, including Nazareth, Capernaum, Cana, and Mount of Beatitudes.",
+  prov_samaria: "Central hill country inhabited by the Samaritans; location of Shechem, Mount Gerizim, Mount Ebal, and Jacob's Well.",
+  prov_judea: "Southern biblical kingdom and Roman province containing Jerusalem, Bethlehem, Bethany, and the rugged Judean Wilderness.",
+  prov_decapolis: "Confederation of ten Hellenistic cities east of the Jordan and south of Galilee; visited by Jesus during His ministry.",
+  prov_peraea: "Region 'beyond the Jordan' east of Judea and Samaria; where John the Baptist preached, baptized, and was imprisoned by Herod Antipas.",
+  prov_nabatea: "Arabian kingdom governed from the rose-red rock city of Petra, spanning the Negev and eastern desert frontiers.",
+  prov_phoenicia: "Ancient coastal maritime civilization; home to the historic seafaring ports of Tyre and Sidon.",
+  prov_syria: "Roman imperial province to the north with seat at Antioch on the Orontes and historical oasis hub at Damascus.",
+  road_via_maris: "The historic coastal highway connecting Egypt, the Plain of Sharon, Jezreel Valley, Galilee, and Damascus with Mesopotamia.",
+  road_kings_highway: "Ancient trade highway through the Transjordan plateau connecting the Gulf of Aqaba and Petra with Damascus; traveled during Israel's Wilderness journey.",
+  road_ridge_route: "The Way of the Patriarchs traversing the central hill country ridge connecting Hebron, Bethlehem, Jerusalem, Bethel, and Shechem.",
+  road_jericho_jerusalem: "Steep historic road descending 3,300 feet from Jerusalem down through the Judean wilderness to Jericho; setting of the Parable of the Good Samaritan.",
+  river_jordan: "Sacred river flowing from Mount Hermon through Lake Hula and the Sea of Galilee down to the Dead Sea; site of Israel's crossing and Jesus' baptism.",
+  river_jabbok: "Eastern mountain tributary where Jacob wrestled with the Angel of the Lord through the night and was blessed with the name Israel (Peniel).",
+  river_arnon: "Formidable canyon river and gorge forming the ancient boundary between Moab and the Amorites (Numbers 21).",
+  river_kishon: "Winding valley river where Deborah and Barak defeated Sisera's chariots (Judges 4-5) and Elijah confronted the false prophets of Baal (1 Kings 18).",
+  river_yarmouk: "Major eastern tributary marking the northern boundary of the Decapolis and Golan.",
+  water_sea_of_galilee: "Freshwater lake 680 feet below sea level; center of Christ's Galilean ministry, calling disciples, walking on water, and calming the tempest.",
+  water_dead_sea: "Biblical Salt Sea sitting 1,410 feet below sea level; Earth's lowest land elevation, bordered by En-gedi, Masada, and Qumran.",
+  water_mediterranean: "The Great Sea forming the western boundary of the Holy Land; sailed by Jonah fleeing to Tarshish and Paul during his missionary journeys.",
+};
+
+function getAvailableInteractiveLayers() {
+  const allLayers = [
+    // 1. KML layers (top priority when loaded)
+    'book-kml-points',
+    'book-kml-lines',
+    'book-kml-fills',
+    // 2. Main map roads & rivers (lines on top of polygons)
+    'ancient-roads-line',
+    'ancient-rivers-line',
+    'ancient-provinces-stroke',
+    'ancient-water-stroke',
+    // 3. Main map waters & provinces (polygons)
+    'ancient-water-shelf',
+    'ancient-water-depth',
+    'ancient-provinces-fill',
+  ];
+
+  return allLayers.filter((id) => {
+    if (!map.getLayer(id)) return false;
+    const vis = map.getLayoutProperty(id, 'visibility');
+    return vis !== 'none';
+  });
+}
+
+function setupVectorClickEngine() {
+  // 1. Mousemove: Pointer cursor when hovering any point, line, or polygon
+  map.on('mousemove', (e) => {
+    if (e.originalEvent && e.originalEvent.target.closest('.site-marker-node')) {
+      return;
+    }
+
+    const availableLayers = getAvailableInteractiveLayers();
+    if (availableLayers.length === 0) {
+      map.getCanvas().style.cursor = '';
+      return;
+    }
+
+    // 8px tolerance bbox for lines and points
+    const bbox = [
+      [e.point.x - 8, e.point.y - 8],
+      [e.point.x + 8, e.point.y + 8],
+    ];
+    const feats = map.queryRenderedFeatures(bbox, { layers: availableLayers });
+    map.getCanvas().style.cursor = feats && feats.length > 0 ? 'pointer' : '';
+  });
+
+  // 2. Click: Show rich popup for any clicked feature (Point, Line, Polygon)
+  map.on('click', (e) => {
+    // If click was on a site marker pin, let marker handle it
+    if (e.originalEvent && e.originalEvent.target.closest('.site-marker-node')) {
+      return;
+    }
+
+    // If click was inside an already open popup, do not recreate
+    if (e.originalEvent && e.originalEvent.target.closest('.maplibregl-popup')) {
+      return;
+    }
+
+    const availableLayers = getAvailableInteractiveLayers();
+    if (availableLayers.length === 0) return;
+
+    const bbox = [
+      [e.point.x - 8, e.point.y - 8],
+      [e.point.x + 8, e.point.y + 8],
+    ];
+
+    // Priority 1: KML Points
+    let candidates = map.queryRenderedFeatures(bbox, {
+      layers: availableLayers.filter((l) => l === 'book-kml-points'),
+    });
+
+    // Priority 2: Lines (KML Lines, Main Map Roads, Main Map Rivers, Province Borders)
+    if (!candidates || candidates.length === 0) {
+      candidates = map.queryRenderedFeatures(bbox, {
+        layers: availableLayers.filter((l) => l.includes('line') || l.includes('road') || l.includes('river')),
+      });
+    }
+
+    // Priority 3: Polygons (KML Fills, Main Map Provinces, Main Map Waters)
+    if (!candidates || candidates.length === 0) {
+      candidates = map.queryRenderedFeatures(e.point, {
+        layers: availableLayers.filter((l) => l.includes('fill') || l.includes('shelf') || l.includes('depth')),
+      });
+    }
+
+    if (!candidates || candidates.length === 0) return;
+
+    const feat = candidates[0];
+    const layerId = feat.layer.id;
+
+    if (layerId.startsWith('book-kml-')) {
+      showKMLFeaturePopup(feat, e.lngLat);
+    } else {
+      showMainMapFeaturePopup(feat, e.lngLat);
+    }
+  });
+}
+
+// Popup Renderer for KML Features (Points, Lines, Polygons)
+function showKMLFeaturePopup(feat, lngLat) {
+  const props = feat.properties || {};
+  const geomType = feat.geometry ? feat.geometry.type : 'Feature';
+
+  let badgeLabel = '📍 KML Location';
+  let badgeColor = '#d97706';
+  if (geomType === 'LineString' || geomType === 'MultiLineString') {
+    badgeLabel = '🛣️ KML Journey Route / Path';
+    badgeColor = '#b71c1c';
+  } else if (geomType === 'Polygon' || geomType === 'MultiPolygon') {
+    badgeLabel = '🗺️ KML Territory / Area';
+    badgeColor = '#0284c7';
+  }
+
+  const title = props.name || 'Biblical KML Feature';
+  const desc = props.description || '';
+
+  const skipKeys = new Set(['name', 'description']);
+  const attrRows = [];
+
+  // Geometry statistics
+  if (geomType === 'Point' && feat.geometry.coordinates) {
+    const [pLon, pLat] = feat.geometry.coordinates;
+    attrRows.push(`
+      <tr>
+        <td class="kml-attr-key">Coordinates:</td>
+        <td class="kml-attr-val" style="font-family: monospace;">${pLat.toFixed(4)}°N, ${pLon.toFixed(4)}°E</td>
+      </tr>
+    `);
+  } else if (geomType === 'LineString' && feat.geometry.coordinates) {
+    attrRows.push(`
+      <tr>
+        <td class="kml-attr-key">Route Geometry:</td>
+        <td class="kml-attr-val">${feat.geometry.coordinates.length} waypoints</td>
+      </tr>
+    `);
+  } else if (geomType === 'Polygon' && feat.geometry.coordinates) {
+    const ring = feat.geometry.coordinates[0] || [];
+    attrRows.push(`
+      <tr>
+        <td class="kml-attr-key">Boundary:</td>
+        <td class="kml-attr-val">${ring.length} vertices</td>
+      </tr>
+    `);
+  }
+
+  // Click position
+  attrRows.push(`
+    <tr>
+      <td class="kml-attr-key">Clicked Position:</td>
+      <td class="kml-attr-val" style="font-family: monospace;">${lngLat.lat.toFixed(4)}°N, ${lngLat.lng.toFixed(4)}°E</td>
+    </tr>
+  `);
+
+  for (const [k, v] of Object.entries(props)) {
+    if (skipKeys.has(k) || v === null || v === undefined || v === '') continue;
+    const valStr = typeof v === 'object' ? JSON.stringify(v) : String(v);
+    const cleanKey = k.replace(/[_-]/g, ' ');
+    attrRows.push(`
+      <tr>
+        <td class="kml-attr-key">${cleanKey}:</td>
+        <td class="kml-attr-val">${escapeHtml(valStr)}</td>
+      </tr>
+    `);
+  }
+
+  const popupHtml = `
+    <div class="kml-feature-popup-card">
+      <div class="kml-popup-header">
+        <span class="kml-popup-badge" style="background: ${badgeColor};">${badgeLabel}</span>
+        <h4 class="kml-popup-title">${escapeHtml(title)}</h4>
+      </div>
+      ${desc ? `
+        <div class="kml-popup-desc">
+          ${cleanDescriptionHtml(desc)}
+        </div>
+      ` : ''}
+      <div class="kml-attrs-section">
+        <span class="kml-attrs-header">KML Attributes & Metadata</span>
+        <table class="kml-attrs-table">
+          <tbody>
+            ${attrRows.join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  new maplibregl.Popup({
+    offset: 10,
+    maxWidth: '310px',
+    className: 'biblical-maplibre-popup kml-popup',
+    closeOnClick: true,
+    closeButton: true,
+  })
+    .setLngLat(lngLat)
+    .setHTML(popupHtml)
+    .addTo(map);
+}
+
+// Popup Renderer for Main Map Features (Points, Lines, Polygons)
+function showMainMapFeaturePopup(feat, lngLat) {
+  const props = feat.properties || {};
+  const featId = props.id || '';
+  const geomType = feat.geometry ? feat.geometry.type : 'Feature';
+
+  let badgeLabel = '🏛️ Historical Territory';
+  let badgeColor = '#b85d43';
+
+  if (props.category === 'ancient_highway') {
+    badgeLabel = '🛣️ Ancient Trade Highway';
+    badgeColor = '#8c4f2b';
+  } else if (props.category === 'river') {
+    badgeLabel = '🌊 Biblical River';
+    badgeColor = '#0284c7';
+  } else if (props.category === 'water_body' || props.category === 'water_depth') {
+    badgeLabel = '⚓ Biblical Waterway';
+    badgeColor = '#0369a1';
+  } else if (props.category === 'confederation') {
+    badgeLabel = '🏛️ Biblical League / Confederation';
+    badgeColor = '#607d8b';
+  }
+
+  const title = props.name || 'Biblical Feature';
+  const desc = MAIN_MAP_DESCRIPTIONS[featId] || props.description || '';
+
+  const attrRows = [];
+
+  // Category
+  if (props.category) {
+    attrRows.push(`
+      <tr>
+        <td class="kml-attr-key">Category:</td>
+        <td class="kml-attr-val" style="text-transform: capitalize;">${escapeHtml(props.category.replace(/[_-]/g, ' '))}</td>
+      </tr>
+    `);
+  }
+
+  // Era / Period
+  if (props.period) {
+    const eraText = props.period === 'all' ? 'All Biblical Eras' : props.period.replace(/[_-]/g, ' ');
+    attrRows.push(`
+      <tr>
+        <td class="kml-attr-key">Biblical Era:</td>
+        <td class="kml-attr-val" style="text-transform: capitalize;">${escapeHtml(eraText)}</td>
+      </tr>
+    `);
+  }
+
+  // Geometry details
+  if (geomType === 'LineString' && feat.geometry.coordinates) {
+    attrRows.push(`
+      <tr>
+        <td class="kml-attr-key">Route Geometry:</td>
+        <td class="kml-attr-val">${feat.geometry.coordinates.length} waypoints</td>
+      </tr>
+    `);
+  } else if (geomType === 'Polygon' && feat.geometry.coordinates) {
+    const ring = feat.geometry.coordinates[0] || [];
+    attrRows.push(`
+      <tr>
+        <td class="kml-attr-key">Boundary:</td>
+        <td class="kml-attr-val">${ring.length} vertices</td>
+      </tr>
+    `);
+  }
+
+  // Click Coordinates
+  attrRows.push(`
+    <tr>
+      <td class="kml-attr-key">Clicked Position:</td>
+      <td class="kml-attr-val" style="font-family: monospace;">${lngLat.lat.toFixed(4)}°N, ${lngLat.lng.toFixed(4)}°E</td>
+    </tr>
+  `);
+
+  const popupHtml = `
+    <div class="kml-feature-popup-card">
+      <div class="kml-popup-header">
+        <span class="kml-popup-badge" style="background: ${badgeColor};">${badgeLabel}</span>
+        <h4 class="kml-popup-title">${escapeHtml(title)}</h4>
+      </div>
+      ${desc ? `
+        <div class="kml-popup-desc">
+          ${cleanDescriptionHtml(desc)}
+        </div>
+      ` : ''}
+      <div class="kml-attrs-section">
+        <span class="kml-attrs-header">Cartographic Details</span>
+        <table class="kml-attrs-table">
+          <tbody>
+            ${attrRows.join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  new maplibregl.Popup({
+    offset: 10,
+    maxWidth: '310px',
+    className: 'biblical-maplibre-popup main-map-popup',
+    closeOnClick: true,
+    closeButton: true,
+  })
+    .setLngLat(lngLat)
+    .setHTML(popupHtml)
+    .addTo(map);
+}
+
+// 18. Authoritative OpenBible Book KML Vector Overlay Loader
+async function loadBookKML(bookCode) {
+  currentBookKml = bookCode;
+
+  // If cleared, remove book layers
+  if (!bookCode) {
+    if (map.getLayer('book-kml-fills')) map.removeLayer('book-kml-fills');
+    if (map.getLayer('book-kml-lines')) map.removeLayer('book-kml-lines');
+    if (map.getLayer('book-kml-points')) map.removeLayer('book-kml-points');
+    if (map.getSource('book-kml-source')) map.removeSource('book-kml-source');
+    showToast('Cleared book vector overlay');
+    return;
+  }
+
+  showToast(`📖 Loading OpenBible vector KML for ${bookCode.toUpperCase()}…`, 3000);
+
+  try {
+    let kmlText = null;
+    // 1. Try local cached file first
+    try {
+      const resp = await fetch(`data/kml/${bookCode}.kml`);
+      if (resp.ok) kmlText = await resp.text();
+    } catch (_) {}
+
+    // 2. Fallback to openbible.info or raw github
+    if (!kmlText) {
+      const resp = await fetch(`https://a.openbible.info/geo/kmls/${bookCode}.kml`);
+      if (resp.ok) kmlText = await resp.text();
+    }
+
+    if (!kmlText) {
+      showToast(`⚠️ Could not load KML for ${bookCode}`, 4000);
+      return;
+    }
+
+    // Parse XML & convert using toGeoJSON
+    const dom = new DOMParser().parseFromString(kmlText, 'text/xml');
+    if (!window.toGeoJSON || !window.toGeoJSON.kml) {
+      console.warn('toGeoJSON library not available');
+      return;
+    }
+    const geojson = window.toGeoJSON.kml(dom);
+    bookKmlGeoJSON = geojson;
+
+    // Remove existing layers and source if present
+    if (map.getLayer('book-kml-fills')) map.removeLayer('book-kml-fills');
+    if (map.getLayer('book-kml-lines')) map.removeLayer('book-kml-lines');
+    if (map.getLayer('book-kml-points')) map.removeLayer('book-kml-points');
+    if (map.getSource('book-kml-source')) map.removeSource('book-kml-source');
+
+    // Add source
+    map.addSource('book-kml-source', {
+      type: 'geojson',
+      data: geojson,
+    });
+
+    // 1. Polygon Fills (translucent territory/confidence areas)
+    map.addLayer({
+      id: 'book-kml-fills',
+      type: 'fill',
+      source: 'book-kml-source',
+      filter: ['==', '$type', 'Polygon'],
+      paint: {
+        'fill-color': currentTemplate === 'ancient' ? '#8d6e63' : '#0284c7',
+        'fill-opacity': 0.22,
+      },
+    });
+
+    // 2. Lines (routes, journeys, rivers) with solid 3.5px click hit-box
+    map.addLayer({
+      id: 'book-kml-lines',
+      type: 'line',
+      source: 'book-kml-source',
+      filter: ['==', '$type', 'LineString'],
+      paint: {
+        'line-color': currentTemplate === 'ancient' ? '#b71c1c' : '#00e5ff',
+        'line-width': 3.5,
+        'line-dasharray': [3, 2],
+      },
+    });
+
+    // 3. Points (book places) with 5.5px clickable radius
+    map.addLayer({
+      id: 'book-kml-points',
+      type: 'circle',
+      source: 'book-kml-source',
+      filter: ['==', '$type', 'Point'],
+      paint: {
+        'circle-radius': 5.5,
+        'circle-color': currentTemplate === 'ancient' ? '#d97706' : '#38bdf8',
+        'circle-stroke-width': 1.5,
+        'circle-stroke-color': '#ffffff',
+      },
+    });
+
+    // Fit bounds to the book's features
+    const coords = [];
+    geojson.features.forEach((f) => {
+      if (f.geometry && f.geometry.type === 'Point') {
+        coords.push(f.geometry.coordinates);
+      } else if (f.geometry && f.geometry.type === 'LineString') {
+        f.geometry.coordinates.forEach((c) => coords.push(c));
+      } else if (f.geometry && f.geometry.type === 'Polygon') {
+        f.geometry.coordinates[0].forEach((c) => coords.push(c));
+      }
+    });
+
+    if (coords.length > 0) {
+      const lons = coords.map((c) => c[0]);
+      const lats = coords.map((c) => c[1]);
+      const minLon = Math.min(...lons);
+      const maxLon = Math.max(...lons);
+      const minLat = Math.min(...lats);
+      const maxLat = Math.max(...lats);
+      map.fitBounds(
+        [
+          [minLon, minLat],
+          [maxLon, maxLat],
+        ],
+        { padding: 40, duration: 1200 }
+      );
+    }
+
+    showToast(`✅ Overlaid ${geojson.features.length} vector features from ${bookCode.toUpperCase()} (OpenBible KML)`, 4000);
+  } catch (err) {
+    console.error('Failed to load book KML:', err);
+    showToast(`⚠️ Error loading KML: ${err.message}`, 4000);
+  }
+}
+

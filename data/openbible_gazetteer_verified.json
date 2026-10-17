@@ -1,0 +1,1275 @@
+{
+  "jerusalem": {
+    "key": "jerusalem",
+    "openbible_id": "a15257a",
+    "openbible_slug": "jerusalem",
+    "openbible_url": "https://www.openbible.info/geo/ancient/a15257a/jerusalem",
+    "modern_basis_id": "m66c5b8",
+    "lat": 31.776667,
+    "lng": 35.234167,
+    "elevation_m": null,
+    "confidence_score": 500,
+    "verse_count": 955,
+    "sample_verses": [
+      "Josh 10:1",
+      "Josh 10:2",
+      "Josh 10:3",
+      "Josh 10:5",
+      "Josh 10:23"
+    ],
+    "photo_url": "https://a.openbible.info/geo/images/512/m66c5b8.i6449a7.jpg",
+    "photo_credit": "Godot13",
+    "photo_credit_url": "https://commons.wikimedia.org/wiki/File:Jerusalem-2013(2)-Aerial-Temple_Mount-(south_exposure).jpg",
+    "photo_license": "CC-BY-SA-4.0",
+    "photo_caption": "aerial cityscape of Jerusalem",
+    "photos": [
+      {
+        "image_id": "i6449a7",
+        "thumb_url": "https://a.openbible.info/geo/images/512/m66c5b8.i6449a7.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/2/22/Jerusalem-2013%282%29-Aerial-Temple_Mount-%28south_exposure%29.jpg",
+        "credit": "Godot13",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Jerusalem-2013(2)-Aerial-Temple_Mount-(south_exposure).jpg",
+        "license": "CC-BY-SA-4.0",
+        "caption": "aerial cityscape of Jerusalem"
+      },
+      {
+        "image_id": "i03d5e8",
+        "thumb_url": "https://a.openbible.info/geo/images/512/me461ba.i03d5e8.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/f/fb/121296-Jerusalem-Mount-of-Olives_%2827524566831%29.jpg",
+        "credit": "xiquinhosilva",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:121296-Jerusalem-Mount-of-Olives_(27524566831).jpg",
+        "license": "CC-BY-2.0",
+        "caption": "panorama of the Mount of Olives"
+      },
+      {
+        "image_id": "i16da2e",
+        "thumb_url": "https://a.openbible.info/geo/images/512/m629bdb.i16da2e.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/e/e2/Jerusalem_%2829558236553%29.jpg",
+        "credit": "DYKT Mohigan",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Jerusalem_(29558236553).jpg",
+        "license": "CC-BY-2.0",
+        "caption": "panorama of the intersection of the Kidron Valley and the Valley of Hinnom"
+      },
+      {
+        "image_id": "i2304ae",
+        "thumb_url": "https://a.openbible.info/geo/images/512/m286edc.i2304ae.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/3/32/Isawiya_from_Hebrew_University_of_Jerusalem_at_mount_scopus.jpg",
+        "credit": "Hidro",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Isawiya_from_Hebrew_University_of_Jerusalem_at_mount_scopus.jpg",
+        "license": "CC-BY-SA-4.0",
+        "caption": "cityscape of Isawiya"
+      }
+    ]
+  },
+  "bethlehem": {
+    "key": "bethlehem",
+    "openbible_id": "a112427",
+    "openbible_slug": "bethlehem-1",
+    "openbible_url": "https://www.openbible.info/geo/ancient/a112427/bethlehem-1",
+    "modern_basis_id": "m9b8daa",
+    "lat": 31.704306,
+    "lng": 35.207639,
+    "elevation_m": null,
+    "confidence_score": 500,
+    "verse_count": 52,
+    "sample_verses": [
+      "Gen 35:19",
+      "Gen 48:7",
+      "Judg 17:7",
+      "Judg 17:8",
+      "Judg 17:9"
+    ],
+    "photo_url": "https://a.openbible.info/geo/images/512/m9b8daa.i3d3eaa.jpg",
+    "photo_credit": "Berthold Werner",
+    "photo_credit_url": "https://commons.wikimedia.org/wiki/File:Church_of_the_Nativity_(Bethlehem,_2008).jpg",
+    "photo_license": "PD",
+    "photo_caption": "building at Bethlehem",
+    "photos": [
+      {
+        "image_id": "i3d3eaa",
+        "thumb_url": "https://a.openbible.info/geo/images/512/m9b8daa.i3d3eaa.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/6/60/Church_of_the_Nativity_%28Bethlehem%2C_2008%29.jpg",
+        "credit": "Berthold Werner",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Church_of_the_Nativity_(Bethlehem,_2008).jpg",
+        "license": "PD",
+        "caption": "building at Bethlehem"
+      },
+      {
+        "image_id": "i9cbc96",
+        "thumb_url": "https://a.openbible.info/geo/images/512/ma3ac8b.i9cbc96.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/b/bd/Templar_Architecture_In_Bethlehem_galilee_2004.jpg",
+        "credit": "Ira Abramov",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Templar_Architecture_In_Bethlehem_galilee_2004.jpg",
+        "license": "GPL",
+        "caption": "building at Beit Lahm"
+      }
+    ]
+  },
+  "nazareth": {
+    "key": "nazareth",
+    "openbible_id": "af5884f",
+    "openbible_slug": "nazareth",
+    "openbible_url": "https://www.openbible.info/geo/ancient/af5884f/nazareth",
+    "modern_basis_id": "mb3f688",
+    "lat": 32.70214,
+    "lng": 35.29769,
+    "elevation_m": null,
+    "confidence_score": 500,
+    "verse_count": 32,
+    "sample_verses": [
+      "Matt 2:23",
+      "Matt 4:13",
+      "Matt 13:54",
+      "Matt 21:11",
+      "Matt 26:71"
+    ],
+    "photo_url": "https://a.openbible.info/geo/images/512/mb3f688.ie64eca.jpg",
+    "photo_credit": "FLASHPACKER TRAVELGUIDE",
+    "photo_credit_url": "https://commons.wikimedia.org/wiki/File:Israel_Nazareth_Old_City_Altstadt_Verk%C3%BCndigungsbasilika_Church_of_Annunciation_(34714423420).jpg",
+    "photo_license": "CC-BY-SA-2.0",
+    "photo_caption": "cityscape of Nazareth",
+    "photos": [
+      {
+        "image_id": "ie64eca",
+        "thumb_url": "https://a.openbible.info/geo/images/512/mb3f688.ie64eca.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/1/14/Israel_Nazareth_Old_City_Altstadt_Verk%C3%BCndigungsbasilika_Church_of_Annunciation_%2834714423420%29.jpg",
+        "credit": "FLASHPACKER TRAVELGUIDE",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Israel_Nazareth_Old_City_Altstadt_Verk%C3%BCndigungsbasilika_Church_of_Annunciation_(34714423420).jpg",
+        "license": "CC-BY-SA-2.0",
+        "caption": "cityscape of Nazareth"
+      },
+      {
+        "image_id": "id9edd5",
+        "thumb_url": "https://upload.wikimedia.org/wikipedia/commons/b/b5/Nazaret_Verkuendigungsbasilika_BW_16.JPG",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/b/b5/Nazaret_Verkuendigungsbasilika_BW_16.JPG",
+        "credit": "Berthold Werner",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Nazaret_Verkuendigungsbasilika_BW_16.JPG",
+        "license": "PD",
+        "caption": "church at Nazareth"
+      }
+    ]
+  },
+  "capernaum": {
+    "key": "capernaum",
+    "openbible_id": "af2161c",
+    "openbible_slug": "capernaum",
+    "openbible_url": "https://www.openbible.info/geo/ancient/af2161c/capernaum",
+    "modern_basis_id": "m66efd0",
+    "lat": 32.881111,
+    "lng": 35.575,
+    "elevation_m": null,
+    "confidence_score": 860,
+    "verse_count": 18,
+    "sample_verses": [
+      "Matt 4:13",
+      "Matt 8:5",
+      "Matt 11:23",
+      "Matt 17:24",
+      "Mark 1:21"
+    ],
+    "photo_url": "https://a.openbible.info/geo/images/512/m66efd0.i3a45de.jpg",
+    "photo_credit": "AVRAMGR",
+    "photo_credit_url": "https://commons.wikimedia.org/wiki/File:KFAR_NAHUM_AERIAL.JPG",
+    "photo_license": "CC-BY-SA-4.0",
+    "photo_caption": "aerial panorama of ruins at Tell Hum",
+    "photos": [
+      {
+        "image_id": "i3a45de",
+        "thumb_url": "https://a.openbible.info/geo/images/512/m66efd0.i3a45de.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/0/0a/KFAR_NAHUM_AERIAL.JPG",
+        "credit": "AVRAMGR",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:KFAR_NAHUM_AERIAL.JPG",
+        "license": "CC-BY-SA-4.0",
+        "caption": "aerial panorama of ruins at Tell Hum"
+      },
+      {
+        "image_id": "i6d9f22",
+        "thumb_url": "https://upload.wikimedia.org/wikipedia/commons/5/5c/IL-Kaphernaum-petrushaus.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/5/5c/IL-Kaphernaum-petrushaus.jpg",
+        "credit": "Bgabel",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:IL-Kaphernaum-petrushaus.jpg",
+        "license": "GFDL",
+        "caption": "ruins at Tell Hum"
+      },
+      {
+        "image_id": "ie5a3be",
+        "thumb_url": "https://upload.wikimedia.org/wikipedia/commons/5/55/ISRAEL%2C_Capernaum%2C_The_Town_of_Jesus%2C_%28ruins%29%3B_ID_is_16-1252-103_%283%29.JPG",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/5/55/ISRAEL%2C_Capernaum%2C_The_Town_of_Jesus%2C_%28ruins%29%3B_ID_is_16-1252-103_%283%29.JPG",
+        "credit": "Britchi Mirela",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:ISRAEL,_Capernaum,_The_Town_of_Jesus,_(ruins);_ID_is_16-1252-103_(3).JPG",
+        "license": "CC-BY-SA-4.0",
+        "caption": "ruins at Tell Hum"
+      }
+    ]
+  },
+  "sea of galilee": {
+    "key": "sea of galilee",
+    "openbible_id": "a562fcc",
+    "openbible_slug": "sea-of-galilee",
+    "openbible_url": "https://www.openbible.info/geo/ancient/a562fcc/sea-of-galilee",
+    "modern_basis_id": "m0438ff",
+    "lat": 32.818906,
+    "lng": 35.590033,
+    "elevation_m": null,
+    "confidence_score": 500,
+    "verse_count": 10,
+    "sample_verses": [
+      "Num 34:11",
+      "Josh 12:3",
+      "Josh 13:27",
+      "Matt 4:18",
+      "Matt 9:1"
+    ],
+    "photo_url": "https://a.openbible.info/geo/images/512/m0438ff.i45ab11.jpg",
+    "photo_credit": "Bahnfrend",
+    "photo_credit_url": "https://commons.wikimedia.org/wiki/File:View_from_the_Mount_of_Beatitudes,_2019_(04).jpg",
+    "photo_license": "CC-BY-SA-4.0",
+    "photo_caption": "panorama of the Sea of Galilee",
+    "photos": [
+      {
+        "image_id": "i45ab11",
+        "thumb_url": "https://a.openbible.info/geo/images/512/m0438ff.i45ab11.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/6/6a/View_from_the_Mount_of_Beatitudes%2C_2019_%2804%29.jpg",
+        "credit": "Bahnfrend",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:View_from_the_Mount_of_Beatitudes,_2019_(04).jpg",
+        "license": "CC-BY-SA-4.0",
+        "caption": "panorama of the Sea of Galilee"
+      },
+      {
+        "image_id": "i044fd3",
+        "thumb_url": "https://upload.wikimedia.org/wikipedia/commons/9/9b/Lake_Tiberias_%28Sea_of_Galilee%29%2C_Northern_Israel.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/9/9b/Lake_Tiberias_%28Sea_of_Galilee%29%2C_Northern_Israel.jpg",
+        "credit": "This image was taken by the NASA Expedition 20 crew.",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Lake_Tiberias_(Sea_of_Galilee),_Northern_Israel.jpg",
+        "license": "PD",
+        "caption": "satellite view of the Sea of Galilee"
+      }
+    ]
+  },
+  "jericho": {
+    "key": "jericho",
+    "openbible_id": "a231f80",
+    "openbible_slug": "jericho-1",
+    "openbible_url": "https://www.openbible.info/geo/ancient/a231f80/jericho-1",
+    "modern_basis_id": "m95349d",
+    "lat": 31.871719,
+    "lng": 35.444564,
+    "elevation_m": null,
+    "confidence_score": 500,
+    "verse_count": 63,
+    "sample_verses": [
+      "Num 22:1",
+      "Num 26:3",
+      "Num 26:63",
+      "Num 31:12",
+      "Num 33:48"
+    ],
+    "photo_url": "https://a.openbible.info/geo/images/512/m95349d.i0064af.jpg",
+    "photo_credit": "Abraham",
+    "photo_credit_url": "https://commons.wikimedia.org/wiki/File:Jerycho11.jpg",
+    "photo_license": "GFDL",
+    "photo_caption": "ruins at Tell es Sultan",
+    "photos": [
+      {
+        "image_id": "i0064af",
+        "thumb_url": "https://a.openbible.info/geo/images/512/m95349d.i0064af.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/c/c8/Jerycho11.jpg",
+        "credit": "Abraham",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Jerycho11.jpg",
+        "license": "GFDL",
+        "caption": "ruins at Tell es Sultan"
+      },
+      {
+        "image_id": "i1244a7",
+        "thumb_url": "https://a.openbible.info/geo/images/512/m80d92c.i1244a7.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/d/d0/Jericho_%2830186979605%29.jpg",
+        "credit": "DYKT Mohigan",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Jericho_(30186979605).jpg",
+        "license": "CC-BY-2.0",
+        "caption": "closeup of Wadi Nu\u2019eima"
+      },
+      {
+        "image_id": "i52a039",
+        "thumb_url": "https://upload.wikimedia.org/wikipedia/commons/9/9b/Jericho_BW_1.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/9/9b/Jericho_BW_1.jpg",
+        "credit": "Berthold Werner",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Jericho_BW_1.jpg",
+        "license": "PD",
+        "caption": "panorama of Tell es Sultan"
+      },
+      {
+        "image_id": "i6151fe",
+        "thumb_url": "https://a.openbible.info/geo/images/512/ma342c0.i6151fe.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/3/37/Jericho_Ruinen_03.JPG",
+        "credit": "Zairon",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Jericho_Ruinen_03.JPG",
+        "license": "CC-BY-SA-4.0",
+        "caption": "ruins at Khirbet el Mefjir"
+      },
+      {
+        "image_id": "i6ac006",
+        "thumb_url": "https://upload.wikimedia.org/wikipedia/commons/f/f4/Tell_es-sultan.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/f/f4/Tell_es-sultan.jpg",
+        "credit": "Fullo88",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Tell_es-sultan.jpg",
+        "license": "PD",
+        "caption": "aerial panorama of Tell es Sultan"
+      }
+    ]
+  },
+  "jordan river": {
+    "key": "jordan river",
+    "openbible_id": "ae686c9",
+    "openbible_slug": "jordan",
+    "openbible_url": "https://www.openbible.info/geo/ancient/ae686c9/jordan",
+    "modern_basis_id": "me7edbd",
+    "lat": 31.761389,
+    "lng": 35.558333,
+    "elevation_m": null,
+    "confidence_score": 500,
+    "verse_count": 202,
+    "sample_verses": [
+      "Gen 32:10",
+      "Gen 50:10",
+      "Gen 50:11",
+      "Num 13:29",
+      "Num 22:1"
+    ],
+    "photo_url": "https://a.openbible.info/geo/images/512/me7edbd.i35a209.jpg",
+    "photo_credit": "Bill Rice",
+    "photo_credit_url": "https://commons.wikimedia.org/wiki/File:Jordan_River_(5418351509).jpg",
+    "photo_license": "CC-BY-2.0",
+    "photo_caption": "closeup of the Jordan River",
+    "photos": [
+      {
+        "image_id": "i35a209",
+        "thumb_url": "https://a.openbible.info/geo/images/512/me7edbd.i35a209.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/5/5d/Jordan_River_%285418351509%29.jpg",
+        "credit": "Bill Rice",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Jordan_River_(5418351509).jpg",
+        "license": "CC-BY-2.0",
+        "caption": "closeup of the Jordan River"
+      },
+      {
+        "image_id": "i0213bf",
+        "thumb_url": "https://a.openbible.info/geo/images/512/m3edbe2.i0213bf.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/a/a2/Ghawr_Almazra%27a_Sub-District%2C_Jordan_-_panoramio_%281%29.jpg",
+        "credit": "Adeeb Atwan",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Ghawr_Almazra%27a_Sub-District,_Jordan_-_panoramio_(1).jpg",
+        "license": "CC-BY-3.0",
+        "caption": "panorama of hills in the region south of the Lisan"
+      },
+      {
+        "image_id": "i054144",
+        "thumb_url": "https://upload.wikimedia.org/wikipedia/commons/0/02/Quairah_District%2C_Jordan_-_panoramio_%281%29.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/0/02/Quairah_District%2C_Jordan_-_panoramio_%281%29.jpg",
+        "credit": "Adeeb Atwan",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Quairah_District,_Jordan_-_panoramio_(1).jpg",
+        "license": "CC-BY-3.0",
+        "caption": "panorama of mountains near Jebel el Musraq"
+      },
+      {
+        "image_id": "i1f2377",
+        "thumb_url": "https://a.openbible.info/geo/images/512/m7aba95.i1f2377.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/f/f0/Joshua%27s_Tomb_in_Jordan_07.jpg",
+        "credit": "Bilal Dweik",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Joshua%27s_Tomb_in_Jordan_07.jpg",
+        "license": "CC-BY-SA-4.0",
+        "caption": "building at Jebel Osha"
+      }
+    ]
+  },
+  "dead sea": {
+    "key": "dead sea",
+    "openbible_id": "abed304",
+    "openbible_slug": "salt-sea",
+    "openbible_url": "https://www.openbible.info/geo/ancient/abed304/salt-sea",
+    "modern_basis_id": "m7d469b",
+    "lat": 31.5,
+    "lng": 35.5,
+    "elevation_m": null,
+    "confidence_score": 500,
+    "verse_count": 21,
+    "sample_verses": [
+      "Gen 14:3",
+      "Num 34:3",
+      "Num 34:12",
+      "Deut 3:17",
+      "Deut 4:49"
+    ],
+    "photo_url": "https://a.openbible.info/geo/images/512/m7d469b.i28c024.jpg",
+    "photo_credit": "Mujaddara",
+    "photo_credit_url": "https://commons.wikimedia.org/wiki/File:67_border_on_Dead_sea_-_panoramio.jpg",
+    "photo_license": "CC-BY-SA-3.0",
+    "photo_caption": "panorama of the Dead Sea",
+    "photos": [
+      {
+        "image_id": "i28c024",
+        "thumb_url": "https://a.openbible.info/geo/images/512/m7d469b.i28c024.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/a/a5/67_border_on_Dead_sea_-_panoramio.jpg",
+        "credit": "Mujaddara",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:67_border_on_Dead_sea_-_panoramio.jpg",
+        "license": "CC-BY-SA-3.0",
+        "caption": "panorama of the Dead Sea"
+      },
+      {
+        "image_id": "i0dc53c",
+        "thumb_url": "https://a.openbible.info/geo/images/512/m8eda70.i0dc53c.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/7/7a/Israel_Hiking_Map_%D7%9E%D7%A6%D7%A4%D7%95%D7%A8_%D7%A2%D7%91%D7%A8%D7%95%D7%A0%D7%94.jpeg",
+        "credit": "zstadler",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Israel_Hiking_Map_%D7%9E%D7%A6%D7%A4%D7%95%D7%A8_%D7%A2%D7%91%D7%A8%D7%95%D7%A0%D7%94.jpeg",
+        "license": "CC-BY-SA-4.0",
+        "caption": "panorama of the modern road between the Dead Sea and the Gulf of Aqaba"
+      },
+      {
+        "image_id": "i490474",
+        "thumb_url": "https://a.openbible.info/geo/images/512/mba7a7f.i490474.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/2/26/PikiWiki_Israel_18483_desert_view.jpg",
+        "credit": "\u05d0\u05d9\u05e8\u05d9\u05ea \u05dc\u05d5\u05d9",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:PikiWiki_Israel_18483_desert_view.jpg",
+        "license": "CC-BY-2.5",
+        "caption": "panorama in the region between the Dead Sea and the Gulf of Aqaba"
+      },
+      {
+        "image_id": "i799e22",
+        "thumb_url": "https://a.openbible.info/geo/images/512/m4c5498.i799e22.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/0/02/Shawbak_Blick_von_der_Festung_Shawbak_04.JPG",
+        "credit": "Zairon",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Shawbak_Blick_von_der_Festung_Shawbak_04.JPG",
+        "license": "CC-BY-SA-3.0",
+        "caption": "panorama of hills in the region between the Dead Sea and Petra"
+      },
+      {
+        "image_id": "ie6fa9a",
+        "thumb_url": "https://upload.wikimedia.org/wikipedia/commons/b/bb/Dead_sea.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/b/bb/Dead_sea.jpg",
+        "credit": "NASA",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Dead_sea.jpg",
+        "license": "PD",
+        "caption": "satellite view of the Dead Sea"
+      }
+    ]
+  },
+  "bethany": {
+    "key": "bethany",
+    "openbible_id": "a4f35bc",
+    "openbible_slug": "bethany-1",
+    "openbible_url": "https://www.openbible.info/geo/ancient/a4f35bc/bethany-1",
+    "modern_basis_id": "m227592",
+    "lat": 31.771661,
+    "lng": 35.255903,
+    "elevation_m": null,
+    "confidence_score": 753,
+    "verse_count": 12,
+    "sample_verses": [
+      "Matt 21:17",
+      "Matt 26:6",
+      "Mark 11:1",
+      "Mark 11:11",
+      "Mark 11:12"
+    ],
+    "photo_url": "https://a.openbible.info/geo/images/512/m227592.icedea1.jpg",
+    "photo_credit": "Naheel Abu Ghaith \u0646\u0647\u064a\u0644 \u0623\u0628\u0648 \u063a\u064a\u062b",
+    "photo_credit_url": "https://commons.wikimedia.org/wiki/File:2_%D8%A7%D9%84%D9%82%D9%86%D8%A7%D8%B7%D8%B1_%D9%81%D9%8A_%D8%A8%D9%84%D8%AF%D8%A9_%D8%A7%D9%84%D8%B9%D9%8A%D8%B2%D8%B1%D9%8A%D8%A9_%D8%A8%D8%A7%D9%84%D9%82%D8%AF%D8%B3.jpg",
+    "photo_license": "CC-BY-SA-4.0",
+    "photo_caption": "ruins at Al Eizariya",
+    "photos": [
+      {
+        "image_id": "icedea1",
+        "thumb_url": "https://a.openbible.info/geo/images/512/m227592.icedea1.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/2/26/2_%D8%A7%D9%84%D9%82%D9%86%D8%A7%D8%B7%D8%B1_%D9%81%D9%8A_%D8%A8%D9%84%D8%AF%D8%A9_%D8%A7%D9%84%D8%B9%D9%8A%D8%B2%D8%B1%D9%8A%D8%A9_%D8%A8%D8%A7%D9%84%D9%82%D8%AF%D8%B3.jpg",
+        "credit": "Naheel Abu Ghaith \u0646\u0647\u064a\u0644 \u0623\u0628\u0648 \u063a\u064a\u062b",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:2_%D8%A7%D9%84%D9%82%D9%86%D8%A7%D8%B7%D8%B1_%D9%81%D9%8A_%D8%A8%D9%84%D8%AF%D8%A9_%D8%A7%D9%84%D8%B9%D9%8A%D8%B2%D8%B1%D9%8A%D8%A9_%D8%A8%D8%A7%D9%84%D9%82%D8%AF%D8%B3.jpg",
+        "license": "CC-BY-SA-4.0",
+        "caption": "ruins at Al Eizariya"
+      },
+      {
+        "image_id": "i4fec65",
+        "thumb_url": "https://upload.wikimedia.org/wikipedia/commons/6/62/Bethany1940s.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/6/62/Bethany1940s.jpg",
+        "credit": "Matson Collection",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Bethany1940s.jpg",
+        "license": "PD",
+        "caption": "historical cityscape of Al Eizariya"
+      },
+      {
+        "image_id": "i640927",
+        "thumb_url": "https://upload.wikimedia.org/wikipedia/commons/4/44/Lazarus_Bethany.JPG",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/4/44/Lazarus_Bethany.JPG",
+        "credit": "Marion Doss",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Lazarus_Bethany.JPG",
+        "license": "CC-BY-SA-2.0",
+        "caption": "tomb of Lazarus at Al Eizariya"
+      },
+      {
+        "image_id": "ib3031d",
+        "thumb_url": "https://a.openbible.info/geo/images/512/m6b5d69.ib3031d.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/e/ec/Bethany_%285%29.JPG",
+        "credit": "Producer",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Bethany_(5).JPG",
+        "license": "CC-BY-2.5",
+        "caption": "baptismal area at Al Maghtas"
+      }
+    ]
+  },
+  "caesarea philippi": {
+    "key": "caesarea philippi",
+    "openbible_id": "ab7bf48",
+    "openbible_slug": "caesarea-philippi",
+    "openbible_url": "https://www.openbible.info/geo/ancient/ab7bf48/caesarea-philippi",
+    "modern_basis_id": "m518f8e",
+    "lat": 33.246111,
+    "lng": 35.693333,
+    "elevation_m": null,
+    "confidence_score": 500,
+    "verse_count": 2,
+    "sample_verses": [
+      "Matt 16:13",
+      "Mark 8:27"
+    ],
+    "photo_url": "https://a.openbible.info/geo/images/512/m518f8e.i7a45a3.jpg",
+    "photo_credit": "EdoM",
+    "photo_credit_url": "https://commons.wikimedia.org/wiki/File:Banias_-_Agrippas_city_001.jpg",
+    "photo_license": "PD",
+    "photo_caption": "ruins at Banias",
+    "photos": [
+      {
+        "image_id": "i7a45a3",
+        "thumb_url": "https://a.openbible.info/geo/images/512/m518f8e.i7a45a3.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/8/8c/Banias_-_Agrippas_city_001.jpg",
+        "credit": "EdoM",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Banias_-_Agrippas_city_001.jpg",
+        "license": "PD",
+        "caption": "ruins at Banias"
+      }
+    ]
+  },
+  "caesarea maritima": {
+    "key": "caesarea maritima",
+    "openbible_id": "a58735e",
+    "openbible_slug": "caesarea",
+    "openbible_url": "https://www.openbible.info/geo/ancient/a58735e/caesarea",
+    "modern_basis_id": "m11da12",
+    "lat": 32.5,
+    "lng": 34.891667,
+    "elevation_m": null,
+    "confidence_score": 500,
+    "verse_count": 18,
+    "sample_verses": [
+      "Acts 8:40",
+      "Acts 9:30",
+      "Acts 10:1",
+      "Acts 10:24",
+      "Acts 11:11"
+    ],
+    "photo_url": "https://a.openbible.info/geo/images/512/m11da12.i2225a2.jpg",
+    "photo_credit": "DerHexer",
+    "photo_credit_url": "https://commons.wikimedia.org/wiki/File:Caesarea_maritima_(DerHexer)_2011-08-02_098.jpg",
+    "photo_license": "CC-BY-SA-3.0",
+    "photo_caption": "panorama of ruins at Caesarea Maritima",
+    "photos": [
+      {
+        "image_id": "i2225a2",
+        "thumb_url": "https://a.openbible.info/geo/images/512/m11da12.i2225a2.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/b/bb/Caesarea_maritima_%28DerHexer%29_2011-08-02_098.jpg",
+        "credit": "DerHexer",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Caesarea_maritima_(DerHexer)_2011-08-02_098.jpg",
+        "license": "CC-BY-SA-3.0",
+        "caption": "panorama of ruins at Caesarea Maritima"
+      },
+      {
+        "image_id": "ie6e0a7",
+        "thumb_url": null,
+        "full_url": null,
+        "credit": "OpenBible / Wikimedia Commons",
+        "credit_url": "https://www.google.com/maps/@32.5003113,34.8913211,3a,75y,353.97h,85.41t/data=!3m8!1e1!3m6!1sAF1QipOZ3K6cbLzwrFP-Z1QCqaorCDWs2B88y8-nF00m!2e10!3e11!6shttps:%2F%2Flh5.googleusercontent.com%2Fp%2FAF1QipOZ3K6cbLzwrFP-Z1QCqaorCDWs2B88y8-nF00m%3Dw203-h100-k-no-pi-0-ya281.41385-ro0-fo100!7i8704!8i4352?hl=en",
+        "license": "copyright",
+        "caption": "Google Streetview of Caesarea Maritima"
+      }
+    ]
+  },
+  "hebron": {
+    "key": "hebron",
+    "openbible_id": "a85151a",
+    "openbible_slug": "hebron",
+    "openbible_url": "https://www.openbible.info/geo/ancient/a85151a/hebron",
+    "modern_basis_id": "m86f941",
+    "lat": 31.525087,
+    "lng": 35.10222,
+    "elevation_m": null,
+    "confidence_score": 500,
+    "verse_count": 62,
+    "sample_verses": [
+      "Gen 13:18",
+      "Gen 23:2",
+      "Gen 23:19",
+      "Gen 35:27",
+      "Num 13:22"
+    ],
+    "photo_url": "https://a.openbible.info/geo/images/512/m86f941.ib463fd.jpg",
+    "photo_credit": "Dr. Avishai Teicher",
+    "photo_credit_url": "https://commons.wikimedia.org/wiki/File:PikiWiki_Israel_43155_Tel_Rumeida_in_Hebron.JPG",
+    "photo_license": "CC-BY-2.5",
+    "photo_caption": "ruins at Tel Rumeida",
+    "photos": [
+      {
+        "image_id": "ib463fd",
+        "thumb_url": "https://a.openbible.info/geo/images/512/m86f941.ib463fd.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/6/6f/PikiWiki_Israel_43155_Tel_Rumeida_in_Hebron.JPG",
+        "credit": "Dr. Avishai Teicher",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:PikiWiki_Israel_43155_Tel_Rumeida_in_Hebron.JPG",
+        "license": "CC-BY-2.5",
+        "caption": "ruins at Tel Rumeida"
+      },
+      {
+        "image_id": "i4b6afc",
+        "thumb_url": "https://a.openbible.info/geo/images/512/mb956fb.i4b6afc.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/3/32/Hebron_Cave_of_the_Patriarchs.jpg",
+        "credit": "Djampa",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Hebron_Cave_of_the_Patriarchs.jpg",
+        "license": "GFDL",
+        "caption": "building at the Cave of the Patriarchs"
+      },
+      {
+        "image_id": "ifbd637",
+        "thumb_url": "https://a.openbible.info/geo/images/512/a375f5a.ifbd637.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/a/a5/%D7%97%D7%91%D7%A8%D7%95%D7%9F_2013.jpg",
+        "credit": "Yuvalhuck",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:%D7%97%D7%91%D7%A8%D7%95%D7%9F_2013.jpg",
+        "license": "CC-BY-SA-3.0",
+        "caption": "cityscape of Hebron in the Valley of Hebron"
+      }
+    ]
+  },
+  "shechem": {
+    "key": "shechem",
+    "openbible_id": "adf74d4",
+    "openbible_slug": "shechem",
+    "openbible_url": "https://www.openbible.info/geo/ancient/adf74d4/shechem",
+    "modern_basis_id": "m657590",
+    "lat": 32.213611,
+    "lng": 35.281944,
+    "elevation_m": null,
+    "confidence_score": 500,
+    "verse_count": 45,
+    "sample_verses": [
+      "Gen 12:6",
+      "Gen 33:18",
+      "Gen 35:4",
+      "Gen 37:12",
+      "Gen 37:13"
+    ],
+    "photo_url": "https://a.openbible.info/geo/images/512/m657590.ia4a34f.jpg",
+    "photo_credit": "\u05d9\u05d0\u05d9\u05e8 \u05d3\u05d1",
+    "photo_credit_url": "https://commons.wikimedia.org/wiki/File:%D7%A9%D7%9B%D7%9D_%D7%94%D7%A2%D7%AA%D7%99%D7%A7%D7%94.jpg",
+    "photo_license": "CC-BY-SA-4.0",
+    "photo_caption": "aerial panorama of Tell Balatah",
+    "photos": [
+      {
+        "image_id": "ia4a34f",
+        "thumb_url": "https://a.openbible.info/geo/images/512/m657590.ia4a34f.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/7/7c/%D7%A9%D7%9B%D7%9D_%D7%94%D7%A2%D7%AA%D7%99%D7%A7%D7%94.jpg",
+        "credit": "\u05d9\u05d0\u05d9\u05e8 \u05d3\u05d1",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:%D7%A9%D7%9B%D7%9D_%D7%94%D7%A2%D7%AA%D7%99%D7%A7%D7%94.jpg",
+        "license": "CC-BY-SA-4.0",
+        "caption": "aerial panorama of Tell Balatah"
+      },
+      {
+        "image_id": "i22d89f",
+        "thumb_url": "https://upload.wikimedia.org/wikipedia/commons/7/71/Tell_Balata.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/7/71/Tell_Balata.jpg",
+        "credit": "TrickyH",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Tell_Balata.jpg",
+        "license": "CC-BY-SA-4.0",
+        "caption": "ruins at Tell Balatah"
+      },
+      {
+        "image_id": "i982155",
+        "thumb_url": "https://upload.wikimedia.org/wikipedia/commons/8/8c/Shechem.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/8/8c/Shechem.jpg",
+        "credit": "Ibrahim Dwaikat",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Shechem.jpg",
+        "license": "CC-BY-SA-3.0",
+        "caption": "ruins at Tell Balatah"
+      }
+    ]
+  },
+  "antioch": {
+    "key": "antioch",
+    "openbible_id": "ae41ab4",
+    "openbible_slug": "antioch-1",
+    "openbible_url": "https://www.openbible.info/geo/ancient/ae41ab4/antioch-1",
+    "modern_basis_id": "mbe432b",
+    "lat": 36.226691,
+    "lng": 36.171743,
+    "elevation_m": null,
+    "confidence_score": 500,
+    "verse_count": 18,
+    "sample_verses": [
+      "Acts 6:5",
+      "Acts 11:19",
+      "Acts 11:20",
+      "Acts 11:22",
+      "Acts 11:26"
+    ],
+    "photo_url": "https://a.openbible.info/geo/images/512/mbe432b.i748f59.jpg",
+    "photo_credit": "Volkan Hatem",
+    "photo_credit_url": "https://commons.wikimedia.org/wiki/File:Antioch_Saint_Pierre_Church_Front.JPG",
+    "photo_license": "CC-BY-2.5",
+    "photo_caption": "building at Antioch on the Orontes",
+    "photos": [
+      {
+        "image_id": "i748f59",
+        "thumb_url": "https://a.openbible.info/geo/images/512/mbe432b.i748f59.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/5/54/Antioch_Saint_Pierre_Church_Front.JPG",
+        "credit": "Volkan Hatem",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Antioch_Saint_Pierre_Church_Front.JPG",
+        "license": "CC-BY-2.5",
+        "caption": "building at Antioch on the Orontes"
+      },
+      {
+        "image_id": "i3a5c2b",
+        "thumb_url": "https://a.openbible.info/geo/images/512/m93f901.i3a5c2b.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/6/62/Antioch_in_Pisidia_Augustus_Temple_2951.jpg",
+        "credit": "Dosseman",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Antioch_in_Pisidia_Augustus_Temple_2951.jpg",
+        "license": "CC-BY-SA-4.0",
+        "caption": "ruins at Antioch in Pisidia"
+      },
+      {
+        "image_id": "i907132",
+        "thumb_url": "https://upload.wikimedia.org/wikipedia/commons/1/19/Antiochia_su_Oronte.PNG",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/1/19/Antiochia_su_Oronte.PNG",
+        "credit": "Cristiano64",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Antiochia_su_Oronte.PNG",
+        "license": "CC-BY-SA-3.0",
+        "caption": "map of Antioch on the Orontes"
+      }
+    ]
+  },
+  "damascus": {
+    "key": "damascus",
+    "openbible_id": "a69c1d4",
+    "openbible_slug": "damascus",
+    "openbible_url": "https://www.openbible.info/geo/ancient/a69c1d4/damascus",
+    "modern_basis_id": "m878978",
+    "lat": 33.511112,
+    "lng": 36.30639,
+    "elevation_m": null,
+    "confidence_score": 500,
+    "verse_count": 58,
+    "sample_verses": [
+      "Gen 14:15",
+      "Gen 15:2",
+      "2 Sam 8:5",
+      "2 Sam 8:6",
+      "1 Kgs 11:24"
+    ],
+    "photo_url": "https://a.openbible.info/geo/images/512/m878978.ib7e04c.jpg",
+    "photo_credit": "Dosseman",
+    "photo_credit_url": "https://commons.wikimedia.org/wiki/File:Damascus_road_along_northern_Citadel_wall_5588.jpg",
+    "photo_license": "CC-BY-SA-4.0",
+    "photo_caption": "citadel of Damascus",
+    "photos": [
+      {
+        "image_id": "ib7e04c",
+        "thumb_url": "https://a.openbible.info/geo/images/512/m878978.ib7e04c.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/1/13/Damascus_road_along_northern_Citadel_wall_5588.jpg",
+        "credit": "Dosseman",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Damascus_road_along_northern_Citadel_wall_5588.jpg",
+        "license": "CC-BY-SA-4.0",
+        "caption": "citadel of Damascus"
+      },
+      {
+        "image_id": "i2a99d2",
+        "thumb_url": "https://a.openbible.info/geo/images/512/mdc2906.i2a99d2.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/a/a9/Maaloula_%28%D9%85%D8%B9%D9%84%D9%88%D9%84%D8%A7%29%2C_Syria_-_Landscape_-_PHBZ024_2016_0146_-_Dumbarton_Oaks.jpg",
+        "credit": "Frank Kidner",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Maaloula_(%D9%85%D8%B9%D9%84%D9%88%D9%84%D8%A7),_Syria_-_Landscape_-_PHBZ024_2016_0146_-_Dumbarton_Oaks.jpg",
+        "license": "CC-BY-SA-4.0",
+        "caption": "panorama of cliffs in the region between Damascus and Hamath"
+      },
+      {
+        "image_id": "i9cd565",
+        "thumb_url": "https://a.openbible.info/geo/images/512/mf29181.i9cd565.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/5/50/Damascus_Al-Maysat_square_1612.jpg",
+        "credit": "Dosseman",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Damascus_Al-Maysat_square_1612.jpg",
+        "license": "CC-BY-SA-4.0",
+        "caption": "cityscape along the Tora River, which runs underground here"
+      },
+      {
+        "image_id": "if24284",
+        "thumb_url": "https://upload.wikimedia.org/wikipedia/commons/2/21/DamascusRomanArch.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/2/21/DamascusRomanArch.jpg",
+        "credit": "Heretiq",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:DamascusRomanArch.jpg",
+        "license": "CC-BY-SA-2.5",
+        "caption": "arch at Damascus"
+      }
+    ]
+  },
+  "ephesus": {
+    "key": "ephesus",
+    "openbible_id": "a5feb15",
+    "openbible_slug": "ephesus",
+    "openbible_url": "https://www.openbible.info/geo/ancient/a5feb15/ephesus",
+    "modern_basis_id": "m84025e",
+    "lat": 37.939125,
+    "lng": 27.3407,
+    "elevation_m": null,
+    "confidence_score": 500,
+    "verse_count": 20,
+    "sample_verses": [
+      "Acts 18:19",
+      "Acts 18:21",
+      "Acts 18:24",
+      "Acts 18:27",
+      "Acts 19:1"
+    ],
+    "photo_url": "https://a.openbible.info/geo/images/512/m84025e.i71c678.jpg",
+    "photo_credit": "Benh LIEU SONG",
+    "photo_credit_url": "https://commons.wikimedia.org/wiki/File:Ephesus_Celsus_Library_Fa%C3%A7ade.jpg",
+    "photo_license": "CC-BY-SA-3.0",
+    "photo_caption": "Celsus Library at Ephesus",
+    "photos": [
+      {
+        "image_id": "i71c678",
+        "thumb_url": "https://a.openbible.info/geo/images/512/m84025e.i71c678.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/8/84/Ephesus_Celsus_Library_Fa%C3%A7ade.jpg",
+        "credit": "Benh LIEU SONG",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Ephesus_Celsus_Library_Fa%C3%A7ade.jpg",
+        "license": "CC-BY-SA-3.0",
+        "caption": "Celsus Library at Ephesus"
+      },
+      {
+        "image_id": "i4a9c19",
+        "thumb_url": "https://upload.wikimedia.org/wikipedia/commons/f/f2/Partherdenkmal%2C_Ephesos_Museum_Wien_2.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/f/f2/Partherdenkmal%2C_Ephesos_Museum_Wien_2.jpg",
+        "credit": "Manfred Werner",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Partherdenkmal,_Ephesos_Museum_Wien_2.jpg",
+        "license": "GFDL",
+        "caption": "artifact from Ephesus"
+      }
+    ]
+  },
+  "athens": {
+    "key": "athens",
+    "openbible_id": "a1fe6e7",
+    "openbible_slug": "athens",
+    "openbible_url": "https://www.openbible.info/geo/ancient/a1fe6e7/athens",
+    "modern_basis_id": "md70ac9",
+    "lat": 37.971851,
+    "lng": 23.726738,
+    "elevation_m": null,
+    "confidence_score": 500,
+    "verse_count": 6,
+    "sample_verses": [
+      "Acts 17:15",
+      "Acts 17:16",
+      "Acts 17:21",
+      "Acts 17:22",
+      "Acts 18:1"
+    ],
+    "photo_url": "https://a.openbible.info/geo/images/512/md70ac9.i046518.jpg",
+    "photo_credit": "George E. Koronaios",
+    "photo_credit_url": "https://commons.wikimedia.org/wiki/File:The_Acropolis_of_Athens_on_February_5,_2020.jpg",
+    "photo_license": "CC-BY-SA-4.0",
+    "photo_caption": "panorama of the acropolis at Athens",
+    "photos": [
+      {
+        "image_id": "i046518",
+        "thumb_url": "https://a.openbible.info/geo/images/512/md70ac9.i046518.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/a/a0/The_Acropolis_of_Athens_on_February_5%2C_2020.jpg",
+        "credit": "George E. Koronaios",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:The_Acropolis_of_Athens_on_February_5,_2020.jpg",
+        "license": "CC-BY-SA-4.0",
+        "caption": "panorama of the acropolis at Athens"
+      },
+      {
+        "image_id": "ib87176",
+        "thumb_url": "https://upload.wikimedia.org/wikipedia/commons/c/c6/Attica_06-13_Athens_50_View_from_Philopappos_-_Acropolis_Hill.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/c/c6/Attica_06-13_Athens_50_View_from_Philopappos_-_Acropolis_Hill.jpg",
+        "credit": "A.Savin",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Attica_06-13_Athens_50_View_from_Philopappos_-_Acropolis_Hill.jpg",
+        "license": "FAL",
+        "caption": "panorama of the acropolis at Athens"
+      }
+    ]
+  },
+  "corinth": {
+    "key": "corinth",
+    "openbible_id": "a6f437a",
+    "openbible_slug": "corinth",
+    "openbible_url": "https://www.openbible.info/geo/ancient/a6f437a/corinth",
+    "modern_basis_id": "me0518f",
+    "lat": 37.905785,
+    "lng": 22.878741,
+    "elevation_m": null,
+    "confidence_score": 500,
+    "verse_count": 11,
+    "sample_verses": [
+      "Acts 18:1",
+      "Acts 18:8",
+      "Acts 18:11",
+      "Acts 18:12",
+      "Acts 18:18"
+    ],
+    "photo_url": "https://a.openbible.info/geo/images/512/me0518f.ia60e09.jpg",
+    "photo_credit": "Davide Mauro",
+    "photo_credit_url": "https://commons.wikimedia.org/wiki/File:Tempio_di_Apollo_e_Acrocorinto.jpg",
+    "photo_license": "CC-BY-SA-4.0",
+    "photo_caption": "ruins at Corinth",
+    "photos": [
+      {
+        "image_id": "ia60e09",
+        "thumb_url": "https://a.openbible.info/geo/images/512/me0518f.ia60e09.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/3/3c/Tempio_di_Apollo_e_Acrocorinto.jpg",
+        "credit": "Davide Mauro",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Tempio_di_Apollo_e_Acrocorinto.jpg",
+        "license": "CC-BY-SA-4.0",
+        "caption": "ruins at Corinth"
+      }
+    ]
+  },
+  "rome": {
+    "key": "rome",
+    "openbible_id": "afc8e7a",
+    "openbible_slug": "rome",
+    "openbible_url": "https://www.openbible.info/geo/ancient/afc8e7a/rome",
+    "modern_basis_id": "mb083bc",
+    "lat": 41.8922,
+    "lng": 12.4852,
+    "elevation_m": null,
+    "confidence_score": 500,
+    "verse_count": 15,
+    "sample_verses": [
+      "Acts 2:10",
+      "Acts 18:2",
+      "Acts 19:21",
+      "Acts 19:40",
+      "Acts 23:11"
+    ],
+    "photo_url": "https://a.openbible.info/geo/images/512/mb083bc.ic507f6.jpg",
+    "photo_credit": "Chalaph",
+    "photo_credit_url": "https://commons.wikimedia.org/wiki/File:Roman_Forum_from_Palatine_Hill_9-9-16.jpg",
+    "photo_license": "CC-BY-SA-4.0",
+    "photo_caption": "panorama of ruins at Rome",
+    "photos": [
+      {
+        "image_id": "ic507f6",
+        "thumb_url": "https://a.openbible.info/geo/images/512/mb083bc.ic507f6.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/f/f4/Roman_Forum_from_Palatine_Hill_9-9-16.jpg",
+        "credit": "Chalaph",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Roman_Forum_from_Palatine_Hill_9-9-16.jpg",
+        "license": "CC-BY-SA-4.0",
+        "caption": "panorama of ruins at Rome"
+      }
+    ]
+  },
+  "mount sinai": {
+    "key": "mount sinai",
+    "openbible_id": "abfba2a",
+    "openbible_slug": "mount-sinai",
+    "openbible_url": "https://www.openbible.info/geo/ancient/abfba2a/mount-sinai",
+    "modern_basis_id": "mb374b4",
+    "lat": 28.539722,
+    "lng": 33.973333,
+    "elevation_m": null,
+    "confidence_score": 463,
+    "verse_count": 30,
+    "sample_verses": [
+      "Ex 16:1",
+      "Ex 19:2",
+      "Ex 19:11",
+      "Ex 19:18",
+      "Ex 19:20"
+    ],
+    "photo_url": "https://a.openbible.info/geo/images/512/mb374b4.ia1f6fd.jpg",
+    "photo_credit": "Ian Sewell",
+    "photo_credit_url": "https://commons.wikimedia.org/wiki/File:MountSinaiView.jpg",
+    "photo_license": "CC-BY-SA-1.0",
+    "photo_caption": "panorama of Jebel Musa",
+    "photos": [
+      {
+        "image_id": "ia1f6fd",
+        "thumb_url": "https://a.openbible.info/geo/images/512/mb374b4.ia1f6fd.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/5/5e/MountSinaiView.jpg",
+        "credit": "Ian Sewell",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:MountSinaiView.jpg",
+        "license": "CC-BY-SA-1.0",
+        "caption": "panorama of Jebel Musa"
+      },
+      {
+        "image_id": "icdffe7",
+        "thumb_url": null,
+        "full_url": null,
+        "credit": "OpenBible / Wikimedia Commons",
+        "credit_url": "https://www.google.com/maps/@28.5384684,33.9750865,3a,75y,242.08h,60.06t/data=!3m8!1e1!3m6!1sAF1QipPl4HaSyu26vNAlxOz1Hnwu3DTIs0o1UCdaHPys!2e10!3e11!6shttps:%2F%2Flh5.googleusercontent.com%2Fp%2FAF1QipPl4HaSyu26vNAlxOz1Hnwu3DTIs0o1UCdaHPys%3Dw203-h100-k-no-pi-0-ya199.62296-ro0-fo100!7i8704!8i4352?hl=en",
+        "license": "copyright",
+        "caption": "Google Streetview of Jebel Musa"
+      }
+    ]
+  },
+  "mount carmel": {
+    "key": "mount carmel",
+    "openbible_id": "a3e21c6",
+    "openbible_slug": "mount-carmel",
+    "openbible_url": "https://www.openbible.info/geo/ancient/a3e21c6/mount-carmel",
+    "modern_basis_id": "mf9b7d7",
+    "lat": 32.6725,
+    "lng": 35.023333,
+    "elevation_m": null,
+    "confidence_score": 500,
+    "verse_count": 18,
+    "sample_verses": [
+      "Josh 12:22",
+      "Josh 19:26",
+      "1 Kgs 18:19",
+      "1 Kgs 18:20",
+      "1 Kgs 18:42"
+    ],
+    "photo_url": "https://a.openbible.info/geo/images/512/mf9b7d7.i047ce9.jpg",
+    "photo_credit": "Chadner",
+    "photo_credit_url": "https://commons.wikimedia.org/wiki/File:Caiobadner_-_mount_carmel.JPG",
+    "photo_license": "PD",
+    "photo_caption": "panorama of Mount Carmel",
+    "photos": [
+      {
+        "image_id": "i047ce9",
+        "thumb_url": "https://a.openbible.info/geo/images/512/mf9b7d7.i047ce9.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/5/5b/Caiobadner_-_mount_carmel.JPG",
+        "credit": "Chadner",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Caiobadner_-_mount_carmel.JPG",
+        "license": "PD",
+        "caption": "panorama of Mount Carmel"
+      },
+      {
+        "image_id": "i700ef3",
+        "thumb_url": "https://upload.wikimedia.org/wikipedia/commons/9/99/MountCarmel1.JPG",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/9/99/MountCarmel1.JPG",
+        "credit": "netanel_h",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:MountCarmel1.JPG",
+        "license": "GFDL",
+        "caption": "panorama of part of Mount Carmel"
+      }
+    ]
+  },
+  "babylon": {
+    "key": "babylon",
+    "openbible_id": "a217d18",
+    "openbible_slug": "babylon-1",
+    "openbible_url": "https://www.openbible.info/geo/ancient/a217d18/babylon-1",
+    "modern_basis_id": "md561de",
+    "lat": 32.543333,
+    "lng": 44.422222,
+    "elevation_m": null,
+    "confidence_score": 500,
+    "verse_count": 296,
+    "sample_verses": [
+      "2 Kgs 17:24",
+      "2 Kgs 17:30",
+      "2 Kgs 20:12",
+      "2 Kgs 20:14",
+      "2 Kgs 20:17"
+    ],
+    "photo_url": "https://a.openbible.info/geo/images/512/md561de.i10cc45.jpg",
+    "photo_credit": "Radomir Vrbovsky",
+    "photo_credit_url": "https://commons.wikimedia.org/wiki/File:Ishtar_gate_in_Pergamon_museum_in_Berlin..jpg",
+    "photo_license": "CC-BY-SA-4.0",
+    "photo_caption": "Ishtar gate from Babylon",
+    "photos": [
+      {
+        "image_id": "i10cc45",
+        "thumb_url": "https://a.openbible.info/geo/images/512/md561de.i10cc45.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/5/53/Ishtar_gate_in_Pergamon_museum_in_Berlin..jpg",
+        "credit": "Radomir Vrbovsky",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Ishtar_gate_in_Pergamon_museum_in_Berlin..jpg",
+        "license": "CC-BY-SA-4.0",
+        "caption": "Ishtar gate from Babylon"
+      }
+    ]
+  },
+  "ur of the chaldees": {
+    "key": "ur of the chaldees",
+    "openbible_id": "a6cf75c",
+    "openbible_slug": "ur-1",
+    "openbible_url": "https://www.openbible.info/geo/ancient/a6cf75c/ur-1",
+    "modern_basis_id": "m297af3",
+    "lat": 30.962222,
+    "lng": 46.104444,
+    "elevation_m": null,
+    "confidence_score": 673,
+    "verse_count": 4,
+    "sample_verses": [
+      "Gen 11:28",
+      "Gen 11:31",
+      "Gen 15:7",
+      "Neh 9:7"
+    ],
+    "photo_url": "https://a.openbible.info/geo/images/512/m297af3.i7a5876.jpg",
+    "photo_credit": "M.Lubinski from Iraq,USA.",
+    "photo_credit_url": "https://commons.wikimedia.org/wiki/File:Ur-Nassiriyah.jpg",
+    "photo_license": "CC-BY-SA-2.0",
+    "photo_caption": "ruins at Tell el Muqayyar",
+    "photos": [
+      {
+        "image_id": "i7a5876",
+        "thumb_url": "https://a.openbible.info/geo/images/512/m297af3.i7a5876.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/f/f7/Ur-Nassiriyah.jpg",
+        "credit": "M.Lubinski from Iraq,USA.",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Ur-Nassiriyah.jpg",
+        "license": "CC-BY-SA-2.0",
+        "caption": "ruins at Tell el Muqayyar"
+      },
+      {
+        "image_id": "idc04c5",
+        "thumb_url": "https://upload.wikimedia.org/wikipedia/commons/f/f5/Zig_front_right_side.JPG",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/f/f5/Zig_front_right_side.JPG",
+        "credit": "Kaufingdude",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Zig_front_right_side.JPG",
+        "license": "CC-BY-SA-3.0",
+        "caption": "ziggurat at Tell el Muqayyar"
+      }
+    ]
+  },
+  "nineveh": {
+    "key": "nineveh",
+    "openbible_id": "a70fd5d",
+    "openbible_slug": "nineveh",
+    "openbible_url": "https://www.openbible.info/geo/ancient/a70fd5d/nineveh",
+    "modern_basis_id": "m52bd87",
+    "lat": 36.3594,
+    "lng": 43.1528,
+    "elevation_m": null,
+    "confidence_score": 500,
+    "verse_count": 30,
+    "sample_verses": [
+      "Gen 10:11",
+      "Gen 10:12",
+      "2 Kgs 19:36",
+      "Isa 37:37",
+      "Jonah 1:2"
+    ],
+    "photo_url": "https://a.openbible.info/geo/images/512/m52bd87.i028fec.jpg",
+    "photo_credit": "Osama Shukir Muhammed Amin FRCP(Glasg)",
+    "photo_credit_url": "https://commons.wikimedia.org/wiki/File:Ashurbanipal_II_in_a_chariot,_wall_relief,_7th_century_BC,_from_Nineveh,_the_British_Museum.jpg",
+    "photo_license": "CC-BY-SA-4.0",
+    "photo_caption": "artifact from Nineveh",
+    "photos": [
+      {
+        "image_id": "i028fec",
+        "thumb_url": "https://a.openbible.info/geo/images/512/m52bd87.i028fec.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/0/0d/Ashurbanipal_II_in_a_chariot%2C_wall_relief%2C_7th_century_BC%2C_from_Nineveh%2C_the_British_Museum.jpg",
+        "credit": "Osama Shukir Muhammed Amin FRCP(Glasg)",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Ashurbanipal_II_in_a_chariot,_wall_relief,_7th_century_BC,_from_Nineveh,_the_British_Museum.jpg",
+        "license": "CC-BY-SA-4.0",
+        "caption": "artifact from Nineveh"
+      },
+      {
+        "image_id": "i5789c8",
+        "thumb_url": "https://upload.wikimedia.org/wikipedia/commons/8/83/Views_of_the_archaeological_site_of_Nineveh_in_modern-day_Mosul%2C_currently_occupied_by_squatters_06.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/8/83/Views_of_the_archaeological_site_of_Nineveh_in_modern-day_Mosul%2C_currently_occupied_by_squatters_06.jpg",
+        "credit": "Levi Clancy",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Views_of_the_archaeological_site_of_Nineveh_in_modern-day_Mosul,_currently_occupied_by_squatters_06.jpg",
+        "license": "CC-Zero",
+        "caption": "panorama of Nineveh"
+      }
+    ]
+  },
+  "joppa": {
+    "key": "joppa",
+    "openbible_id": "ae023a9",
+    "openbible_slug": "joppa",
+    "openbible_url": "https://www.openbible.info/geo/ancient/ae023a9/joppa",
+    "modern_basis_id": "mcb49f3",
+    "lat": 32.054481,
+    "lng": 34.753039,
+    "elevation_m": null,
+    "confidence_score": 500,
+    "verse_count": 14,
+    "sample_verses": [
+      "Josh 19:46",
+      "2 Chr 2:16",
+      "Ezra 3:7",
+      "Jonah 1:3",
+      "Acts 9:36"
+    ],
+    "photo_url": "https://a.openbible.info/geo/images/512/mcb49f3.ibf00bb.jpg",
+    "photo_credit": "Godot13",
+    "photo_credit_url": "https://commons.wikimedia.org/wiki/File:ISR-2013-Aerial-Jaffa-Port_of_Jaffa.jpg",
+    "photo_license": "CC-BY-SA-4.0",
+    "photo_caption": "aerial cityscape of Jaffa",
+    "photos": [
+      {
+        "image_id": "ibf00bb",
+        "thumb_url": "https://a.openbible.info/geo/images/512/mcb49f3.ibf00bb.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/a/a3/ISR-2013-Aerial-Jaffa-Port_of_Jaffa.jpg",
+        "credit": "Godot13",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:ISR-2013-Aerial-Jaffa-Port_of_Jaffa.jpg",
+        "license": "CC-BY-SA-4.0",
+        "caption": "aerial cityscape of Jaffa"
+      },
+      {
+        "image_id": "i1dc5fa",
+        "thumb_url": "https://upload.wikimedia.org/wikipedia/commons/a/a4/Old_Jaffa_2017.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/a/a4/Old_Jaffa_2017.jpg",
+        "credit": "\u05d3\u05d5\u05d3 \u05e9\u05d9",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Old_Jaffa_2017.jpg",
+        "license": "CC-BY-SA-4.0",
+        "caption": "cityscape of Jaffa"
+      }
+    ]
+  },
+  "emmaus": {
+    "key": "emmaus",
+    "openbible_id": "ae7274b",
+    "openbible_slug": "emmaus",
+    "openbible_url": "https://www.openbible.info/geo/ancient/ae7274b/emmaus",
+    "modern_basis_id": "m639fec",
+    "lat": 31.79289,
+    "lng": 35.16419,
+    "elevation_m": null,
+    "confidence_score": 204,
+    "verse_count": 3,
+    "sample_verses": [
+      "Luke 24:13",
+      "Luke 24:28",
+      "Luke 24:35"
+    ],
+    "photo_url": "https://a.openbible.info/geo/images/512/m639fec.ib67872.jpg",
+    "photo_credit": "\u05d0\u05d1\u05d9\u05e9\u05d9 \u05d8\u05d9\u05d9\u05db\u05e8",
+    "photo_credit_url": "https://commons.wikimedia.org/wiki/File:PikiWiki_Israel_7415_old_citadel_in_motza.jpg",
+    "photo_license": "CC-BY-2.5",
+    "photo_caption": "ruins at Qalunya",
+    "photos": [
+      {
+        "image_id": "ib67872",
+        "thumb_url": "https://a.openbible.info/geo/images/512/m639fec.ib67872.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/0/07/PikiWiki_Israel_7415_old_citadel_in_motza.jpg",
+        "credit": "\u05d0\u05d1\u05d9\u05e9\u05d9 \u05d8\u05d9\u05d9\u05db\u05e8",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:PikiWiki_Israel_7415_old_citadel_in_motza.jpg",
+        "license": "CC-BY-2.5",
+        "caption": "ruins at Qalunya"
+      },
+      {
+        "image_id": "i1af5ba",
+        "thumb_url": "https://a.openbible.info/geo/images/512/m77574e.i1af5ba.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/d/d7/Emmaus_Nicopolis_basilica.JPG",
+        "credit": "Emmaus",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Emmaus_Nicopolis_basilica.JPG",
+        "license": "CC-BY-SA-3.0",
+        "caption": "ruins at Emmaus Nicopolis"
+      },
+      {
+        "image_id": "if02659",
+        "thumb_url": "https://upload.wikimedia.org/wikipedia/commons/2/27/Qalunya.jpg",
+        "full_url": "https://upload.wikimedia.org/wikipedia/commons/2/27/Qalunya.jpg",
+        "credit": "Kippi70",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Qalunya.jpg",
+        "license": "PD",
+        "caption": "historical cityscape of Qalunya"
+      }
+    ]
+  }
+}

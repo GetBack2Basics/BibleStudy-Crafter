@@ -40,6 +40,13 @@ $LocalDir = $PSScriptRoot
 Write-Host "[INFO] Uploading static assets from $LocalDir..." -ForegroundColor Yellow
 & gcloud storage rsync "$LocalDir" "gs://$BucketName" --recursive --exclude="\.git.*|.*\.ps1|.*\.sh"
 
+# 5. Set Cache-Control on index.html, app.js, and style.css so browsers immediately fetch updates
+Write-Host "[INFO] Setting Cache-Control: no-cache on key web assets..." -ForegroundColor Yellow
+& gcloud storage objects update "gs://$BucketName/index.html" --cache-control="no-cache, no-store, must-revalidate"
+& gcloud storage objects update "gs://$BucketName/app.js" --cache-control="no-cache, no-store, must-revalidate"
+& gcloud storage objects update "gs://$BucketName/style.css" --cache-control="no-cache, no-store, must-revalidate"
+
+
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host " Deployment Complete!" -ForegroundColor Green
 Write-Host " Public URL: https://storage.googleapis.com/$BucketName/index.html" -ForegroundColor Green

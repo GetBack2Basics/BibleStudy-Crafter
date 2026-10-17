@@ -1,0 +1,517 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+<name>All Bible Places in Gal</name>
+<description>From OpenBible.info; some data © OpenStreetMap contributors</description>
+<Style id="landpoint">
+	<IconStyle>
+		<scale>0.75</scale>
+		<Icon><href>https://maps.google.com/mapfiles/kml/paddle/red-circle.png</href></Icon>
+	</IconStyle>
+</Style>
+<Style id="waterpoint">
+	<IconStyle>
+		<scale>0.75</scale>
+		<Icon><href>https://maps.google.com/mapfiles/kml/paddle/blu-circle.png</href></Icon>
+	</IconStyle>
+</Style>
+<Style id="landrepresentativepoint">
+	<IconStyle>
+		<scale>0.75</scale>
+		<Icon><href>https://maps.google.com/mapfiles/kml/paddle/wht-circle.png</href></Icon>
+	</IconStyle>
+</Style>
+<Style id="waterrepresentativepoint">
+	<IconStyle>
+		<scale>0.75</scale>
+		<Icon><href>https://maps.google.com/mapfiles/kml/paddle/blu-circle.png</href></Icon>
+	</IconStyle>
+</Style>
+<Style id="landisobands">
+	<LineStyle>
+		<color>80333333</color>
+		<width>1</width>
+	</LineStyle>
+	<PolyStyle>
+		<color>80ffffff</color>
+		<fill>1</fill>
+		<outline>0</outline>
+	</PolyStyle>
+</Style>
+<Style id="waterisobands">
+	<LineStyle>
+		<color>cccc0000</color>
+		<width>1</width>
+	</LineStyle>
+	<PolyStyle>
+		<color>50cc0000</color>
+		<fill>1</fill>
+		<outline>1</outline>
+	</PolyStyle>
+</Style>
+<Style id="region">
+	<LineStyle>
+		<color>80333333</color>
+		<width>1</width>
+	</LineStyle>
+	<PolyStyle>
+		<color>33333333</color>
+		<fill>1</fill>
+		<outline>1</outline>
+	</PolyStyle>
+</Style>
+<Style id="water">
+	<LineStyle>
+		<color>cccc0000</color>
+		<width>2</width>
+	</LineStyle>
+	<PolyStyle>
+		<color>80cc0000</color>
+		<fill>1</fill>
+		<outline>1</outline>
+	</PolyStyle>
+</Style>
+<Style id="path">
+	<LineStyle>
+		<color>ff333333</color>
+		<width>1</width>
+	</LineStyle>
+</Style>
+<Folder>
+	<name>Antioch 1</name>
+	<description><![CDATA[Gal <a href="https://www.biblegateway.com/passage/?search=Gal.2.11&amp;version=ESV">2:11</a>]]></description>
+	<Placemark>
+		<name>Antioch 1 / Antioch on the Orontes</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>36.171743,36.226691</coordinates>
+		</Point>
+	</Placemark>
+</Folder>
+<Folder>
+	<name>Arabia 2</name>
+	<description><![CDATA[Gal <a href="https://www.biblegateway.com/passage/?search=Gal.1.17&amp;version=ESV">1:17</a>, <a href="https://www.biblegateway.com/passage/?search=Gal.4.25&amp;version=ESV">4:25</a>]]></description>
+	<Placemark>
+		<name>Arabia 2 / Arabia Petraea</name>
+		<styleUrl>#region</styleUrl>
+		<Polygon>
+			<tesselate>1</tesselate>
+			<outerBoundaryIs>
+				<LinearRing>
+					<coordinates>35.67869,32.886973 35.606632,32.710745 35.714246,31.662156 35.417346,31.106949 34.145823,31.304886 33.963807,31.190793 32.603248,29.792763 32.627683,29.577478 33.162394,28.601735 33.718229,27.994237 34.208343,27.691752 36.287499,27.764813 35.801033,29.498242 35.992932,31.359044 36.626683,32.674062 36.593026,32.894556 36.192331,33.005057 35.980068,32.908603 35.67869,32.886973</coordinates>
+				</LinearRing>
+			</outerBoundaryIs>
+		</Polygon>
+	</Placemark>
+	<Placemark>
+		<name>Arabia 2 / Arabia Petraea</name>
+		<styleUrl>#landrepresentativepoint</styleUrl>
+		<Point>
+			<coordinates>35.35,30.07</coordinates>
+		</Point>
+	</Placemark>
+</Folder>
+<Folder>
+	<name>Cilicia</name>
+	<description><![CDATA[Gal <a href="https://www.biblegateway.com/passage/?search=Gal.1.21&amp;version=ESV">1:21</a>]]></description>
+	<Folder>
+		<name>Cilicia</name>
+		<Placemark>
+			<name>Cilicia (90% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>32.50374,36.14154 32.62255,36.04532 32.74136,36.04532 32.86017,36.04532 32.97899,36.04532 33.0978,36.04532 33.21661,36.04532 33.81067,36.14154 35.47403,36.52642 36.42452,37.00751 36.54333,37.10373 36.42452,37.19995 36.30571,37.29617 36.06808,37.39238 35.2364,37.4886 35.11759,37.4886 34.52353,37.39238 32.50374,36.71885 32.38493,36.62263 32.26612,36.33398 32.38493,36.23776 32.50374,36.14154</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Cilicia (80% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>32.1473,36.62263 32.1473,36.52642 32.1473,36.4302 32.26612,36.23776 32.38493,36.14154 32.50374,36.04532 32.62255,36.04532 32.74136,36.04532 32.86017,36.04532 32.97899,36.04532 33.0978,36.04532 33.21661,36.04532 33.33542,36.04532 33.45423,36.04532 33.57304,36.04532 34.04829,36.14154 35.59284,36.52642 35.83046,36.62263 36.54333,37.00751 36.54333,37.10373 36.54333,37.19995 36.54333,37.39238 36.06808,37.68104 34.99878,37.4886 34.52353,37.39238 32.50374,36.81507 32.26612,36.71885 32.1473,36.62263</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Cilicia (70% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>32.1473,36.62263 32.1473,36.52642 32.1473,36.4302 32.1473,36.33398 32.50374,35.9491 33.69185,36.04532 35.59284,36.52642 35.83046,36.62263 36.30571,36.81507 36.78095,37.00751 36.66214,37.39238 36.30571,37.68104 36.1869,37.68104 36.06808,37.68104 35.47403,37.58482 34.87997,37.4886 32.62255,37.00751 32.26612,36.81507 32.1473,36.62263</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Cilicia (60% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>32.1473,36.71885 32.1473,36.62263 32.1473,36.52642 32.1473,36.4302 32.1473,36.33398 32.38493,36.04532 32.50374,35.9491 33.69185,36.04532 35.59284,36.52642 36.66214,36.91129 36.78095,37.00751 36.78095,37.10373 36.66214,37.58482 36.30571,37.68104 36.1869,37.68104 36.06808,37.68104 35.94927,37.68104 35.47403,37.68104 35.35522,37.68104 32.50374,37.00751 32.38493,36.91129 32.26612,36.81507 32.1473,36.71885</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Cilicia (50% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>32.02849,36.4302 32.38493,36.04532 32.50374,35.9491 32.62255,35.9491 33.69185,36.04532 35.59284,36.52642 36.78095,36.91129 36.89976,37.00751 36.89976,37.10373 36.78095,37.4886 36.66214,37.58482 36.54333,37.68104 35.83046,37.77726 35.71165,37.77726 35.59284,37.77726 32.74136,37.10373 32.38493,37.00751 32.26612,36.91129 32.1473,36.71885 32.02849,36.52642 32.02849,36.4302</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Cilicia (40% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>32.02849,36.4302 32.38493,36.04532 32.50374,35.9491 32.62255,35.9491 32.74136,35.9491 33.69185,36.04532 34.1671,36.14154 35.71165,36.52642 36.78095,36.91129 36.89976,37.00751 36.89976,37.10373 36.89976,37.19995 36.89976,37.39238 36.89976,37.4886 36.78095,37.68104 36.1869,37.87348 35.47403,37.77726 32.26612,37.10373 32.1473,36.81507 32.02849,36.52642 32.02849,36.4302</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Cilicia (30% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>32.02849,36.52642 32.02849,36.4302 32.26612,36.14154 32.38493,36.04532 32.50374,35.9491 32.62255,35.9491 32.74136,35.9491 33.69185,36.04532 34.1671,36.14154 35.71165,36.52642 36.66214,36.81507 36.89976,36.91129 36.89976,37.00751 36.89976,37.10373 36.89976,37.19995 36.89976,37.29617 36.89976,37.39238 36.89976,37.4886 36.78095,37.68104 36.30571,37.87348 36.1869,37.87348 36.06808,37.87348 35.94927,37.87348 35.83046,37.87348 35.35522,37.77726 32.1473,37.10373 32.02849,36.81507 32.02849,36.71885 32.02849,36.62263 32.02849,36.52642</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Cilicia (20% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>32.02849,37.00751 32.02849,36.91129 32.02849,36.81507 32.02849,36.71885 32.02849,36.62263 32.02849,36.52642 32.02849,36.4302 32.26612,36.14154 32.38493,36.04532 32.50374,35.9491 32.62255,35.9491 32.74136,35.9491 33.69185,36.04532 34.1671,36.14154 36.1869,36.62263 36.78095,36.81507 36.89976,36.91129 37.01858,37.00751 37.01858,37.39238 36.89976,37.58482 36.78095,37.68104 36.42452,37.87348 36.06808,37.9697 34.76116,37.77726 32.50374,37.19995 32.1473,37.10373 32.02849,37.00751</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Cilicia (10% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>32.02849,37.00751 32.02849,36.91129 32.02849,36.81507 32.02849,36.71885 32.02849,36.62263 32.02849,36.52642 32.02849,36.4302 32.26612,36.14154 32.38493,36.04532 32.50374,35.9491 32.62255,35.9491 32.74136,35.9491 33.81067,36.04532 35.83046,36.33398 36.89976,36.81507 37.13739,37.00751 37.13739,37.10373 37.13739,37.9697 37.01858,37.9697 36.89976,37.9697 36.78095,37.9697 36.66214,37.9697 36.30571,37.9697 36.06808,37.9697 35.94927,37.9697 35.83046,37.9697 35.71165,37.9697 35.47403,37.9697 35.35522,37.9697 35.2364,37.9697 35.11759,37.9697 34.99878,37.9697 32.38493,37.29617 32.26612,37.19995 32.1473,37.10373 32.02849,37.00751</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Cilicia</name>
+			<styleUrl>#landrepresentativepoint</styleUrl>
+			<Point>
+				<coordinates>34.892056,36.913028</coordinates>
+			</Point>
+		</Placemark>
+	</Folder>
+</Folder>
+<Folder>
+	<name>Damascus</name>
+	<description><![CDATA[Gal <a href="https://www.biblegateway.com/passage/?search=Gal.1.17&amp;version=ESV">1:17</a>]]></description>
+	<Placemark>
+		<name>Damascus</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>36.30639,33.511112</coordinates>
+		</Point>
+	</Placemark>
+</Folder>
+<Folder>
+	<name>Galatia</name>
+	<description><![CDATA[Gal <a href="https://www.biblegateway.com/passage/?search=Gal.1.2&amp;version=ESV">1:2</a>]]></description>
+	<Folder>
+		<name>Galatia</name>
+		<Placemark>
+			<name>Galatia (80% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>31.50194,37.66055 31.70788,37.49538 31.91382,37.33022 32.11976,37.16505 33.3554,37.33022 33.56134,37.49538 35.20886,39.8077 35.00292,40.96386 34.79698,41.12903 34.17916,40.96386 33.56134,40.7987 33.14946,40.63353 32.73758,40.46836 32.53164,40.3032 31.70788,39.47737 30.88412,38.32121 30.88412,38.15605 31.50194,37.66055</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Galatia (70% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>31.50194,39.47737 30.67818,38.15605 30.88412,37.99088 31.70788,37.33022 31.91382,37.16505 32.11976,37.16505 32.3257,37.16505 33.76728,37.33022 35.20886,39.8077 35.20886,40.96386 35.20886,41.12903 35.00292,41.12903 34.79698,41.12903 34.59104,41.12903 34.3851,41.12903 34.17916,41.12903 33.14946,40.96386 32.3257,40.3032 31.50194,39.47737</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Galatia (60% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>30.67818,38.15605 30.67818,37.99088 31.91382,37.16505 32.11976,37.16505 32.3257,37.16505 33.56134,37.16505 33.76728,37.16505 35.4148,39.8077 35.4148,39.97287 35.4148,41.12903 35.20886,41.29419 35.00292,41.29419 34.79698,41.29419 32.53164,41.12903 31.296,39.47737 30.67818,38.15605</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Galatia (50% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>30.67818,38.32121 30.67818,38.15605 30.67818,37.99088 31.91382,37.16505 32.11976,37.16505 32.3257,37.16505 33.56134,37.16505 33.76728,37.16505 35.62074,39.8077 35.62074,39.97287 35.62074,40.7987 35.62074,40.96386 35.4148,41.12903 35.20886,41.29419 34.17916,41.45936 33.97322,41.45936 33.76728,41.45936 33.56134,41.45936 33.3554,41.45936 33.14946,41.45936 32.53164,41.12903 31.09006,39.47737 30.67818,38.32121</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Galatia (40% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>35.62074,41.12903 35.20886,41.29419 34.59104,41.45936 34.3851,41.45936 34.17916,41.45936 33.97322,41.45936 33.76728,41.45936 33.56134,41.45936 33.3554,41.45936 33.14946,41.45936 32.53164,41.12903 31.09006,39.47737 30.47224,37.99088 31.91382,37.16505 32.11976,37.16505 32.3257,37.16505 32.53164,37.16505 32.73758,37.16505 32.94352,37.16505 33.56134,37.16505 33.76728,37.16505 35.62074,39.8077 35.82668,40.7987 35.82668,40.96386 35.62074,41.12903</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Galatia (30% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>31.09006,39.64254 30.2663,37.99088 31.91382,37.16505 32.3257,36.99989 33.76728,37.16505 35.62074,39.8077 36.03262,40.7987 35.82668,41.12903 35.4148,41.29419 34.59104,41.45936 34.3851,41.45936 34.17916,41.45936 33.97322,41.45936 33.76728,41.45936 33.56134,41.45936 33.3554,41.45936 33.14946,41.45936 32.53164,41.12903 31.09006,39.64254</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Galatia (20% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>30.2663,37.99088 30.2663,37.82572 30.2663,37.66055 30.2663,37.49538 30.2663,37.33022 30.2663,37.16505 32.3257,36.99989 33.76728,37.16505 36.4445,40.46836 36.4445,40.63353 36.4445,40.7987 36.23856,40.96386 35.82668,41.12903 35.4148,41.29419 35.00292,41.45936 34.17916,41.62452 33.14946,41.45936 32.73758,41.29419 32.53164,41.12903 31.09006,39.64254 30.2663,37.99088</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Galatia (10% confidence)</name>
+			<styleUrl>#landisobands</styleUrl>
+			<Polygon>
+				<tesselate>1</tesselate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>32.53164,41.12903 31.296,39.97287 31.09006,39.64254 30.2663,37.99088 30.06036,37.49538 30.2663,36.99989 32.11976,36.99989 32.3257,36.99989 32.53164,36.99989 32.73758,36.99989 32.94352,36.99989 33.14946,36.99989 33.3554,36.99989 33.56134,36.99989 39.5336,40.63353 39.5336,40.7987 39.5336,40.96386 34.17916,41.62452 33.97322,41.62452 33.76728,41.62452 33.14946,41.45936 32.73758,41.29419 32.53164,41.12903</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Galatia</name>
+			<styleUrl>#landrepresentativepoint</styleUrl>
+			<Point>
+				<coordinates>32.983333,39.266667</coordinates>
+			</Point>
+		</Placemark>
+	</Folder>
+</Folder>
+<Folder>
+	<name>Jerusalem</name>
+	<description><![CDATA[Gal <a href="https://www.biblegateway.com/passage/?search=Gal.1.17&amp;version=ESV">1:17</a>, <a href="https://www.biblegateway.com/passage/?search=Gal.1.18&amp;version=ESV">1:18</a>, <a href="https://www.biblegateway.com/passage/?search=Gal.2.1&amp;version=ESV">2:1</a>, <a href="https://www.biblegateway.com/passage/?search=Gal.4.25&amp;version=ESV">4:25</a>, <a href="https://www.biblegateway.com/passage/?search=Gal.4.26&amp;version=ESV">4:26</a>]]></description>
+	<Placemark>
+		<name>Jerusalem</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>35.234167,31.776667</coordinates>
+		</Point>
+	</Placemark>
+</Folder>
+<Folder>
+	<name>Judea 1 (Judaea)</name>
+	<description><![CDATA[Gal <a href="https://www.biblegateway.com/passage/?search=Gal.1.22&amp;version=ESV">1:22</a>]]></description>
+	<Placemark>
+		<name>Judea 1 / Judea 1</name>
+		<styleUrl>#region</styleUrl>
+		<Polygon>
+			<tesselate>1</tesselate>
+			<outerBoundaryIs>
+				<LinearRing>
+					<coordinates>34.883215,32.562013 34.855042,32.412566 34.741444,32.044753 34.59465,31.777872 34.484398,31.617956 34.539955,31.211483 35.450015,31.243866 35.55086,31.531459 35.647488,31.595129 35.596268,32.711386 35.645996,32.866567 35.628623,33.104068 34.883215,32.562013</coordinates>
+				</LinearRing>
+			</outerBoundaryIs>
+		</Polygon>
+	</Placemark>
+	<Placemark>
+		<name>Judea 1 / Judea 1</name>
+		<styleUrl>#landrepresentativepoint</styleUrl>
+		<Point>
+			<coordinates>35.234167,31.776667</coordinates>
+		</Point>
+	</Placemark>
+</Folder>
+<Folder>
+	<name>Mount Sinai (Sinai)</name>
+	<description><![CDATA[Gal <a href="https://www.biblegateway.com/passage/?search=Gal.4.24&amp;version=ESV">4:24</a>, <a href="https://www.biblegateway.com/passage/?search=Gal.4.25&amp;version=ESV">4:25</a>]]></description>
+	<Placemark>
+		<name>Mount Sinai / Jebel Musa</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>33.973333,28.539722</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Mount Sinai / Ras es Safsafeh</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>33.967222,28.555556</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Mount Sinai / Jebel Sin Bishar</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>32.961,29.671</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Mount Sinai / Har Karkom</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>34.75,30.283333</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Mount Sinai / Jebel Katherina</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>33.955278,28.510833</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Mount Sinai / Jebel Serbal</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>33.651667,28.646389</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Mount Sinai / Jebel Halal</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>34.028889,30.653056</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Mount Sinai / Jebel Hashem el Tarif</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>34.633411,29.669217</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Mount Sinai / Har ‘Arif</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>34.7334,30.4265</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Mount Sinai / Jabal al Lawz</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>35.305833,28.654167</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Mount Sinai / Jabal al Magharah</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>33.376667,30.702222</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Mount Sinai / Jebel Yeleq</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>33.523056,30.351111</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Mount Sinai / Al Manifa</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>35.2925,28.3405</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>Mount Sinai / Jabal Harb</name>
+		<styleUrl>#landpoint</styleUrl>
+		<Point>
+			<coordinates>35.6572,27.9607</coordinates>
+		</Point>
+	</Placemark>
+</Folder>
+<Folder>
+	<name>Syria 2</name>
+	<description><![CDATA[Gal <a href="https://www.biblegateway.com/passage/?search=Gal.1.21&amp;version=ESV">1:21</a>]]></description>
+	<Placemark>
+		<name>Syria 2 / Syria 2</name>
+		<styleUrl>#region</styleUrl>
+		<Polygon>
+			<tesselate>1</tesselate>
+			<outerBoundaryIs>
+				<LinearRing>
+					<coordinates>34.907114,32.609146 35.106525,32.738525 35.348802,33.058042 35.628878,33.090721 35.661506,32.867721 36.014507,32.977926 36.768294,32.796867 39.200086,35.861585 38.838291,35.932055 38.732104,35.872179 38.671227,35.858262 38.149296,36.02877 38.049572,36.150511 38.177048,36.272499 38.27423,36.584494 37.878477,37.159914 38.628958,37.593916 39.063691,37.995499 38.288066,37.93924 37.134934,37.533575 36.692493,37.306031 36.18674,36.652618 35.73656,36.331767 35.960803,36.013739 35.850667,35.887153 35.779594,35.862728 35.820202,35.745349 35.698373,35.573047 35.764835,35.486593 35.899028,35.416249 35.910862,35.205749 35.843789,34.885555 35.970253,34.54345 35.796768,34.468722 35.794593,34.414795 35.71984,34.393728 35.705333,34.329759 35.644487,34.329961 35.60704,34.148045 35.629133,34.091962 35.553099,33.917605 35.432605,33.910744 35.461497,33.843556 35.413938,33.706788 35.2644,33.467296 35.17255,33.197354 35.075434,33.098082 35.038225,32.93385 35.028692,32.827364 34.999149,32.85699 34.932078,32.839611 34.907114,32.609146</coordinates>
+				</LinearRing>
+			</outerBoundaryIs>
+		</Polygon>
+	</Placemark>
+	<Placemark>
+		<name>Syria 2 / Syria 2</name>
+		<styleUrl>#landrepresentativepoint</styleUrl>
+		<Point>
+			<coordinates>36.30639,33.511112</coordinates>
+		</Point>
+	</Placemark>
+</Folder>
+</Document>
+</kml>
