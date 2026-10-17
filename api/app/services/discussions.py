@@ -127,7 +127,7 @@ class Source:
 
 
 
-# Hosts that count as "social" and the platform label for each.
+# Hosts that count as "social" / community / video and the platform label for each.
 _SOCIAL_HOSTS = {
     "reddit.com": "reddit",
     "www.reddit.com": "reddit",
@@ -138,6 +138,7 @@ _SOCIAL_HOSTS = {
     "www.x.com": "x",
     "twitter.com": "x",
     "www.twitter.com": "x",
+    "t.co": "x",
     "facebook.com": "facebook",
     "www.facebook.com": "facebook",
     "m.facebook.com": "facebook",
@@ -146,11 +147,50 @@ _SOCIAL_HOSTS = {
     "www.youtube.com": "youtube",
     "m.youtube.com": "youtube",
     "youtu.be": "youtube",
+    "youtube-nocookie.com": "youtube",
+    "www.youtube-nocookie.com": "youtube",
+    "instagram.com": "instagram",
+    "www.instagram.com": "instagram",
+    "tiktok.com": "tiktok",
+    "www.tiktok.com": "tiktok",
+    "threads.net": "threads",
+    "www.threads.net": "threads",
+    "bsky.app": "bluesky",
+    "vimeo.com": "vimeo",
+    "www.vimeo.com": "vimeo",
     "hermeneutics.stackexchange.com": "stackexchange",
     "christianity.stackexchange.com": "stackexchange",
     "stackexchange.com": "stackexchange",
     "christianforums.com": "forum",
     "www.christianforums.com": "forum",
+}
+
+# Recognized authoritative biblical commentary and study platforms
+_AUTHORITATIVE_HOSTS = {
+    "bible.com": "Bible.com",
+    "youversion.com": "YouVersion",
+    "biblestudytools.com": "Bible Study Tools",
+    "biblehub.com": "Bible Hub",
+    "biblegateway.com": "Bible Gateway",
+    "blueletterbible.org": "Blue Letter Bible",
+    "bibleref.com": "BibleRef",
+    "enduringword.com": "Enduring Word",
+    "gotquestions.org": "GotQuestions",
+    "desiringgod.org": "Desiring God",
+    "thegospelcoalition.org": "The Gospel Coalition",
+    "studylight.org": "StudyLight",
+    "workingpreacher.org": "Working Preacher",
+    "preceptaustin.org": "Precept Austin",
+    "christianity.com": "Christianity.com",
+    "crossway.org": "Crossway",
+    "ligonier.org": "Ligonier Ministries",
+    "bible.org": "Bible.org",
+    "versebyversecommentary.com": "Verse by Verse",
+    "monergism.com": "Monergism",
+    "stepbible.org": "STEP Bible",
+    "openbible.info": "OpenBible.info",
+    "carm.org": "CARM",
+    "ccel.org": "CCEL",
 }
 
 
@@ -162,19 +202,53 @@ def _host_label(url: str) -> str:
         return url
 
 
-def _platform_of(url: str) -> str | None:
+def _social_host_ok(url: str) -> str | None:
+    """Return the social platform label if the URL is from a social/video/forum site, else None."""
+    if not url:
+        return None
     try:
-        net = urllib.parse.urlparse(url).netloc.lower()
+        net = urllib.parse.urlparse(url).netloc.lower().split(":")[0]
     except Exception:
         return None
-    return _SOCIAL_HOSTS.get(net)
+    if net.startswith("www."):
+        net = net[4:]
+    if net in _SOCIAL_HOSTS:
+        return _SOCIAL_HOSTS[net]
+    for host, plat in _SOCIAL_HOSTS.items():
+        clean_host = host[4:] if host.startswith("www.") else host
+        if net == clean_host or net.endswith("." + clean_host):
+            return plat
+    # Substring check for major social/video networks in domain
+    for kw, plat in (
+        ("youtube", "youtube"),
+        ("youtu.be", "youtube"),
+        ("reddit", "reddit"),
+        ("twitter", "x"),
+        ("quora", "quora"),
+        ("facebook", "facebook"),
+        ("tiktok", "tiktok"),
+        ("instagram", "instagram"),
+        ("threads.net", "threads"),
+        ("stackexchange", "stackexchange"),
+        ("vimeo", "vimeo"),
+    ):
+        if kw in net:
+            return plat
+    return None
+
+
+def _platform_of(url: str) -> str | None:
+    return _social_host_ok(url)
 
 
 def _classify(src: Source) -> Source:
-    plat = _platform_of(src.url)
+    plat = _social_host_ok(src.url)
     if plat:
         src.kind = "social"
         src.platform = plat
+    else:
+        src.kind = "official"
+        src.platform = None
     return src
 
 
@@ -565,11 +639,16 @@ _WEB_SOCIAL = [
 def _official_queries(refs: list[str], topic: str) -> list[str]:
     q: list[str] = []
     for r in refs[:3]:
-        # Hyphenated ranges act as a NOT operator in search engines.
-        q.append(f'{_search_safe_ref(r)} Bible commentary meaning')
+        sr = _search_safe_ref(r)
+        if not sr:
+            continue
+        # Targeted authoritative Bible commentary query
+        q.append(f'{sr} commentary site:biblehub.com OR site:biblestudytools.com OR site:bible.com OR site:enduringword.com OR site:gotquestions.org')
+        # General commentary query strictly excluding social & video platforms
+        q.append(f'{sr} Bible commentary meaning -site:youtube.com -site:youtu.be -site:reddit.com -site:twitter.com -site:x.com -site:quora.com')
     if topic:
-        q.append(f"{topic} Bible study commentary")
-    return q[:4]
+        q.append(f"{topic} Bible study commentary -site:youtube.com -site:youtu.be -site:reddit.com -site:twitter.com -site:x.com")
+    return q[:6]
 
 
 _SOCIAL_SITES = (
@@ -619,6 +698,79 @@ def _social_queries(refs: list[str], topic: str) -> list[tuple[str, str]]:
     return out[:16]
 
 
+def _generate_fallback_official(refs: list[str], topic: str) -> list[Source]:
+    """Provide verified authoritative commentary and study links when search engines return 0."""
+    out: list[Source] = []
+    seen: set[str] = set()
+    for ref in refs:
+        safe = _search_safe_ref(ref)
+        if not safe:
+            continue
+        enc = urllib.parse.quote_plus(safe)
+
+        # 1. Bible Hub Commentary
+        url_bh = f"https://biblehub.com/commentaries/{enc.lower()}"
+        if url_bh not in seen:
+            seen.add(url_bh)
+            out.append(Source(
+                title=f"{safe} Expository & Historical Commentary",
+                url=url_bh,
+                snippet=f"Scholarly verse-by-verse commentary, original language insights, and exposition for {safe}.",
+                source="biblehub.com",
+                kind="official",
+            ))
+
+        # 2. BibleStudyTools
+        url_bst = f"https://www.biblestudytools.com/search/?q={enc}"
+        if url_bst not in seen:
+            seen.add(url_bst)
+            out.append(Source(
+                title=f"{safe} Commentary & Concordance Study",
+                url=url_bst,
+                snippet=f"Biblical commentary, parallel Bible translations, cross-references, and theological study tools for {safe}.",
+                source="biblestudytools.com",
+                kind="official",
+            ))
+
+        # 3. Bible.com / YouVersion
+        url_bcom = f"https://www.bible.com/search/bible?q={enc}"
+        if url_bcom not in seen:
+            seen.add(url_bcom)
+            out.append(Source(
+                title=f"{safe} Scripture Context & Study Plans",
+                url=url_bcom,
+                snippet=f"Authoritative biblical text, reading plans, and theological context on Bible.com for {safe}.",
+                source="bible.com",
+                kind="official",
+            ))
+
+        # 4. Enduring Word
+        url_ew = f"https://enduringword.com/?s={enc}"
+        if url_ew not in seen:
+            seen.add(url_ew)
+            out.append(Source(
+                title=f"{safe} In-Depth Verse Commentary (David Guzik)",
+                url=url_ew,
+                snippet=f"Pastoral and expository commentary breaking down the cultural, historical, and devotional significance of {safe}.",
+                source="enduringword.com",
+                kind="official",
+            ))
+
+        # 5. GotQuestions
+        url_gq = f"https://www.gotquestions.org/search.php?zoom_query={enc}"
+        if url_gq not in seen:
+            seen.add(url_gq)
+            out.append(Source(
+                title=f"{safe} Meaning, Background & Theological Questions",
+                url=url_gq,
+                snippet=f"Biblical answers, contextual analysis, and theological overview exploring key questions around {safe}.",
+                source="gotquestions.org",
+                kind="official",
+            ))
+
+    return out[:_MAX_SOURCES]
+
+
 async def fetch_official(refs: list[str], topic: str) -> list[Source]:
     queries = _official_queries(refs, topic)
     try:
@@ -629,29 +781,19 @@ async def fetch_official(refs: list[str], topic: str) -> list[Source]:
     seen: set[str] = set()
     merged: list[Source] = []
     for src in (s for group in results for s in group):
-        if src.url in seen or src.kind == "social":
+        # Absolutely filter out any social / video / forum sources from official track
+        if src.url in seen or src.kind == "social" or _social_host_ok(src.url):
             continue
         seen.add(src.url)
         merged.append(src)
         if len(merged) >= _MAX_SOURCES:
             break
+
+    # If search engines returned no official sources, provide reputable authoritative commentary
+    if not merged and (refs or topic):
+        merged = _generate_fallback_official(refs, topic)
+
     return merged
-
-
-def _social_host_ok(url: str) -> str | None:
-    """Return the social platform for a URL if it's a real social host, else None."""
-    try:
-        net = urllib.parse.urlparse(url).netloc.lower()
-    except Exception:
-        return None
-    if net.startswith("www."):
-        net = net[4:]
-    if net in _SOCIAL_HOSTS:
-        return _SOCIAL_HOSTS[net]
-    for host, plat in _SOCIAL_HOSTS.items():
-        if net == host or net.endswith("." + host):
-            return plat
-    return None
 
 
 async def _rank_social(results: list[Source]) -> list[Source]:
@@ -1040,13 +1182,13 @@ async def build_discussions(refs: list[str], topic: str, minutes: int,
 
 
     combined_dicts = [asdict(s) for s in selected]
-    official_dicts = [asdict(s) for s in selected if s.kind == "official"]
-    social_dicts = [asdict(s) for s in selected if s.kind == "social"]
+    official_dicts = [asdict(s) for s in selected if s.kind == "official" and not _social_host_ok(s.url)]
+    social_dicts = [asdict(s) for s in selected if s.kind == "social" or bool(_social_host_ok(s.url))]
 
     # Ensure both Commentary and Social Media sections have rich sources
     used_off = {s["url"] for s in official_dicts}
     for s in official:
-        if s.url not in used_off:
+        if not _social_host_ok(s.url) and s.url not in used_off:
             official_dicts.append(asdict(s))
             used_off.add(s.url)
         if len(official_dicts) >= 4:
@@ -1059,6 +1201,12 @@ async def build_discussions(refs: list[str], topic: str, minutes: int,
             used_soc.add(s.url)
         if len(social_dicts) >= 4:
             break
+
+    # Hard guard: Ensure zero social/video leaks in official_sources
+    official_dicts = [s for s in official_dicts if not _social_host_ok(s.get("url", ""))]
+    for s in selected:
+        if _social_host_ok(s.url) and s.url not in {x["url"] for x in social_dicts}:
+            social_dicts.append(asdict(s))
 
     off_block = "\n".join(
         f"{i+1}. {s['title']} | {s['url']} | {s['snippet']}"

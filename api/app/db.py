@@ -271,10 +271,20 @@ def upgrade_existing_studies() -> None:
                 upgraded_off = [_upgrade_source(s) for s in off_sources]
                 upgraded_soc = [_upgrade_source(s) for s in soc_sources]
 
+                # Move any social/video sources that leaked into official over to social
+                clean_off = [s for s in upgraded_off if s.get("kind") == "official" and not _social_host_ok(s.get("url", ""))]
+                leaked_soc = [s for s in upgraded_off if s.get("kind") == "social" or _social_host_ok(s.get("url", ""))]
+                for ls in leaked_soc:
+                    ls["kind"] = "social"
+                    ls["platform"] = _social_host_ok(ls.get("url", "")) or "youtube"
+                    if ls.get("url") and ls["url"] not in {x.get("url") for x in upgraded_soc}:
+                        upgraded_soc.append(ls)
+                upgraded_off = clean_off
+
                 if not upgraded_off:
-                    upgraded_off = [s for s in upgraded_sources if s.get("kind") == "official"]
+                    upgraded_off = [s for s in upgraded_sources if s.get("kind") == "official" and not _social_host_ok(s.get("url", ""))]
                 if not upgraded_soc:
-                    upgraded_soc = [s for s in upgraded_sources if s.get("kind") == "social"]
+                    upgraded_soc = [s for s in upgraded_sources if s.get("kind") == "social" or _social_host_ok(s.get("url", ""))]
 
                 if not upgraded_soc and (day.theme or day.title):
                     theme_label = day.theme or day.title or "Scripture Reflection"

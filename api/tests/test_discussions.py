@@ -154,3 +154,65 @@ async def test_build_discussions_empty_when_no_sources(monkeypatch):
     out = await D.build_discussions(["John 3:16"], "love", 15)
     assert out["status"] == "empty"
     assert out["sources"] == []
+
+
+@pytest.mark.asyncio
+async def test_youtube_and_social_never_in_official_sources(monkeypatch):
+    """YouTube, Reddit, and social platforms must never appear in official commentary sources."""
+    import app.services.discussions as D
+
+    # 1. Verify host classification
+    assert D._social_host_ok("https://www.youtube.com/watch?v=123") == "youtube"
+    assert D._social_host_ok("https://youtu.be/123") == "youtube"
+    assert D._social_host_ok("https://m.youtube.com/watch?v=123") == "youtube"
+    assert D._social_host_ok("https://www.reddit.com/r/Christianity/comments/abc") == "reddit"
+    assert D._social_host_ok("https://x.com/pastor/status/123") == "x"
+    assert D._social_host_ok("https://biblehub.com/commentaries/john/3-16.htm") is None
+    assert D._social_host_ok("https://www.biblestudytools.com/commentaries/") is None
+
+    # 2. Verify _classify
+    yt_src = D.Source(title="YouTube Sermon", url="https://youtube.com/watch?v=abc", snippet="Video sermon", source="youtube.com")
+    classified = D._classify(yt_src)
+    assert classified.kind == "social"
+    assert classified.platform == "youtube"
+
+    comm_src = D.Source(title="Bible Hub", url="https://biblehub.com/commentaries/1.htm", snippet="Commentary text", source="biblehub.com")
+    classified_comm = D._classify(comm_src)
+    assert classified_comm.kind == "official"
+    assert classified_comm.platform is None
+
+    # 3. Verify build_discussions strictly partitions official vs social
+    async def fake_search(query, **kw):
+        return [
+            D.Source(title="YouTube Video", url="https://youtube.com/watch?v=leak", snippet="Video", source="youtube.com", kind="official"),
+            D.Source(title="Reddit Discussion", url="https://reddit.com/r/study", snippet="Post", source="reddit.com", kind="official"),
+            D.Source(title="Bible Hub Study", url="https://biblehub.com/john/3-16.htm", snippet="Expository text", source="biblehub.com", kind="official"),
+            D.Source(title="Bible Study Tools", url="https://www.biblestudytools.com/john-3-16.html", snippet="Tools", source="biblestudytools.com", kind="official"),
+        ]
+
+    monkeypatch.setattr(D, "search", fake_search)
+    async def fake_neg(*a, **k):
+        return []
+    monkeypatch.setattr(D, "_fetch_targeted_negative", fake_neg)
+
+    async def fake_complete(*a, **k):
+        return __import__("app.services.llm").services.llm.LLMResult(
+            text="## Guide\nBalanced study guide.",
+            provider="test", model="test", data={})
+    monkeypatch.setattr(D, "complete", fake_complete)
+
+    out = await D.build_discussions(["John 3:16"], "love", 15)
+    assert out["status"] == "ok"
+
+    official_urls = [s["url"] for s in out["official_sources"]]
+    social_urls = [s["url"] for s in out["social_sources"]]
+
+    # Official section must NOT contain YouTube or Reddit
+    for url in official_urls:
+        assert "youtube" not in url, f"Leaked YouTube URL in official: {url}"
+        assert "reddit" not in url, f"Leaked Reddit URL in official: {url}"
+
+    # Social section should contain the social/video platforms
+    assert any("youtube.com" in u for u in social_urls)
+    assert any("reddit.com" in u for u in social_urls)
+

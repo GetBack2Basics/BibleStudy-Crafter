@@ -2755,6 +2755,42 @@ function DayTTS({
 
 /* ---------- Discussions: real, cited reading material about the verses ---------- */
 
+const SOCIAL_DOMAINS = [
+  'youtube.com',
+  'youtu.be',
+  'reddit.com',
+  'redd.it',
+  'twitter.com',
+  'x.com',
+  't.co',
+  'quora.com',
+  'tiktok.com',
+  'instagram.com',
+  'facebook.com',
+  'threads.net',
+  'bsky.app',
+  'vimeo.com',
+  'stackexchange.com',
+]
+
+export function isSocialSource(s: AnySource): boolean {
+  if (s.kind === 'social' || Boolean(s.platform)) return true
+  const rawUrl = (s.url || '').toLowerCase()
+  if (!rawUrl) return false
+  try {
+    const parsed = new URL(rawUrl)
+    const host = parsed.hostname.toLowerCase().replace(/^www\./, '')
+    if (SOCIAL_DOMAINS.some(d => host === d || host.endsWith('.' + d))) {
+      return true
+    }
+  } catch {
+    if (SOCIAL_DOMAINS.some(d => rawUrl.includes(d))) {
+      return true
+    }
+  }
+  return false
+}
+
 function SourceGrid({
   sources,
   empty,
@@ -2960,35 +2996,64 @@ function Discussions({
           </div>
         )}
         {d && d.status === 'ok' && (() => {
-          const offList = (d.official_sources && d.official_sources.length > 0)
-            ? d.official_sources
-            : (d.sources || []).filter(s => s.kind === 'official' || (!s.platform && s.kind !== 'social'))
+          const rawOff = d.official_sources ?? []
+          const rawSoc = d.social_sources ?? []
+          const rawAll = d.sources ?? []
 
-          const socList = (d.social_sources && d.social_sources.length > 0)
-            ? d.social_sources
-            : (d.sources || []).filter(s => s.kind === 'social' || Boolean(s.platform))
+          // Strictly isolate authoritative commentary sources from social/video media
+          const cleanOff = rawOff.filter(s => !isSocialSource(s))
+          const leakedSoc = rawOff.filter(isSocialSource)
+          const allSoc = [...rawSoc, ...leakedSoc]
+
+          // Deduplicate social sources by URL/title
+          const seenSocUrls = new Set<string>()
+          const cleanSoc: AnySource[] = []
+          for (const s of allSoc) {
+            const key = (s.url || s.title || '').trim().toLowerCase()
+            if (key && !seenSocUrls.has(key)) {
+              seenSocUrls.add(key)
+              cleanSoc.push(s)
+            }
+          }
+
+          const offList = cleanOff.length > 0
+            ? cleanOff
+            : rawAll.filter(s => !isSocialSource(s))
+
+          const socList = cleanSoc.length > 0
+            ? cleanSoc
+            : rawAll.filter(isSocialSource)
 
           return (
             <div className="space-y-6">
-              {/* 1. Commentary Sources */}
+              {/* 1. Authoritative Commentary Sources */}
               <div>
-                <div className="mb-2.5 flex items-center gap-2 font-ui-label-sm uppercase tracking-wide text-on-surface-variant font-semibold">
-                  <I name="menu_book" cls="text-[18px] text-primary" />
-                  <span>Commentary Sources</span>
+                <div className="mb-2.5 flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2 font-ui-label-sm uppercase tracking-wide text-on-surface-variant font-semibold">
+                    <I name="menu_book" cls="text-[18px] text-primary" />
+                    <span>Authoritative Commentary Sources</span>
+                  </div>
+                  <span className="font-ui-label-xs normal-case tracking-normal text-on-surface-variant/70 font-normal">
+                    (Bible.com · Bible Study Tools · Bible Hub · Scholarly Commentaries)
+                  </span>
                 </div>
                 <SourceGrid
-                  sources={offList.length > 0 ? offList : (socList.length === 0 ? (d.sources ?? []) : [])}
-                  empty="No commentary sources found."
+                  sources={offList}
+                  empty="No authoritative commentary sources found."
                   onOpenSource={handleOpenSource}
                 />
               </div>
 
-              {/* 2. Social Media Sources */}
+              {/* 2. Social Media & Community Voices */}
               <div className="border-t border-outline-variant/20 pt-4">
-                <div className="mb-2.5 flex items-center gap-2 font-ui-label-sm uppercase tracking-wide text-on-surface-variant font-semibold">
-                  <I name="forum" cls="text-[18px] text-primary" />
-                  <span>Social Media Sources</span>
-                  <span className="font-ui-label-xs normal-case tracking-normal text-on-surface-variant/70 font-normal">(Reddit · YouTube · Quora · Forums)</span>
+                <div className="mb-2.5 flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2 font-ui-label-sm uppercase tracking-wide text-on-surface-variant font-semibold">
+                    <I name="forum" cls="text-[18px] text-primary" />
+                    <span>Social Media & Community Voices</span>
+                  </div>
+                  <span className="font-ui-label-xs normal-case tracking-normal text-on-surface-variant/70 font-normal">
+                    (YouTube · X / Twitter · Reddit · Quora · Community Forums)
+                  </span>
                 </div>
                 {socList.length > 0 ? (
                   <SourceGrid
