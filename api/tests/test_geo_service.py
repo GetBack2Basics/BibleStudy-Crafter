@@ -48,3 +48,43 @@ def test_resolve_day_maps():
     assert rome_loc.get("photo_url") is not None
     assert rome_loc.get("photo_credit") is not None
 
+    # Verify Historical Plates direct links and attribution
+    plates = res.get("historical_plates", {})
+    assert "bible_ca" in plates
+    assert "knowing_the_bible" in plates
+    assert "https://www.bible.ca/" in plates["bible_ca"]["url"]
+    assert "https://www.knowingthebible.net/" in plates["knowing_the_bible"]["url"]
+    assert "Steve Rudd" in plates["bible_ca"]["attribution"]
+    assert "KnowingTheBible.net" in plates["knowing_the_bible"]["attribution"]
+
+
+def test_historical_plates_exodus_matching():
+    commentary = "Israel crossed the Red Sea and camped at Mount Sinai."
+    passages = [{"book": "Exodus", "ref": "Exodus 14:21", "text": "Then Moses stretched out his hand over the sea..."}]
+    res = geo_service.resolve_day_maps(commentary, passages)
+    plates = res["historical_plates"]
+
+    # Bible.ca should match the specific Exodus map directly
+    assert "maps-the-exodus" in plates["bible_ca"]["url"]
+    assert "Exodus" in plates["bible_ca"]["title"]
+    assert plates["bible_ca"]["source_url"] == "https://www.bible.ca/maps/"
+
+    # Knowing The Bible should match Exodus map directly
+    assert "israels-exodus-and-wanderings" in plates["knowing_the_bible"]["url"]
+    assert "Exodus" in plates["knowing_the_bible"]["title"]
+    assert plates["knowing_the_bible"]["source_url"] == "https://www.knowingthebible.net/bible-maps"
+
+
+def test_historical_plates_gospel_matching():
+    commentary = "Jesus was teaching in Capernaum by the Sea of Galilee."
+    passages = [{"book": "Matthew", "ref": "Matthew 4:13", "text": "Leaving Nazareth he went and lived in Capernaum..."}]
+    res = geo_service.resolve_day_maps(commentary, passages)
+    plates = res["historical_plates"]
+
+    # Bible.ca matches Jesus Ministry
+    assert "maps-ministry-of-jesus" in plates["bible_ca"]["url"]
+    assert "Jesus" in plates["bible_ca"]["title"]
+
+    # Knowing The Bible matches Israel During Time of Jesus
+    assert "israel-during-the-time-of-jesus" in plates["knowing_the_bible"]["url"]
+

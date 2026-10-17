@@ -12,6 +12,8 @@ import re
 from typing import Any, Dict, List, Optional, Tuple
 import httpx
 
+from app.services.historical_plates_indexer import match_historical_plates
+
 # Pre-loaded comprehensive Biblical Gazetteer
 # Each entry includes:
 # - ancient_name & modern_name
@@ -886,6 +888,15 @@ def resolve_day_maps(
         f"and high-resolution satellite terrain for identical biblical coordinates."
     )
 
+    # Match direct historical plates from Bible.ca and Knowing The Bible
+    historical_plates = match_historical_plates(
+        primary_book=primary_book,
+        osis_code=osis_code,
+        period_key=era_info.get("period_key", "roman_judea"),
+        locations=locations,
+        text=commentary,
+    )
+
     return {
         "status": "ready",
         "has_locations": len(locations) > 0,
@@ -905,6 +916,7 @@ def resolve_day_maps(
         "ancient_map_url": ancient_map_url,
         "modern_map_url": modern_map_url,
         "map_crafter_url": map_crafter_url,
+        "historical_plates": historical_plates,
         "public_maps_refs": [
             {
                 "title": f"OpenBible.info: {primary_book} {primary_chapter} Interactive Atlas",
@@ -919,12 +931,18 @@ def resolve_day_maps(
                 "url": "https://www.openbible.info/geo/",
             },
             {
-                "title": "100 Free Printable Public Use Bible Maps",
-                "url": "https://www.bible.ca/maps/",
+                "title": f"Bible.ca: {historical_plates['bible_ca']['title']}",
+                "url": historical_plates['bible_ca']['url'],
+                "source_name": historical_plates["bible_ca"].get("source_name", "Bible.ca"),
+                "source_url": historical_plates["bible_ca"].get("source_url", "https://www.bible.ca/maps/"),
+                "attribution": historical_plates["bible_ca"].get("attribution", ""),
             },
             {
-                "title": "Bible Maps Archive",
-                "url": "https://www.knowingthebible.net/bible-maps",
+                "title": f"Knowing The Bible: {historical_plates['knowing_the_bible']['title']}",
+                "url": historical_plates['knowing_the_bible']['url'],
+                "source_name": historical_plates["knowing_the_bible"].get("source_name", "Knowing The Bible"),
+                "source_url": historical_plates["knowing_the_bible"].get("source_url", "https://www.knowingthebible.net/bible-maps"),
+                "attribution": historical_plates["knowing_the_bible"].get("attribution", ""),
             },
         ],
     }

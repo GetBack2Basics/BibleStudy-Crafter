@@ -1088,6 +1088,10 @@ function DayCard({
   // day-level collapse
   const [dayOpen, setDayOpen] = useState(defaultOpen)
 
+  useEffect(() => {
+    setDayOpen(defaultOpen)
+  }, [defaultOpen])
+
   const isGenerating = day.status === 'generating' || Boolean(dayProgress && dayProgress.progress < 100)
 
   useEffect(() => {
@@ -1229,75 +1233,84 @@ function DayCard({
   }
 
   return (
-    <div className="w-full flex flex-col items-center">
+    <div id={`day-card-${day.day_number}`} className="w-full flex flex-col items-center scroll-mt-20">
       <article className="w-full max-w-[98%] bg-transparent flex flex-col gap-6">
-        {/* Day Card Header Bar (When in study list view) */}
-        {!defaultOpen && (
-          <div className="bg-surface-container-lowest rounded-2xl p-4 shadow-sm border border-outline-variant/20 flex flex-col gap-2.5">
-            <div className="flex items-center justify-between gap-3">
+        {/* Day Card Header Bar */}
+        <div className="bg-surface-container-lowest rounded-2xl p-4 shadow-sm border border-outline-variant/20 flex flex-col gap-2.5">
+          <div className="flex items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={() => setDayOpen((o) => !o)}
+              aria-expanded={dayOpen}
+              aria-label={dayOpen ? `Collapse Day ${day.day_number}` : `Expand Day ${day.day_number}`}
+              title={dayOpen ? `Collapse Day ${day.day_number}` : `Expand Day ${day.day_number}`}
+              className="shrink-0 rounded-full p-1 text-on-surface-variant transition-colors hover:bg-surface-container cursor-pointer"
+            >
+              <I name={dayOpen ? 'expand_less' : 'expand_more'} cls="text-[22px]" />
+            </button>
+            <Link to={dayLink} className="min-w-0 flex-1 group">
+              <h3 className="font-headline-md text-headline-md text-on-surface truncate group-hover:text-primary transition-colors">
+                <span className="text-primary font-semibold">Day {day.day_number}</span>
+                {draft?.heading ? ` — ${draft.heading}` : day.title ? ` — ${day.title}` : ''}
+                {day.theme && <span className="ml-2 font-caption-caps text-secondary text-caption-caps">· {day.theme}</span>}
+              </h3>
+            </Link>
+            <div className="flex shrink-0 items-center gap-2">
               <button
                 type="button"
                 onClick={() => setDayOpen((o) => !o)}
-                aria-expanded={dayOpen}
-                className="shrink-0 rounded-full p-1 text-on-surface-variant transition-colors hover:bg-surface-container cursor-pointer"
+                className="hidden sm:inline-flex items-center gap-1 text-xs font-medium text-secondary hover:text-primary transition-colors py-1 px-2.5 rounded-lg hover:bg-surface-container cursor-pointer"
+                title={dayOpen ? `Collapse Day ${day.day_number}` : `Expand Day ${day.day_number}`}
               >
-                <I name={dayOpen ? 'expand_less' : 'expand_more'} cls="text-[22px]" />
+                <I name={dayOpen ? 'expand_less' : 'expand_more'} cls="text-[16px]" />
+                <span>{dayOpen ? 'Collapse' : 'Expand'}</span>
               </button>
-              <Link to={dayLink} className="min-w-0 flex-1">
-                <h3 className="font-headline-md text-headline-md text-on-surface truncate">
-                  <span className="text-primary font-semibold">Day {day.day_number}</span>
-                  {draft?.heading ? ` — ${draft.heading}` : day.title ? ` — ${day.title}` : ''}
-                  {day.theme && <span className="ml-2 font-caption-caps text-secondary text-caption-caps">· {day.theme}</span>}
-                </h3>
-              </Link>
-              <div className="flex shrink-0 items-center gap-2">
-                {isGenerating ? (
-                  <span className="text-caption-caps font-caption-caps px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/25 flex items-center gap-1.5 animate-pulse font-semibold">
-                    <span className="material-symbols-outlined text-[13px] animate-spin">progress_activity</span>
-                    Generating · {dayProgress?.progress != null ? `${dayProgress.progress}%` : 'Working…'}
-                  </span>
-                ) : (
-                  <span className={`text-caption-caps font-caption-caps px-2 py-0.5 rounded bg-secondary-container ${STATUS_CLS[day.status]}`}>
-                    {day.status}
-                  </span>
-                )}
-                {!editing && !isGenerating && (
-                  <>
-                    <button onClick={startEdit} className="btn-outline text-xs py-1 px-2.5">
-                      <I name="edit" cls="text-[14px]" /> Edit
-                    </button>
-                    <button
-                      onClick={() => {
-                        setDayOpen(true)
-                        onGenerate()
-                      }}
-                      className="btn-outline text-xs py-1 px-2.5"
-                    >
-                      <I name={day.blocks_json ? 'autorenew' : 'add'} cls="text-[14px]" />
-                      {day.blocks_json ? 'Regenerate' : 'Generate'}
-                    </button>
-                  </>
-                )}
-              </div>
+              {isGenerating ? (
+                <span className="text-caption-caps font-caption-caps px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/25 flex items-center gap-1.5 animate-pulse font-semibold">
+                  <span className="material-symbols-outlined text-[13px] animate-spin">progress_activity</span>
+                  Generating · {dayProgress?.progress != null ? `${dayProgress.progress}%` : 'Working…'}
+                </span>
+              ) : (
+                <span className={`text-caption-caps font-caption-caps px-2 py-0.5 rounded bg-secondary-container ${STATUS_CLS[day.status]}`}>
+                  {day.status}
+                </span>
+              )}
+              {!editing && !isGenerating && (
+                <>
+                  <button onClick={startEdit} className="btn-outline text-xs py-1 px-2.5">
+                    <I name="edit" cls="text-[14px]" /> Edit
+                  </button>
+                  <button
+                    onClick={() => {
+                      setDayOpen(true)
+                      onGenerate()
+                    }}
+                    className="btn-outline text-xs py-1 px-2.5"
+                  >
+                    <I name={day.blocks_json ? 'autorenew' : 'add'} cls="text-[14px]" />
+                    {day.blocks_json ? 'Regenerate' : 'Generate'}
+                  </button>
+                </>
+              )}
             </div>
-            {isGenerating && (
-              <div className="w-full pt-0.5">
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-container">
-                  <div
-                    className="h-full rounded-full bg-primary transition-all duration-500"
-                    style={{ width: `${dayProgress?.progress != null ? dayProgress.progress : 15}%` }}
-                  />
-                </div>
-                {dayProgress?.message && (
-                  <p className="text-[11px] text-primary font-medium truncate mt-1 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0 animate-ping" />
-                    {dayProgress.message}
-                  </p>
-                )}
-              </div>
-            )}
           </div>
-        )}
+          {isGenerating && (
+            <div className="w-full pt-0.5">
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-container">
+                <div
+                  className="h-full rounded-full bg-primary transition-all duration-500"
+                  style={{ width: `${dayProgress?.progress != null ? dayProgress.progress : 15}%` }}
+                />
+              </div>
+              {dayProgress?.message && (
+                <p className="text-[11px] text-primary font-medium truncate mt-1 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0 animate-ping" />
+                  {dayProgress.message}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
 
         {dayOpen && (
           <div className="flex flex-col gap-6 w-full">
@@ -1415,6 +1428,15 @@ function DayCard({
               )}
               {/* Micro metadata pill row */}
               <div className="flex items-center flex-wrap gap-2 pt-0.5">
+                <button
+                  type="button"
+                  onClick={() => setDayOpen(false)}
+                  className="h-[28px] px-3 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center gap-1 font-label-nav text-label-nav transition-colors active:scale-95 cursor-pointer shadow-xs border border-outline-variant/20"
+                  title={`Collapse Day ${day.day_number}`}
+                >
+                  <span className="material-symbols-outlined text-[15px]">expand_less</span>
+                  <span>Collapse Day</span>
+                </button>
                 <button
                   type="button"
                   className="h-[28px] pl-3 pr-2.5 rounded-full bg-surface-container flex items-center gap-1 text-on-surface hover:bg-surface-container-high transition-colors active:scale-95 cursor-pointer shadow-xs border border-outline-variant/20"
@@ -1581,6 +1603,30 @@ function DayCard({
                     </span>
                   </button>
                 </section>
+              )}
+            </div>
+
+            {/* Day Bottom Navigation Bar */}
+            <div className="w-full flex items-center justify-between pt-4 pb-2 border-t border-outline-variant/20">
+              <button
+                type="button"
+                onClick={() => {
+                  setDayOpen(false)
+                  const el = document.getElementById(`day-card-${day.day_number}`)
+                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                }}
+                className="btn-outline text-xs py-2 px-4 flex items-center gap-1.5 cursor-pointer"
+              >
+                <I name="expand_less" cls="text-[16px]" /> Collapse Day {day.day_number}
+              </button>
+              {day.day_number < totalDays && (
+                <Link
+                  to={`/study/${studyId}/day/${day.day_number + 1}`}
+                  className="btn-primary text-xs py-2 px-4 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <span>Next: Day {day.day_number + 1}</span>
+                  <I name="arrow_forward" cls="text-[16px]" />
+                </Link>
               )}
             </div>
           </div>
@@ -1859,61 +1905,6 @@ function DraftEditor({
         />
       </div>
 
-      {/* Sleek Inset Disclosure Group (HIG Table View Rows) */}
-      <section className="bg-surface-container-lowest rounded-2xl shadow-sm border border-outline-variant/20 overflow-hidden flex flex-col">
-        <button
-          type="button"
-          onClick={() => {
-            const el = document.getElementById('scripture-reading-section')
-            if (el) el.scrollIntoView({ behavior: 'smooth' })
-          }}
-          className="w-full px-5 py-3.5 flex items-center justify-between hover:bg-surface-container transition-colors text-left group cursor-pointer"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center">
-              <span className="material-symbols-outlined text-[17px]">menu_book</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="font-body-ui text-body-ui font-medium text-on-surface">
-                Read Full Passage ({memoryVerseRef})
-              </span>
-              <span className="font-label-nav text-label-nav text-secondary">
-                The apostolic witness and foundational scripture
-              </span>
-            </div>
-          </div>
-          <span className="material-symbols-outlined text-secondary group-hover:translate-x-0.5 transition-transform text-[18px]">
-            chevron_right
-          </span>
-        </button>
-        <div className="h-[1px] bg-surface-container-high ml-14"></div>
-        <button
-          type="button"
-          onClick={() => {
-            const el = document.getElementById('commentary-section')
-            if (el) el.scrollIntoView({ behavior: 'smooth' })
-          }}
-          className="w-full px-5 py-3.5 flex items-center justify-between hover:bg-surface-container transition-colors text-left group cursor-pointer"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-tertiary-fixed text-on-tertiary-fixed flex items-center justify-center">
-              <span className="material-symbols-outlined text-[17px]">lightbulb</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="font-body-ui text-body-ui font-medium text-on-surface">
-                Theological Insight: {draft.heading || 'Academic Commentary'}
-              </span>
-              <span className="font-label-nav text-label-nav text-secondary">
-                Historical context, linguistic nuances, and hermeneutics
-              </span>
-            </div>
-          </div>
-          <span className="material-symbols-outlined text-secondary group-hover:translate-x-0.5 transition-transform text-[18px]">
-            chevron_right
-          </span>
-        </button>
-      </section>
-
       {/* Commentary Section */}
       <div id="commentary-section">
         <CommentarySection
@@ -2037,9 +2028,18 @@ function DayDetail() {
   const timer = useRef<ReturnType<typeof setInterval> | null>(null)
   const [progress, setProgress] = useState<number | null>(null)
   const [progressMsg, setProgressMsg] = useState<string>('')
-  const [dayProgress, setDayProgress] = useState<{ progress: number; message: string; step?: string } | null>(null)
+  const [dayProgressMap, setDayProgressMap] = useState<Record<number, { progress: number; message: string; step?: string }>>({})
   const esRef = useRef<EventSource | null>(null)
   const setTitle = useContext(SetStudyTitleCtx)
+
+  const [activeAudioDayNum, setActiveAudioDayNum] = useState<number>(dayNum)
+  const [activeAudioSection, setActiveAudioSection] = useState<string>('all')
+  const [audioTrigger, setAudioTrigger] = useState<{ section: string; timestamp: number } | null>(null)
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false)
+  const [playingAudioSection, setPlayingAudioSection] = useState<string | null>(null)
+  const [selectedVoice, setSelectedVoice] = useState<TTSChoice | null>(null)
+  const [isVoicePickerOpen, setIsVoicePickerOpen] = useState(false)
+  const [voices, setVoices] = useState<TTSChoice[]>(ttsDefaultVoices)
 
   const load = () => {
     if (!Number.isInteger(studyId) || studyId < 1) return
@@ -2067,12 +2067,15 @@ function DayDetail() {
       try {
         const data = JSON.parse(raw)
         if (data?.study_id === studyId && typeof data.progress === 'number') {
-          if (data.day_number === dayNum || (data.day_number == null && study?.status === 'generating')) {
-            setDayProgress({
-              progress: data.progress,
-              message: data.message || '',
-              step: data.step,
-            })
+          if (typeof data.day_number === 'number') {
+            setDayProgressMap((prev) => ({
+              ...prev,
+              [data.day_number]: {
+                progress: data.progress,
+                message: data.message || '',
+                step: data.step,
+              },
+            }))
           }
           setProgress(data.progress)
           setProgressMsg(data.message || '')
@@ -2088,36 +2091,94 @@ function DayDetail() {
       if (esRef.current) esRef.current.close()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [studyId, dayNum])
+  }, [studyId])
 
   useEffect(() => {
     if (study) setTitle?.({ title: study.title || study.topic, dayNum, totalDays: study.total_days, tradition: study.tradition })
     return () => setTitle?.(null)
   }, [study, setTitle, dayNum])
 
-  const day = study?.days.find((d) => d.day_number === dayNum)
+  useEffect(() => {
+    setActiveAudioDayNum(dayNum)
+  }, [dayNum])
 
-  const [activeAudioSection, setActiveAudioSection] = useState<string>('all')
-  const [audioTrigger, setAudioTrigger] = useState<{ section: string; timestamp: number } | null>(null)
-  const [isPlayingAudio, setIsPlayingAudio] = useState(false)
-  const [playingAudioSection, setPlayingAudioSection] = useState<string | null>(null)
-  const [selectedVoice, setSelectedVoice] = useState<TTSChoice | null>(null)
-  const [isVoicePickerOpen, setIsVoicePickerOpen] = useState(false)
-  const [voices, setVoices] = useState<TTSChoice[]>(ttsDefaultVoices)
+  useEffect(() => {
+    if (study && dayNum > 1) {
+      const el = document.getElementById(`day-card-${dayNum}`)
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    }
+  }, [study, dayNum])
 
-  const handlePlaySection = (sec: string) => {
+  const genDay = async (dNum: number) => {
+    setStudy((s) => s ? ({ ...s, days: s.days.map((d) => d.day_number === dNum ? { ...d, status: 'generating' } : d) }) : s)
+    setDayProgressMap((prev) => ({
+      ...prev,
+      [dNum]: { progress: 12, message: `Initiating Day ${dNum} study generator…`, step: 'init' },
+    }))
+
+    const simTimer = setInterval(() => {
+      setDayProgressMap((prev) => {
+        const cur = prev[dNum]
+        if (!cur || cur.progress >= 92) return prev
+        const increment = Math.max(1, Math.round((92 - cur.progress) / 6))
+        return {
+          ...prev,
+          [dNum]: { ...cur, progress: Math.min(92, cur.progress + increment) },
+        }
+      })
+    }, 1200)
+
+    try {
+      const res = await studyApi.generateDay(studyId, dNum)
+      clearInterval(simTimer)
+      setDayProgressMap((prev) => ({
+        ...prev,
+        [dNum]: { progress: 100, message: `Day ${dNum} generated successfully!`, step: 'complete' },
+      }))
+      setTimeout(() => {
+        setStudy((s) => s ? ({ ...s, days: s.days.map((d) => d.day_number === dNum ? { ...d, status: 'ready', blocks_json: res.draft } : d) }) : s)
+      }, 450)
+    } catch (e) {
+      clearInterval(simTimer)
+      setErr(e instanceof Error ? e.message : String(e))
+      setStudy((s) => s ? ({ ...s, days: s.days.map((d) => d.day_number === dNum ? { ...d, status: 'failed' } : d) }) : s)
+    }
+  }
+
+  const handlePlayDaySection = (dayNumber: number, sec: string) => {
+    setActiveAudioDayNum(dayNumber)
     setActiveAudioSection(sec)
     setAudioTrigger({ section: sec, timestamp: Date.now() })
   }
 
   if (err && !study) return <div className="text-error p-4">{err}</div>
   if (!study) return <p className="text-on-surface-variant p-4">Loading study sanctuary…</p>
+  const day = study.days.find((d) => d.day_number === dayNum)
   if (!day) return <div className="text-error p-4">Day {dayNum} not found in this study.</div>
 
-  const effectiveDayProgress = dayProgress || (study.status === 'generating' ? { progress: progress ?? 15, message: progressMsg } : undefined)
+  const activeAudioDay = study.days.find((d) => d.day_number === activeAudioDayNum && d.blocks_json) ||
+                         day ||
+                         study.days[0]
 
   return (
     <div className="w-full flex flex-col items-center px-1 sm:px-2 pb-8">
+      {study.status === 'failed' && (
+        <ApiKeyAlert
+          error="AI Generation Failed: The AI provider was unreachable or free quota was exhausted. Please configure your free Gemini or OpenRouter key below to continue."
+          className="my-3 w-full max-w-[98%]"
+        />
+      )}
+
+      {err && (
+        isKeyError(err) ? (
+          <ApiKeyAlert error={err} className="my-3 w-full max-w-[98%]" />
+        ) : (
+          <div className="text-error my-3 w-full max-w-[98%]">{err}</div>
+        )
+      )}
+
       {study.status === 'generating' && (
         <div className="w-full max-w-[98%] mb-4 rounded-2xl border border-outline-variant/20 bg-surface-container-low p-4 shadow-sm">
           <div className="mb-2 flex items-center justify-between text-ui-label-md">
@@ -2131,65 +2192,48 @@ function DayDetail() {
         </div>
       )}
 
-      <DayCard
-        studyId={studyId}
-        day={day}
-        defaultOpen
-        totalDays={study.total_days}
-        studyTopic={study.title || study.topic}
-        primaryTranslation={study.primary_translation}
-        dayProgress={effectiveDayProgress}
-        onGenerate={async () => {
-          setStudy((s) => s ? ({ ...s, days: s.days.map((d) => d.day_number === dayNum ? { ...d, status: 'generating' } : d) }) : s)
-          setDayProgress({ progress: 12, message: `Initiating Day ${dayNum} study generator…`, step: 'init' })
-
-          const simTimer = setInterval(() => {
-            setDayProgress((prev) => {
-              if (!prev || prev.progress >= 92) return prev
-              const increment = Math.max(1, Math.round((92 - prev.progress) / 6))
-              return { ...prev, progress: Math.min(92, prev.progress + increment) }
-            })
-          }, 1200)
-
-          try {
-            const res = await studyApi.generateDay(studyId, dayNum)
-            clearInterval(simTimer)
-            setDayProgress({ progress: 100, message: `Day ${dayNum} generated successfully!`, step: 'complete' })
-            setTimeout(() => {
-              setStudy((s) => s ? ({ ...s, days: s.days.map((d) => d.day_number === dayNum ? { ...d, status: 'ready', blocks_json: res.draft } : d) }) : s)
-            }, 450)
-          } catch (e) {
-            clearInterval(simTimer)
-            setErr(e instanceof Error ? e.message : String(e))
-            setStudy((s) => s ? ({ ...s, days: s.days.map((d) => d.day_number === dayNum ? { ...d, status: 'failed' } : d) }) : s)
-          }
-        }}
-        onPlaySection={handlePlaySection}
-        playingSection={isPlayingAudio ? playingAudioSection : null}
-        isPlayingAudio={isPlayingAudio}
-        selectedVoice={selectedVoice}
-        onOpenVoicePicker={() => setIsVoicePickerOpen(true)}
-      />
+      <div className="w-full max-w-[98%] space-y-4">
+        {study.days.map((d) => (
+          <DayCard
+            key={d.day_number}
+            studyId={studyId}
+            day={d}
+            defaultOpen={d.day_number === dayNum}
+            totalDays={study.total_days}
+            studyTopic={study.title || study.topic}
+            primaryTranslation={study.primary_translation}
+            dayProgress={dayProgressMap[d.day_number] || (study.status === 'generating' && d.day_number === dayNum ? { progress: progress ?? 15, message: progressMsg } : undefined)}
+            onGenerate={() => genDay(d.day_number)}
+            onPlaySection={(sec) => handlePlayDaySection(d.day_number, sec)}
+            playingSection={activeAudioDayNum === d.day_number && isPlayingAudio ? playingAudioSection : null}
+            isPlayingAudio={activeAudioDayNum === d.day_number && isPlayingAudio}
+            selectedVoice={selectedVoice}
+            onOpenVoicePicker={() => setIsVoicePickerOpen(true)}
+          />
+        ))}
+      </div>
 
       {/* Floating Apple Dock Audio Player */}
-      <DayTTS
-        studyId={studyId}
-        day={day}
-        voices={voices}
-        setVoices={setVoices}
-        selectedVoice={selectedVoice}
-        onSelectVoice={setSelectedVoice}
-        activeSection={activeAudioSection}
-        onChangeSection={setActiveAudioSection}
-        externalTrigger={audioTrigger}
-        isVoicePickerOpen={isVoicePickerOpen}
-        onOpenVoicePicker={() => setIsVoicePickerOpen(true)}
-        onCloseVoicePicker={() => setIsVoicePickerOpen(false)}
-        onAudioStateChange={(playing, sec) => {
-          setIsPlayingAudio(playing)
-          setPlayingAudioSection(sec)
-        }}
-      />
+      {activeAudioDay && (
+        <DayTTS
+          studyId={studyId}
+          day={activeAudioDay}
+          voices={voices}
+          setVoices={setVoices}
+          selectedVoice={selectedVoice}
+          onSelectVoice={setSelectedVoice}
+          activeSection={activeAudioSection}
+          onChangeSection={setActiveAudioSection}
+          externalTrigger={audioTrigger}
+          isVoicePickerOpen={isVoicePickerOpen}
+          onOpenVoicePicker={() => setIsVoicePickerOpen(true)}
+          onCloseVoicePicker={() => setIsVoicePickerOpen(false)}
+          onAudioStateChange={(playing, sec) => {
+            setIsPlayingAudio(playing)
+            setPlayingAudioSection(sec)
+          }}
+        />
+      )}
     </div>
   )
 }

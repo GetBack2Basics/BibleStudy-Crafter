@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { studies, type BiblicalLocation, type DayMapsOut } from '../lib/studies'
+import { resolveHistoricalPlates } from '../lib/historicalPlates'
 
 interface BiblicalMapSectionProps {
   studyId: number
@@ -659,61 +660,76 @@ export default function BiblicalMapSection({
       )}
 
       {/* Cartographic Reference Footer */}
-      <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-secondary border-t border-outline-variant/20 pt-3">
-        <div className="flex items-center gap-2 flex-wrap">
-          <I name="hub" cls="text-[15px] text-tertiary" />
-          <span>
-            Authoritative Geospatial Data:{' '}
-            <a
-              href="https://www.openbible.info/geo/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-semibold underline text-primary hover:text-primary-dark"
-              title="OpenBible.info Bible Geocoding Project (CC BY 4.0)"
-            >
-              OpenBible.info
-            </a>{' '}
-            (<a
-              href="https://github.com/openbibleinfo/Bible-Geocoding-Data"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline text-secondary hover:text-on-surface"
-            >
-              GitHub Open Data
-            </a>) +{' '}
-            <a
-              href={mapsData?.map_crafter_url || "https://storage.googleapis.com/biblestudy-map-crafter/index.html"}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-semibold underline text-tertiary hover:text-primary"
-            >
-              Biblical Map Crafter (GCS)
-            </a>
-          </span>
-        </div>
+      {(() => {
+        const plates = resolveHistoricalPlates(mapsData)
+        return (
+          <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-secondary border-t border-outline-variant/20 pt-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <I name="hub" cls="text-[15px] text-tertiary select-none" />
+              <span>
+                Map Engine:{' '}
+                <a
+                  href={mapsData?.map_crafter_url || "https://storage.googleapis.com/biblestudy-map-crafter/index.html"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold underline text-primary hover:text-primary-dark"
+                  title="Biblical Map Crafter interactive geospatial studio"
+                >
+                  Biblical Map Crafter
+                </a>{' '}
+                + High-Res Satellite &amp; Physical Plates
+              </span>
+            </div>
 
-        <div className="flex items-center gap-3">
-          <span className="text-outline/60 hidden sm:inline">Historical Plates Reference:</span>
-          <a
-            href="https://www.bible.ca/maps/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-primary transition-colors flex items-center gap-1 underline underline-offset-2"
-          >
-            <span>Bible.ca 100 Free Maps</span>
-            <I name="arrow_outward" cls="text-[13px]" />
-          </a>
-          <a
-            href="https://www.knowingthebible.net/bible-maps"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-primary transition-colors flex items-center gap-1 underline underline-offset-2"
-          >
-            <span>Knowing The Bible Maps</span>
-            <I name="arrow_outward" cls="text-[13px]" />
-          </a>
-        </div>
-      </div>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <span className="text-outline/60 hidden sm:inline">Historical Plates Reference:</span>
+              <a
+                href={plates.bible_ca.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-primary transition-colors inline-flex items-center gap-1 underline underline-offset-2 max-w-[260px] sm:max-w-[320px] truncate"
+                title={`${plates.bible_ca.title} — ${plates.bible_ca.attribution || ''} (Direct plate link)`}
+              >
+                <span className="truncate">Bible.ca: {plates.bible_ca.title}</span>
+                <I name="arrow_outward" cls="text-[13px] shrink-0 select-none" />
+              </a>
+              <a
+                href={plates.knowing_the_bible.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-primary transition-colors inline-flex items-center gap-1 underline underline-offset-2 max-w-[260px] sm:max-w-[320px] truncate"
+                title={`${plates.knowing_the_bible.title} — ${plates.knowing_the_bible.attribution || ''} (Direct plate link)`}
+              >
+                <span className="truncate">Knowing The Bible: {plates.knowing_the_bible.title}</span>
+                <I name="arrow_outward" cls="text-[13px] shrink-0 select-none" />
+              </a>
+              <span className="text-[11px] text-outline/50 hidden lg:inline select-none">
+                (Source:{' '}
+                <a
+                  href={plates.bible_ca.source_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-primary underline underline-offset-1"
+                  title="Steve Rudd / Bible.ca 100 Free Printable Bible Maps Homepage"
+                >
+                  Bible.ca
+                </a>
+                {' '}&bull;{' '}
+                <a
+                  href={plates.knowing_the_bible.source_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-primary underline underline-offset-1"
+                  title="KnowingTheBible.net Bible Maps Archive Homepage"
+                >
+                  Knowing The Bible
+                </a>
+                )
+              </span>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Fullscreen Photograph Lightbox Modal */}
       {lightboxPhoto && (
