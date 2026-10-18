@@ -221,6 +221,9 @@ def ensure_demo_account() -> None:
                             session.add(new_a)
 
                         session.commit()
+                else:
+                    from app.seeder.demo_studies import seed_demo_studies
+                    seed_demo_studies(session, demo_user.id)
     except Exception as exc:  # noqa: BLE001
         print(f"[BOOTSTRAP] Demo user bootstrap notice: {exc}")
 

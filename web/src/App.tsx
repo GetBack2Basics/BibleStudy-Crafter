@@ -836,6 +836,7 @@ function StudyList({ studies, loading, onRefresh, onDelete, onDeleteAll }: {
 
 function StudyDetail() {
   const params = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const studyId = Number(params.id)
   const [study, setStudy] = useState<StudyOut | null>(null)
   const [err, setErr] = useState<string | null>(null)
@@ -864,7 +865,16 @@ function StudyDetail() {
   }
 
   const load = () => {
-    studyApi.get(studyId).then(setStudy).catch((e) => setErr(e instanceof Error ? e.message : String(e)))
+    studyApi.get(studyId).then(setStudy).catch((e) => {
+      studyApi.list().then((list) => {
+        if (list && list.length > 0) {
+          const active = list.find((s) => s.status === 'ready' || s.status === 'generating') || list[0]
+          navigate(`/study/${active.id}`, { replace: true })
+        } else {
+          setErr(e instanceof Error ? e.message : String(e))
+        }
+      }).catch(() => setErr(e instanceof Error ? e.message : String(e)))
+    })
   }
 
   useEffect(() => {
@@ -1003,7 +1013,7 @@ function StudyDetail() {
             totalDays={study.total_days}
             studyTopic={study.title || study.topic}
             primaryTranslation={study.primary_translation}
-            dayProgress={dayProgressMap[d.day_number] || (study.status === 'generating' && d.day_number === 1 ? { progress: progress ?? 15, message: progressMsg } : undefined)}
+            dayProgress={dayProgressMap[d.day_number] || (study.status === 'generating' && d.status !== 'ready' && d.day_number === 1 ? { progress: progress ?? 15, message: progressMsg } : undefined)}
             onGenerate={() => genDay(d.day_number)}
             onPlaySection={(sec) => handlePlayDaySection(d.day_number, sec)}
             playingSection={activeAudioDayNum === d.day_number && isPlayingAudio ? playingAudioSection : null}
@@ -2020,6 +2030,7 @@ function Labeled({ label, children }: { label: string; children: React.ReactNode
 
 function DayDetail() {
   const params = useParams<{ id: string; day: string }>()
+  const navigate = useNavigate()
   const studyId = Number(params.id)
   const dayNum = Number(params.day)
 
@@ -2043,7 +2054,17 @@ function DayDetail() {
 
   const load = () => {
     if (!Number.isInteger(studyId) || studyId < 1) return
-    studyApi.get(studyId).then(setStudy).catch((e) => setErr(e instanceof Error ? e.message : String(e)))
+    studyApi.get(studyId).then(setStudy).catch((e) => {
+      // Graceful fallback: If specific study not found (e.g. legacy seeded ID 7), redirect to the first available study
+      studyApi.list().then((list) => {
+        if (list && list.length > 0) {
+          const active = list.find((s) => s.status === 'ready' || s.status === 'generating') || list[0]
+          navigate(`/study/${active.id}/day/${dayNum || active.days?.[0]?.day_number || 1}`, { replace: true })
+        } else {
+          setErr(e instanceof Error ? e.message : String(e))
+        }
+      }).catch(() => setErr(e instanceof Error ? e.message : String(e)))
+    })
   }
 
   useEffect(() => {
@@ -2202,7 +2223,7 @@ function DayDetail() {
             totalDays={study.total_days}
             studyTopic={study.title || study.topic}
             primaryTranslation={study.primary_translation}
-            dayProgress={dayProgressMap[d.day_number] || (study.status === 'generating' && d.day_number === dayNum ? { progress: progress ?? 15, message: progressMsg } : undefined)}
+            dayProgress={dayProgressMap[d.day_number] || (study.status === 'generating' && d.status !== 'ready' && d.day_number === dayNum ? { progress: progress ?? 15, message: progressMsg } : undefined)}
             onGenerate={() => genDay(d.day_number)}
             onPlaySection={(sec) => handlePlayDaySection(d.day_number, sec)}
             playingSection={activeAudioDayNum === d.day_number && isPlayingAudio ? playingAudioSection : null}

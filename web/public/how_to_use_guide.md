@@ -5,63 +5,163 @@
 
 ---
 
-## 🌟 1. What You Can Do in an Already Created Study
+## 🌟 1. The Scripture Sanctuary
 
-When you open an existing study—like **Study #5: Empowered for Mission (Day 1)**—you enter a peaceful, focused sanctuary designed to help you deeply understand God's Word.
+When you open an existing study—such as **Study Day 2: Assessment and Planning (The Midnight Survey)**—you enter a peaceful, focused sanctuary designed to help you deeply understand God's Word.
 
 ![Figure 1: The Scripture Sanctuary](/guide_images/02_study_day1_scripture.png)
 
 ### A. Pure Scripture Reading & Memory Verses
-* **Memory Verse Card**: Every day highlights a central anchor verse (such as *Acts 1:8*). You can highlight key words, add personal reflection notes, or copy the verse with one click.
-* **Translation Switcher**: Compare translations side-by-side (`KJV`, `ASV`, `PEV 1611`, `WEB`, etc.) to see how different scholars translate ancient Hebrew and Greek phrases.
+* **Memory Verse Card**: Every day highlights a central anchor verse (such as *Nehemiah 2:12*). You can highlight key words, add personal margin notes, or copy the verse with one click.
+* **Translation Switcher**: Compare translations side-by-side (`KJV`, `ASV`, `PEV 1611`, `BBE`, `WEB`, etc.) to see how different scholars translate ancient Hebrew and Greek phrases.
 * **AI Audio Narration Dock**: A floating player at the bottom lets you listen to the passage narrated in high-quality speech (such as David Suchet, pastoral, or contemplative voices). You can even adjust the speed from `1.0×` to `1.5×` and pick specific sections to listen to.
+* **Thematic Cover Art**: Handcrafted sacred vector posters anchor each day's spiritual motif with symbolic geometry.
 
 ---
 
-### B. Guided Prayer & AI Reflection
+## 🗺️ 2. Biblical Geography & Interactive Inline Atlas
 
-![Figure 2: Opening and Closing Prayers](/guide_images/03_study_day1_commentary.png)
+Faith is rooted in real history and tangible places. BibleStudy-Crafter integrates a dual-layer historical atlas to connect the biblical narrative to geographical reality.
 
-* **Opening & Closing Prayers**: Grounded liturgical and pastoral prayers help prepare your heart before reading and surrender your thoughts before continuing your day.
-* **The "Refine with AI" Wand**: Want the prayer to focus on forgiveness? Or shorter for family devotional? Type your prompt (e.g., *"Make it more heartfelt and focus on gratitude"*) and tap **Refine with AI** to customize the prayer seamlessly.
+![Figure 2: Historical Setting & Present-Day Context — Dual-Layer Biblical Map Atlas](/guide_images/02c_biblical_geography_maps.png)
+
+### A. Four Interactive Map View Modes
+1. **Side-by-Side Dual View**:
+   * Places the historical biblical era (ancient topography, ancient kingdoms, physical relief) directly next to the present-day satellite view (modern roads, cities, geopolitical borders) for instant visual comparison.
+2. **Peel Slider (Split-Wipe)**:
+   * Drag an interactive vertical divider (0% to 100%) horizontally across the screen to peel back millennia of history—revealing modern satellite terrain directly beneath ancient settlements and walls.
+3. **Historical Setting View**:
+   * Dedicated full-width focus on vintage cartographic plates, historical trade corridors (*Via Maris*, *King's Highway*), ancient territorial allotments, and bathymetric depth contours.
+4. **Present-Day Context View**:
+   * Dedicated full-width view using high-resolution ESRI Earth satellite imagery, topological terrain relief, and contemporary geopolitical boundaries.
+
+### B. Key Sites Chips, Toponyms, & Archaeological Inspection
+* **Key Sites Filter Chips**: Filter chips above the map automatically highlight every location cited in today's reading (e.g. *Jerusalem*, *Valley of Hinnom*, *King's Pool*, *Brook Kidron*). Clicking any chip centers the map and displays the full archaeological dossier:
+  * **Ancient vs. Modern Names**: Compares ancient Hebrew/Greek toponyms (e.g. *Yerushalayim* during the Persian / Post-Exilic period) with present-day geography (e.g. *Al-Quds / Jerusalem*, Israel / West Bank).
+  * **Altitude & Elevation**: Displays exact height in meters (e.g. *754m* above sea level, or negative values like *-430m* for the Dead Sea basin), illuminating biblical expressions such as "going *up* to Jerusalem" or "going *down* to Jericho".
+  * **GPS Coordinates**: Exact Latitude & Longitude (`31.7767°N, 35.2345°E`).
+  * **Multi-Photo Archaeological Carousel & Lightbox**: Embedded carousel showing authentic photographs of excavations, stone walls, ancient gates, and ruins from Wikimedia Commons. Click any photo to open the **Fullscreen Lightbox Modal** for high-resolution inspection with full photographer and Creative Commons license attribution.
+
+### C. Links to Authoritative External Source Maps
+Every map toolbar and location card connects you directly to the world's most authoritative biblical geography archives:
+* **OpenBible.info Chapter Atlas**: Click the **OpenBible Atlas** button in the toolbar to explore an interactive scholarly atlas filtered specifically to the chapter you are studying.
+* **Book KML Download**: Download the complete vector KML dataset for the biblical book (e.g. *Nehemiah.kml*) to load directly into **Google Earth**, **ArcGIS**, or **QGIS** for 3D aerial flyovers.
+* **Bible.ca Archaeological Atlas**: Direct footer links to curated archaeological survey plates by Steve Rudd (e.g. Nehemiah's 12 gates and Jerusalem wall rebuild, Persian royal roads, temple mount excavations).
+* **Knowing The Bible Historical Plates**: Direct links to high-resolution plate scans depicting ancient tribal allotments, empire boundaries, and migration journeys.
+* **Google Maps & High-Res JPG Exports**: Jump directly to modern Google Maps for live street views and navigation, or click **Ancient JPG** / **Satellite JPG** to download publication-ready map images.
 
 ---
 
-### C. Reflection Questions & Personal Study Journal
+## 🧭 2B. Bible Map Crafter / Map Crafter Studio (GCS)
 
-![Figure 3: Interactive Reflection Questions](/guide_images/03b_reflection_questions.png)
+In the map toolbar, the **"Map Crafter Studio (GCS)"** button opens the dedicated Biblical Map Crafter web application hosted on Google Cloud Storage ([`https://storage.googleapis.com/biblestudy-map-crafter/index.html`](https://storage.googleapis.com/biblestudy-map-crafter/index.html)).
 
-* **Deep Questions**: Each day gives you 3 deep questions to ponder and apply to real life.
-* **Private Cloud-Synced Journal**: Type your answers directly into the journal fields. They are automatically saved to your private account so you can track your spiritual growth over weeks and months.
+### What is Map Crafter Studio?
+Bible Map Crafter is an upstream interactive geospatial studio designed specifically for historical and theological mapping.
+
+### What Teachers, Pastors, & Scholars Can Do:
+1. **Dynamic Cartographic Templates**: Switch between antique parchment styles (with hand-shaded relief and ancient highways) and modern high-resolution satellite imagery.
+2. **Journey Routes & Borders**: Trace and edit biblical expedition paths (such as Nehemiah's journey from Susa to Jerusalem, Paul's missionary journeys, or the Exodus) and regional territory boundaries.
+3. **Archaeological Site Customization**: Add new coordinate markers, waypoints, and excavation notes.
+4. **Publication-Grade Dual JPG Exports**: Generate matched, identical camera-angle Ancient and Modern JPG plates at native high resolution for church study bulletins, academic papers, and projection screens.
 
 ---
 
-## 🗣️ 2. The 'Voices on Verses' Section: Breaking Silos & Echo Chambers
+## 📊 3. Visual Key Learnings & Sacred Infographics
+
+Visual learners can quickly digest complex theological concepts through structured learning infographics rendered directly in native high-resolution vector SVG.
+
+![Figure 3: Visual Key Learnings & Sacred Infographics](/guide_images/02b_visual_infographic.png)
+
+### What Each Infographic Contains:
+* **3-4 Structured Learning Pillars**: Breaks down the day into distinct pillars (e.g., *Scripture Foundation*, *Theological Core*, *Heart Application*) featuring substantive summaries and verified scripture quotes.
+* **Central Core Thesis**: A distilled, memorable theological statement capturing the core message of the passage.
+* **Anchor Verse**: A focal verse anchoring the theological truth into your memory.
+* **Daily Practical Walkaway**: A concrete action step (e.g., *Take 3 minutes of quiet prayer today to invite God into one specific area where you need His peace*).
+* **Interactive & Poster Modes**: Toggle between interactive responsive cards and a clean fullscreen poster view with one-click copy.
+* **1-Click Copy Summary**: Click **"Copy"** to copy a cleanly formatted summary complete with emojis and scripture references for study handouts, messaging apps, or church bulletins.
+* **"Re-extract" Button**: Click **"Re-extract"** to re-evaluate today's commentary with a fresh AI synthesis whenever you make edits.
+
+---
+
+## 🎨 3B. Sacred Artwork & Visual Prompt Crafter
+
+Beyond automated vector infographics, BibleStudy-Crafter provides an integrated studio for generating custom biblical cover banners and sacred posters.
+
+![Figure 4: Visual Studio & Prompt Crafter Modal](/guide_images/08_visual_prompt_crafter_modal.png)
+
+### How to Access the Visual Studio:
+* Click **"Customize Art"** beneath any study day cover banner, or
+* Click **"Craft Visual Art"** in the Key Learnings toolbar.
+
+### Core Features of Prompt Crafter:
+1. **Artistic Style Presets**:
+   * **Classical Oil Painting**: Warm chiaroscuro, golden light, reverent museum masterwork.
+   * **Luminous Watercolor**: Soft translucent washes, atmospheric and contemplative.
+   * **Cathedral Stained Glass**: Radiant jewel tones, devotional sacred aesthetic.
+   * **Illuminated Woodcut**: Medieval engraving, illuminated manuscript detailing.
+   * **Modern Minimalist**: Clean editorial illustration, peaceful geometric harmony.
+   * **Cinematic Golden Hour**: Volumetric rays of dawn light, grand biblical landscape.
+2. **Spiritual Mood & Atmosphere**:
+   * **Peaceful & Contemplative**: Quiet stillness, gentle dawn, peaceful prayer.
+   * **Majestic & Triumphant**: Radiant praise, grand victory, sunburst through clouds.
+   * **Somber & Reverent**: Deep solemnity, humble prayer in the wilderness.
+   * **Hope & Renewal**: Blossoming desert, living water, fresh green shoots.
+   * **Prophetic Wonder**: Vast star-filled heavens, mystery of divine promise.
+3. **Artwork Types & Aspect Ratios**:
+   * **Cover Art Banner**: 16:9 Landscape widescreen designed for study headers.
+   * **Infographic Poster**: 3:4 Portrait or 1:1 Square designed for mobile sharing and print handouts.
+4. **Personal Vision & Metaphors**:
+   * Add optional symbolic prompts (e.g., *"an ancient stone path leading toward sunrise, still waters reflecting dawn"*).
+5. **Prompt Assistant & Playground**:
+   * Powered by Gemini AI. Analyzes the day's scripture to formulate evocative prompts complete with negative prompts and theological rationale. Advanced users can use the **Prompt Playground** for direct prompt testing.
+6. **Day Gallery & History**:
+   * Every generated piece is saved to your study day's gallery. You can preview past variations, set any image as the active artwork, or download full-resolution images directly.
+
+---
+
+## ✍️ 4. Guided Prayers, "Refine with AI", & Personal Journal
+
+Grounding liturgical and pastoral prayers help prepare your heart before reading and surrender your thoughts before continuing your day.
+
+![Figure 5: Guided Prayers with the 'Refine with AI' Wand](/guide_images/03_study_day1_commentary.png)
+
+![Figure 6: Selah Pause & Reflection Questions](/guide_images/03b_reflection_questions.png)
+
+### How Prayer & Journaling Work:
+* **Opening & Closing Prayers**: Carefully composed prayers for each study day.
+* **Multi-Tradition Prayer Versions**: Switch between *Liturgical*, *Evangelical*, and *Contemplative* prayer styles.
+* **The "Refine with AI" Wand**: Want the prayer to focus on peace? Or shorter for family devotional? Type your revision prompt (e.g., *"Make it more focused on peace during trials"*) and tap **Refine with AI** to adapt the prayer seamlessly.
+* **Selah Pause & Personal Study Journal**: Ponder 3 deep reflection prompts and meditative Selah moments. Type your answers directly into the private journal fields. They are automatically saved to your cloud profile so you can revisit your insights over time.
+
+---
+
+## 🗣️ 5. The 'Voices on Verses' Section: Breaking Silos & Echo Chambers
 
 > **WHY WE NEED DIVERSE VOICES**  
-> Modern social media algorithms and news feeds are engineered to silo people into echo chambers, stoking outrage and keeping people divided. In contrast, true Christian discipleship and spiritual maturity require considering what others think and say. Others may have very different impressions and life experiences. By exploring diverse viewpoints while remaining firmly anchored in prayer and Scripture, we avoid blind spots, build genuine empathy, and develop a holistic, grounded understanding of Truth.
+> Modern social media algorithms and news feeds are engineered to silo people into echo chambers, stoking outrage and keeping people divided. In contrast, true Christian discipleship and spiritual maturity require considering what others think and say. Others may have very different impressions and life experiences. By exploring diverse viewpoints while remaining firmly anchored in prayer and Scripture, we avoid blind spots, build genuine empathy, and develop a holistic, grounded understanding of Truth (*1 Peter 3:15*).
 
-![Figure 4: Voices on Verses — Sentiment Quota Bar & Discussions](/guide_images/05_voices_on_verses_expanded.png)
+![Figure 7: Voices on Verses — Tunable Sentiment Quota Bar & Discussions](/guide_images/05_voices_on_verses_expanded.png)
 
 ### How the Voices Section Works:
 1. **The Tunable Voices Mix Bar (Sentiment Controls)**:
-   * 🔴 **Red (Critical / Skeptical)**: Objections, difficult questions, skeptics, and apparent contradictions (e.g., *"Do John 20:22 and Acts 2:1-4 contradict?"*). Addressing honest objections strengthens our faith and prepares us for real conversations.
-   * 🟡 **Amber (Neutral / Scholarly)**: Linguistic analysis, historical contexts, archaeological data, and unbiased summaries.
-   * 🟢 **Green (Positive / Devotional)**: Traditional, faith-filled, encouraging interpretations from saints and pastors.
-2. **Real Cited Sources & Community Discussions**:
-   * Rather than inventing fake opinions, BibleStudy-Crafter pulls cited commentaries (Bible Gateway, Study Bibles, historical encyclopedias) and real community forums (Reddit r/Christianity, theological boards). Clicking any source card opens an in-depth reader so you can examine the context yourself.
-3. **Humility and Wisdom in Dialogue**:
-   * When you understand the questions and objections other people wrestle with, you speak and witness with far greater gentleness, wisdom, and charity (*1 Peter 3:15*).
+   * 🔴 **Red (Critical / Skeptical)**: Objections, difficult questions, skeptics, and apparent contradictions. Addressing honest objections strengthens our faith and prepares us for real conversations.
+   * 🟡 **Amber (Neutral / Scholarly)**: Linguistic analysis, historical contexts, original Greek/Hebrew nuances, archaeological data, and unbiased summaries.
+   * 🟢 **Green (Positive / Devotional)**: Traditional, faith-filled, encouraging interpretations from saints, church fathers, and pastors.
+2. **Strictly Isolated Authoritative Commentaries**:
+   * Authoritative theological resources (BibleRef, GotQuestions, Bible Gateway, DesiringGod, Pulpit Commentary) are strictly separated from user-generated content.
+3. **Real Social Media & Community Discussions**:
+   * BibleStudy-Crafter pulls cited discussions from real forums (Reddit r/AcademicBiblical, r/Christianity, YouTube) with BERT sentiment analysis and confidence scores so you can understand real-world perspectives.
 
 ---
 
-## 👤 3. How to Create an Account
+## 👤 6. How to Create an Account
 
 Getting started takes less than 30 seconds:
 
-![Figure 5: Sign In and Account Registration Screen](/guide_images/01_login_signup_screen.png)
+![Figure 8: Sign In and Account Registration Screen](/guide_images/01_login_signup_screen.png)
 
-1. Open the app in your browser.
+1. Open BibleStudy-Crafter in your browser.
 2. Click **"Don't have an account? Create one"** at the bottom of the card.
 3. Enter your **Name**, **Email Address**, and a secure **Password** (at least 6 characters).
 4. Click **Create Account**!
@@ -70,11 +170,11 @@ Getting started takes less than 30 seconds:
 
 ---
 
-## 🔑 4. How to Get a Free Google Gemini API Key
+## 🔑 7. How to Get a Free Google Gemini API Key
 
 To generate new customized studies, the app connects directly to Google Gemini's AI model. Google provides a **100% free Google Gemini API key** with generous daily limits so anyone can study without subscription costs.
 
-![Figure 6: Profile & BYOK (Bring Your Own Key) Settings Modal](/guide_images/07_byok_api_keys_modal.png)
+![Figure 9: Profile & BYOK (Bring Your Own Key) Settings Modal](/guide_images/07_byok_api_keys_modal.png)
 
 ### Step-by-Step Instructions:
 1. Open [Google AI Studio (aistudio.google.com/app/apikey)](https://aistudio.google.com/app/apikey) in a new browser tab.
@@ -84,21 +184,21 @@ To generate new customized studies, the app connects directly to Google Gemini's
 5. Back in **BibleStudy-Crafter**, tap your **Profile Avatar** 👤 in the upper right.
 6. Click the **API Keys & BYOK** tab.
 7. Paste your key into the **Google Gemini API Key** field and click **Test** (you'll see a green checkmark).
-8. Click **Save API Key Settings**. You are now ready to generate limitless studies!
+8. Click **Save API Key Settings**. Your keys are encrypted locally in your browser session. You are now ready to generate limitless studies!
 
 ---
 
-## 🛠️ 5. How to Create a Brand New Study Plan
+## 🛠️ 8. How to Create a Brand New Study Plan
 
 Now you can design any study plan tailored to your personal walk, family, or small group:
 
-![Figure 7: Sanctuary Crafter — Subject of Inquiry & Study Dashboard](/guide_images/06_study_library.png)
+![Figure 10: Sanctuary Crafter — Subject of Inquiry & Study Dashboard](/guide_images/06_study_library.png)
 
-* **Step 1: Subject of Inquiry**: Type your topic, book, or theme in the main input box (e.g., *"The Beatitudes"*, *"Justification by Faith"*, *"Gideon's Calling"*, or click a suggested topic chip).
+* **Step 1: Subject of Inquiry**: Type your topic, book, or theme in the main input box (e.g., *"The Beatitudes"*, *"Justification by Faith"*, *"Nehemiah for Disaster Relief"*, or click a suggested topic chip).
 * **Step 2: Time Commitment**: Choose how many minutes you want to spend each day (e.g., `15` minutes) and how many total days the study should last (e.g., `3`, `5`, `7`, or `14` days).
-* **Step 3: Theological Lens & Bible Version**: Choose your preferred theological lens (*Non-denominational*, *Reformed*, *Catholic*, *Orthodox*, etc.) and your primary Bible version (`KJV`, `ASV`, `BBE`, `WEB`).
+* **Step 3: Theological Lens & Bible Version**: Choose your preferred theological lens (*Non-denominational*, *Reformed*, *Catholic*, *Orthodox*, etc.) and your primary Bible version (`KJV`, `ASV`, `PEV 1611`, `BBE`, `WEB`).
 * **Step 4: Find Relevant Verses**: Click **"Find relevant verses"** to search the Bible database. You can pick and choose the exact chapters and verses you want included.
-* **Step 5: Craft Study**: Click **Create study ➔**. The system automatically assembles each day's pure scripture reading, multi-voice commentary, reflection questions, guided prayers, and audio narration!
+* **Step 5: Craft Study**: Click **Create study ➔**. The system automatically assembles each day's pure scripture reading, dual-layer biblical maps, key learning infographics, multi-voice commentary, reflection questions, guided prayers, and audio narration!
 
 ---
 
@@ -107,6 +207,9 @@ Now you can design any study plan tailored to your personal walk, family, or sma
 | Stage | What You Do | Why It Matters |
 | :--- | :--- | :--- |
 | **1. Scripture First** | Read pure text & listen to narration without bias. | Protects the Word from being diluted by human or AI commentary. |
-| **2. Voices on Verses** | Explore skeptical, neutral, and devotional viewpoints. | Breaks algorithmic silos, explores diverse mindsets, builds empathy. |
-| **3. Reflect & Pray** | Answer journaling prompts & pray guided prayers. | Internalizes God's Word into daily lifestyle, character, and action. |
-| **4. Craft & Share** | Create tailored multi-day plans on any topic. | Equips individuals, families, and study groups with personalized plans. |
+| **2. Biblical Atlas** | Explore ancient maps, gazetteers, and satellite terrain. | Anchors scripture in verified archaeological and historical reality. |
+| **3. Infographics** | Review structured learning pillars, thesis, and daily walkaways. | Accelerates retention and clarifies theological principles visually. |
+| **3B. Sacred Imagery** | Customize banners & infographics with artistic presets and AI prompt crafter. | Elevates visual immersion and creates publication-grade devotional assets. |
+| **4. Reflect & Pray** | Pray liturgical prayers, refine with AI, and write journal entries. | Internalizes God's Word into daily character and action. |
+| **5. Voices on Verses** | Explore skeptical, neutral, and devotional viewpoints. | Breaks algorithmic silos, explores diverse mindsets, builds empathy. |
+| **6. Craft & Share** | Create tailored multi-day plans on any topic. | Equips individuals, families, and study groups with personalized plans. |
