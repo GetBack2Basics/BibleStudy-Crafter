@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bible Map Crafter & Thematic Spatial Studio Showcase</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap');
+
+    @page {
+      size: 16in 9in;
+      margin: 0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #0b0f19;
+      color: #f1f5f9;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    .slide {
+      width: 16in;
+      height: 9in;
+      padding: 0.65in 0.85in;
+      page-break-after: always;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: radial-gradient(circle at 10% 10%, rgba(30, 41, 59, 0.7) 0%, rgba(11, 15, 25, 1) 100%);
+    }
+
+    /* Ambient glow elements */
+    .slide::before {
+      content: '';
+      position: absolute;
+      top: -150px;
+      right: -150px;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.08) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .slide-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.25in;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 0.18in;
+    }
+
+    .slide-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12pt;
+      font-weight: 700;
+      padding: 4px 14px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+
+    .slide-title {
+      font-family: 'Cinzel', serif;
+      font-size: 26pt;
+      font-weight: 800;
+      color: #f8fafc;
+      letter-spacing: -0.01em;
+      line-height: 1.15;
+    }
+
+    .slide-subtitle {
+      font-size: 13pt;
+      color: #94a3b8;
+      font-weight: 400;
+      margin-top: 4px;
+    }
+
+    .slide-brand {
+      text-align: right;
+    }
+
+    .slide-brand-title {
+      font-family: 'Cinzel', serif;
+      font-size: 14pt;
+      font-weight: 700;
+      color: #e2e8f0;
+    }
+
+    .slide-brand-sub {
+      font-size: 10pt;
+      color: #64748b;
+      margin-top: 2px;
+    }
+
+    .slide-body {
+      flex: 1;
+      display: flex;
+      gap: 0.5in;
+      align-items: center;
+      min-height: 0;
+    }
+
+    .content-left {
+      flex: 1.15;
+      display: flex;
+      flex-direction: column;
+      gap: 0.18in;
+    }
+
+    .content-right {
+      flex: 1.35;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .screen-mockup {
+      width: 100%;
+      max-height: 5.6in;
+      object-fit: contain;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      background: #0f172a;
+    }
+
+    .feature-card {
+      background: rgba(30, 41, 59, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 0.16in 0.22in;
+    }
+
+    .feature-card h3 {
+      font-size: 14pt;
+      font-weight: 700;
+      color: #f1f5f9;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .feature-card p {
+      font-size: 11pt;
+      color: #94a3b8;
+      line-height: 1.45;
+    }
+
+    .pill-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .tech-pill {
+      background: rgba(148, 163, 184, 0.1);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      color: #cbd5e1;
+      font-size: 10pt;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 6px;
+    }
+
+    .slide-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding-top: 0.15in;
+      margin-top: 0.15in;
+      font-size: 11pt;
+      color: #64748b;
+    }
+
+    .slide-footer a {
+      color: #38bdf8;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    /* Title Slide Specifics */
+    .title-slide {
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 0.8in 1.5in;
+    }
+
+    .title-hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      color: #f59e0b;
+      font-size: 14pt;
+      font-weight: 700;
+      padding: 6px 20px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 24px;
+    }
+
+    .title-hero-h1 {
+      font-family: 'Cinzel', serif;
+      font-size: 44pt;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1.15;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 60%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .title-hero-sub {
+      font-size: 18pt;
+      color: #94a3b8;
+      max-width: 10.5in;
+      line-height: 1.5;
+      margin: 0 auto 36px auto;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      width: 100%;
+      max-width: 13in;
+      margin-top: 10px;
+    }
+
+    .hero-stat-card {
+      background: rgba(30, 41, 59, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: left;
+    }
+
+    .hero-stat-card .val {
+      font-size: 20pt;
+      font-weight: 800;
+      color: #38bdf8;
+      font-family: 'Cinzel', serif;
+      margin-bottom: 4px;
+    }
+
+    .hero-stat-card .lbl {
+      font-size: 10.5pt;
+      color: #94a3b8;
+      line-height: 1.35;
+    }
+
+    /* Grid for Use Cases Slide */
+    .use-cases-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.25in;
+      width: 100%;
+    }
+
+    .use-case-box {
+      background: rgba(30, 41, 59, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 0.25in 0.3in;
+    }
+
+    .use-case-box h3 {
+      font-family: 'Cinzel', serif;
+      font-size: 17pt;
+      font-weight: 700;
+      color: #38bdf8;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .use-case-box p {
+      font-size: 12pt;
+      color: #cbd5e1;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== SLIDE 1: TITLE SLIDE ==================== -->
+  <div class="slide title-slide">
+    <div style="margin: auto 0;">
+      <div class="title-hero-badge">🗺️ Geospatial & Digital Humanities Architecture</div>
+      <h1 class="title-hero-h1">Bible Map Crafter & Thematic Spatial Studio</h1>
+      <p class="title-hero-sub">
+        Adapting modern, client-side geospatial engines for ancient history, literature, archaeology, and educational atlases without anachronistic modern road grids.
+      </p>
+
+      <div class="grid-4">
+        <div class="hero-stat-card">
+          <div class="val">📜 Dual-Plate</div>
+          <div class="lbl">Instant split-peel slider between Ancient Parchment & Modern Satellite.</div>
+        </div>
+        <div class="hero-stat-card">
+          <div class="val">📍 1,200+ Sites</div>
+          <div class="lbl">Authoritative gazetteers from OpenBible, Pleiades, and Wikidata.</div>
+        </div>
+        <div class="hero-stat-card">
+          <div class="val">🎯 Hitbox Engine</div>
+          <div class="lbl">8px bounding-box click tolerance on travel routes and ancient empires.</div>
+        </div>
+        <div class="hero-stat-card">
+          <div class="val">⚡ Serverless</div>
+          <div class="lbl">MapLibre GL JS 4.x hosted on Google Cloud Storage for pennies a month.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer" style="width: 100%;">
+      <span>A project of <strong>GetBack2Basics</strong></span>
+      <span>Live Studio: <a href="https://storage.googleapis.com/biblestudy-map-crafter/index.html">storage.googleapis.com/biblestudy-map-crafter</a></span>
+      <span>Slide 1 / 8</span>
+    </div>
+  </div>
+
+  <!-- ==================== SLIDE 2: ANCIENT TEMPLATE ==================== -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <div class="slide-badge">01 | Core Cartographic Studio</div>
+        <h2 class="slide-title">Ancient Historical Atlas Template</h2>
+        <div class="slide-subtitle">Strips away modern 4-lane motorways and urban grids in favor of vintage parchment topography.</div>
+      </div>
+      <div class="slide-brand">
+        <div class="slide-brand-title">Bible Map Crafter</div>
+        <div class="slide-brand-sub">Thematic Vector Studio</div>
+      </div>
+    </div>
+
+    <div class="slide-body">
+      <div class="content-left">
+        <div class="feature-card">
+          <h3>📜 Vintage Parchment Shaded Relief</h3>
+          <p>Replaces modern asphalt tiles with bespoke hillshading, warm sepia relief, and bathymetric tints to reflect ancient terrain.</p>
+        </div>
+        <div class="feature-card">
+          <h3>⏳ Chronological Era Filtering</h3>
+          <p>Instant client-side filtering for 5 major biblical epochs: Patriarchal (~2000 BC), Exodus, United Monarchy, Roman Judea (~30 AD), and Early Church (~50-95 AD).</p>
+        </div>
+        <div class="feature-card">
+          <h3>📁 Dynamic KML Vector Overlays</h3>
+          <p>Streams authoritative chapter routes and territorial boundaries on demand via <code>@tmcw/togeojson</code> with automatic bounding-box fitting.</p>
+        </div>
+        <div class="pill-group">
+          <span class="tech-pill">MapLibre GL JS 4.x</span>
+          <span class="tech-pill">3D DEM Terrain</span>
+          <span class="tech-pill">OpenTopoMap Shading</span>
+          <span class="tech-pill">GeoJSON / KML</span>
+        </div>
+      </div>
+      <div class="content-right">
+        <img class="screen-mockup" src="presentation_images/01_ancient_parchment_studio.png" alt="Ancient Parchment Studio">
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>Upstream Engine: <a href="https://github.com/GetBack2Basics/Highlight_Map_Crafter">Highlight Map Crafter</a></span>
+      <span>Live Studio: <a href="https://storage.googleapis.com/biblestudy-map-crafter/index.html">storage.googleapis.com/biblestudy-map-crafter</a></span>
+      <span>Slide 2 / 8</span>
+    </div>
+  </div>
+
+  <!-- ==================== SLIDE 3: ARCHAEOLOGICAL POPUPS & LIGHTBOX ==================== -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <div class="slide-badge">02 | Archaeological Gazetteers</div>
+        <h2 class="slide-title">Site Popups with Photo Carousels & Lightbox</h2>
+        <div class="slide-subtitle">Connecting ancient coordinates to verified archaeological excavations and peer-reviewed media.</div>
+      </div>
+      <div class="slide-brand">
+        <div class="slide-brand-title">Bible Map Crafter</div>
+        <div class="slide-brand-sub">Archaeological Intelligence</div>
+      </div>
+    </div>
+
+    <div class="slide-body">
+      <div class="content-left">
+        <div class="feature-card">
+          <h3>🏛️ Tri-Gazetteer Cross-Referencing</h3>
+          <p>Synchronizes over 1,200 ancient Near Eastern locations against <strong>OpenBible.info</strong>, <strong>Pleiades</strong>, and <strong>Wikidata</strong> to eliminate duplicate and disputed coordinates.</p>
+        </div>
+        <div class="feature-card">
+          <h3>🖼️ Responsive In-Map Photo Carousels</h3>
+          <p>Every prominent site features a multi-image drawer carousel with CC-licensed photography, photographer credit, and Wikimedia Commons source badges.</p>
+        </div>
+        <div class="feature-card">
+          <h3>🔍 Fullscreen Lightbox & In-Browser Editor</h3>
+          <p>Keyboard-navigable modal lightbox for high-resolution artifact inspection, plus an in-browser site editor to update coordinates and descriptions.</p>
+        </div>
+        <div class="pill-group">
+          <span class="tech-pill">Wikimedia Commons API</span>
+          <span class="tech-pill">Pleiades Gazetteer</span>
+          <span class="tech-pill">Modal Lightbox</span>
+          <span class="tech-pill">CC Attribution</span>
+        </div>
+      </div>
+      <div class="content-right">
+        <img class="screen-mockup" src="presentation_images/02_archaeological_popup_carousel.png" alt="Archaeological Popup and Photo Carousel">
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>Gazetteer Data: <a href="https://www.openbible.info/geo/">OpenBible.info</a> &bull; <a href="https://pleiades.stoa.org/">Pleiades Ancient World</a></span>
+      <span>Slide 3 / 8</span>
+    </div>
+  </div>
+
+  <!-- ==================== SLIDE 4: MODERN SATELLITE TEMPLATE ==================== -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <div class="slide-badge">03 | Grounding in Physical Reality</div>
+        <h2 class="slide-title">Modern Satellite Template Integration</h2>
+        <div class="slide-subtitle">One-click switch to high-resolution satellite imagery while maintaining historical vector markers.</div>
+      </div>
+      <div class="slide-brand">
+        <div class="slide-brand-title">Bible Map Crafter</div>
+        <div class="slide-brand-sub">Comparative Satellite Cartography</div>
+      </div>
+    </div>
+
+    <div class="slide-body">
+      <div class="content-left">
+        <div class="feature-card">
+          <h3>🛰️ Seamless Imagery Switching</h3>
+          <p>Instantly shifts the basemap to ESRI World Imagery without dropping active site selections, travel vectors, or historical search state.</p>
+        </div>
+        <div class="feature-card">
+          <h3>🏔️ Real-World Topography & Tell Verification</h3>
+          <p>Enables researchers, students, and educators to correlate ancient texts with geological river bends, wadis, mountain passes, and archaeological tells.</p>
+        </div>
+        <div class="feature-card">
+          <h3>📸 High-Resolution Dual-Plate Exporter</h3>
+          <p>Direct WebGL canvas capture that exports synchronized Ancient and Modern JPEG plates with matching bounds for publication and offline printing.</p>
+        </div>
+        <div class="pill-group">
+          <span class="tech-pill">ESRI World Imagery</span>
+          <span class="tech-pill">Canvas Capture API</span>
+          <span class="tech-pill">Synchronized Bounds</span>
+          <span class="tech-pill">High-DPI Export</span>
+        </div>
+      </div>
+      <div class="content-right">
+        <img class="screen-mockup" src="presentation_images/03_modern_satellite_studio.png" alt="Modern Satellite Template">
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>Live Studio: <a href="https://storage.googleapis.com/biblestudy-map-crafter/index.html">storage.googleapis.com/biblestudy-map-crafter</a></span>
+      <span>Slide 4 / 8</span>
+    </div>
+  </div>
+
+  <!-- ==================== SLIDE 5: DOWNSTREAM PEEL SLIDER ==================== -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <div class="slide-badge">04 | Interactive Downstream Applications</div>
+        <h2 class="slide-title">Dual-Plate Split Peel Slider (React)</h2>
+        <div class="slide-subtitle">Consuming generated plates in modern web applications to provide real-time interactive exploration.</div>
+      </div>
+      <div class="slide-brand">
+        <div class="slide-brand-title">BibleStudy-Crafter</div>
+        <div class="slide-brand-sub">Production Web App</div>
+      </div>
+    </div>
+
+    <div class="slide-body">
+      <div class="content-left">
+        <div class="feature-card">
+          <h3>🎚️ Interactive Real-Time Peel Slider</h3>
+          <p>Users drag an intuitive split slider to peel back the ancient historical plate and reveal modern satellite photography underneath in real time.</p>
+        </div>
+        <div class="feature-card">
+          <h3>🧭 In-Context Geographic Discovery</h3>
+          <p>Seamlessly embedded into curriculum lessons, displaying historical plate context, archaeological significance, and direct GCS studio deep-links.</p>
+        </div>
+        <div class="feature-card">
+          <h3>🔗 Deep-Linked Studio Handoff</h3>
+          <p>A single click on "Map Crafter Studio (GCS)" opens the standalone studio centered on the exact coordinates and era of the active lesson.</p>
+        </div>
+        <div class="pill-group">
+          <span class="tech-pill">React 18 / TypeScript</span>
+          <span class="tech-pill">Touch & Mouse Drag</span>
+          <span class="tech-pill">Deep Linking</span>
+          <span class="tech-pill">CSS Clip-Path</span>
+        </div>
+      </div>
+      <div class="content-right">
+        <img class="screen-mockup" src="presentation_images/04_peel_slider_dual_plate.png" alt="Interactive Peel Slider in BibleStudy-Crafter">
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>Live App: <a href="https://biblestudy-crafter-uc2dhzwjsa-uc.a.run.app">biblestudy-crafter-uc2dhzwjsa-uc.a.run.app</a></span>
+      <span>Slide 5 / 8</span>
+    </div>
+  </div>
+
+  <!-- ==================== SLIDE 6: UPSTREAM ENGINE ==================== -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <div class="slide-badge">05 | Spatial Foundation & Evolution</div>
+        <h2 class="slide-title">The Upstream Engine: Highlight Map Crafter</h2>
+        <div class="slide-subtitle">From short-term rental concierge and travel isochrones to universal thematic cartography.</div>
+      </div>
+      <div class="slide-brand">
+        <div class="slide-brand-title">Highlight Map Crafter</div>
+        <div class="slide-brand-sub">Upstream Spatial Engine</div>
+      </div>
+    </div>
+
+    <div class="slide-body">
+      <div class="content-left">
+        <div class="feature-card">
+          <h3>🏡 Property Hub & Travel-Time Isochrones</h3>
+          <p>Initially created for our Lake Macquarie guest stay (21 Bournville Rd, Rathmines) using Valhalla to calculate true 5/10/15/30-minute drive & walk polygons.</p>
+        </div>
+        <div class="feature-card">
+          <h3>🔄 Contributing Upstream Innovations</h3>
+          <p>Enhancements engineered in Bible Map Crafter (8px vector click hitboxes, multi-photo carousels, dynamic KML vector streaming) were contributed straight back upstream.</p>
+        </div>
+        <div class="feature-card">
+          <h3>🤖 AI Welcome Guide with Google NotebookLM</h3>
+          <p>Integrated conversational AI concierge transforming property guides, house manuals, and local secrets into a 24/7 guest assistant.</p>
+        </div>
+        <div class="pill-group">
+          <span class="tech-pill">Valhalla Isochrones</span>
+          <span class="tech-pill">Turf.js Buffering</span>
+          <span class="tech-pill">NotebookLM Integration</span>
+          <span class="tech-pill">OpenStreetMap</span>
+        </div>
+      </div>
+      <div class="content-right">
+        <img class="screen-mockup" src="presentation_images/05_upstream_highlight_map_crafter.png" alt="Highlight Map Crafter Hub">
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>Upstream Repo: <a href="https://github.com/GetBack2Basics/Highlight_Map_Crafter">github.com/GetBack2Basics/Highlight_Map_Crafter</a></span>
+      <span>Slide 6 / 8</span>
+    </div>
+  </div>
+
+  <!-- ==================== SLIDE 7: APPLICATIONS BEYOND BIBLE STUDY ==================== -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <div class="slide-badge">06 | Universal Potential</div>
+        <h2 class="slide-title">Applications Far Beyond Biblical Studies</h2>
+        <div class="slide-subtitle">A reusable, zero-backend architecture for digital humanities, education, and cultural heritage.</div>
+      </div>
+      <div class="slide-brand">
+        <div class="slide-brand-title">Thematic Spatial Studio</div>
+        <div class="slide-brand-sub">Universal Blueprint</div>
+      </div>
+    </div>
+
+    <div class="slide-body" style="align-items: stretch;">
+      <div class="use-cases-grid">
+        <div class="use-case-box">
+          <h3>🏛️ Classical History & Literature</h3>
+          <p>Interactive companions tracing Homer's <em>Odyssey</em>, the campaigns of Alexander the Great, Silk Road trade caravans, or Roman highways across Britannia without modern border distractions.</p>
+        </div>
+        <div class="use-case-box">
+          <h3>🎓 K-12 & Higher EdTech</h3>
+          <p>Engaging classroom modules allowing students to interactively peel between ancient empires (Mesopotamia, Pharaonic Egypt, the Indus Valley) and present-day sovereign nations.</p>
+        </div>
+        <div class="use-case-box">
+          <h3>🏺 Museums & Cultural Heritage</h3>
+          <p>Lightweight, embeddable touchscreen kiosks displaying artifact provenance, excavation strata, and historical context without heavy, expensive desktop GIS licenses.</p>
+        </div>
+        <div class="use-case-box">
+          <h3>🌿 Environmental & Historical Tracking</h3>
+          <p>Visualizing changing river deltas, historical deforestation, ancient maritime routes, or indigenous territorial boundaries with high-resolution satellite overlay.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>Architectural Blueprint: <a href="https://github.com/GetBack2Basics/Highlight_Map_Crafter/blob/main/docs/highlight_map_crafter_integration_blueprint.md">docs/highlight_map_crafter_integration_blueprint.md</a></span>
+      <span>Slide 7 / 8</span>
+    </div>
+  </div>
+
+  <!-- ==================== SLIDE 8: SUMMARY & OPEN SOURCE ==================== -->
+  <div class="slide title-slide">
+    <div style="margin: auto 0;">
+      <div class="title-hero-badge">🚀 Open Source & Free to Adapt</div>
+      <h1 class="title-hero-h1">Explore the Live Tools & Source Code</h1>
+      <p class="title-hero-sub">
+        Both repositories are completely open-source under MIT & ISC licenses. Feel free to fork, plug in your own historical GeoJSON/KML data, or adapt the spatial engine for your institution.
+      </p>
+
+      <div class="grid-4" style="max-width: 13.5in;">
+        <div class="hero-stat-card">
+          <div class="val" style="font-size: 15pt;">🌐 Live Map Studio</div>
+          <div class="lbl" style="margin-top: 6px;"><a href="https://storage.googleapis.com/biblestudy-map-crafter/index.html" style="color: #38bdf8; text-decoration: none; word-break: break-all;">storage.googleapis.com/biblestudy-map-crafter</a></div>
+        </div>
+        <div class="hero-stat-card">
+          <div class="val" style="font-size: 15pt;">📖 Live App (Slider)</div>
+          <div class="lbl" style="margin-top: 6px;"><a href="https://biblestudy-crafter-uc2dhzwjsa-uc.a.run.app" style="color: #38bdf8; text-decoration: none; word-break: break-all;">biblestudy-crafter-uc2dhzwjsa-uc.a.run.app</a></div>
+        </div>
+        <div class="hero-stat-card">
+          <div class="val" style="font-size: 15pt;">💻 Bible Map Crafter</div>
+          <div class="lbl" style="margin-top: 6px;"><a href="https://github.com/GetBack2Basics/BibleStudy-Crafter/tree/main/map_crafter" style="color: #38bdf8; text-decoration: none; word-break: break-all;">github.com/GetBack2Basics/BibleStudy-Crafter</a></div>
+        </div>
+        <div class="hero-stat-card">
+          <div class="val" style="font-size: 15pt;">🗺️ Upstream Engine</div>
+          <div class="lbl" style="margin-top: 6px;"><a href="https://github.com/GetBack2Basics/Highlight_Map_Crafter" style="color: #38bdf8; text-decoration: none; word-break: break-all;">github.com/GetBack2Basics/Highlight_Map_Crafter</a></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer" style="width: 100%;">
+      <span>Built with ❤️ by <strong>GetBack2Basics</strong></span>
+      <span>Connect on GitHub & LinkedIn</span>
+      <span>Slide 8 / 8</span>
+    </div>
+  </div>
+
+</body>
+</html>

@@ -13,6 +13,7 @@
 ## 🌟 Live Studio & Links
 
 - 🌐 **Live Web Application (GCS)**: [https://storage.googleapis.com/biblestudy-map-crafter/index.html](https://storage.googleapis.com/biblestudy-map-crafter/index.html)
+- 📄 **Slide Deck Showcase (PDF)**: [docs/Bible_Map_Crafter_Thematic_Studio_Showcase.pdf](../docs/Bible_Map_Crafter_Thematic_Studio_Showcase.pdf)
 - 📖 **Parent Platform**: [BibleStudy-Crafter](https://github.com/GetBack2Basics/BibleStudy-Crafter)
 - 🗺️ **Upstream Core Engine**: [Highlight Map Crafter](https://github.com/GetBack2Basics/Highlight_Map_Crafter)
 - 📘 **Integration Blueprint**: [docs/highlight_map_crafter_integration_blueprint.md](../docs/highlight_map_crafter_integration_blueprint.md)
