@@ -5,7 +5,7 @@
 
 ## 🌟 Executive Summary
 
-This document serves as a comprehensive architectural blueprint, technical guide, and upstream feature proposal for **[Highlight_Map_Crafter](https://github.com/GetBack2Basics/Highlight_Map_Crafter)**, based on real-world production enhancements developed in **[BibleStudy-Crafter](https://github.com/GetBack2Basics/BibleStudy-Crafter)** (specifically the live **Biblical Map Crafter** deployment hosted at [`https://storage.googleapis.com/biblestudy-map-crafter/index.html`](https://storage.googleapis.com/biblestudy-map-crafter/index.html)).
+This document serves as a comprehensive architectural blueprint, technical guide, and upstream feature proposal for **[Highlight_Map_Crafter](https://github.com/GetBack2Basics/Highlight_Map_Crafter)**, based on real-world production enhancements developed in **[BibleStudy-Crafter](https://github.com/GetBack2Basics/BibleStudy-Crafter)** (specifically the live **[Bible Map Crafter](https://github.com/GetBack2Basics/BibleStudy-Crafter/tree/main/map_crafter)** studio located in [`map_crafter/`](../map_crafter/README.md) and hosted at [`https://storage.googleapis.com/biblestudy-map-crafter/index.html`](https://storage.googleapis.com/biblestudy-map-crafter/index.html)).
 
 By generalizing these advancements, **Highlight_Map_Crafter** can evolve from a point-highlighting utility into a **state-of-the-art, multi-geometry cartographic studio** capable of powering:
 - **Historical & Archaeological Atlases** (ancient vs. modern comparisons, archaeological expeditions, territory evolution).
@@ -555,6 +555,8 @@ To incorporate these battle-tested patterns into the main [Highlight_Map_Crafter
 
 ## 📜 Credits and Attribution
 
+- **Bible Map Crafter Implementation**: [`map_crafter/`](../map_crafter/README.md) at [`https://github.com/GetBack2Basics/BibleStudy-Crafter/tree/main/map_crafter`](https://github.com/GetBack2Basics/BibleStudy-Crafter/tree/main/map_crafter)
+- **Bible Map Crafter Live Studio (GCS)**: [`https://storage.googleapis.com/biblestudy-map-crafter/index.html`](https://storage.googleapis.com/biblestudy-map-crafter/index.html)
 - **BibleStudy-Crafter Project**: [`https://github.com/GetBack2Basics/BibleStudy-Crafter`](https://github.com/GetBack2Basics/BibleStudy-Crafter)
 - **Authoritative Geocoding Data**: [OpenBible.info Bible-Geocoding-Data](https://github.com/openbibleinfo/Bible-Geocoding-Data)
 - **Map Engine**: [MapLibre GL JS](https://maplibre.org/)

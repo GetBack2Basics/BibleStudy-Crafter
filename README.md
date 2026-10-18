@@ -30,7 +30,13 @@ Every day includes meaningful reflection questions to help you apply the lesson 
 - **Theology Infographics**: Charts and diagrams that break down complex timelines and themes.
 - **Listen Out Loud (TTS)**: Built-in voice player so you can listen hands-free on the go.
 
-### 7. 🆓 100% Free & Private (No Subscriptions Needed)
+### 7. 🗺️ Bible Map Crafter & Interactive Cartography (Ancient Atlas vs. Modern Satellite)
+- **Interactive Peel Slider**: Compare vintage historical parchment maps against high-resolution modern satellite imagery side-by-side with an intuitive split slider.
+- **1,200+ Archaeological Sites**: Geocoded locations with verified photos, scripture links, and ancient names from OpenBible.info and Pleiades.
+- **Dedicated Map Crafter Studio**: Open the dedicated, serverless [Bible Map Crafter Studio](map_crafter/) (live on GCS at [https://storage.googleapis.com/biblestudy-map-crafter/index.html](https://storage.googleapis.com/biblestudy-map-crafter/index.html)) to filter by biblical era, inspect travel vectors, and export publication-ready dual map plates.
+- **Powered by Highlight Map Crafter**: Adapted from the open-source spatial engine of [Highlight Map Crafter](https://github.com/GetBack2Basics/Highlight_Map_Crafter).
+
+### 8. 🆓 100% Free & Private (No Subscriptions Needed)
 Works completely free with zero API keys required, and can even run 100% privately on your own computer with Ollama. If you have your own favorite AI keys (Gemini, Claude, OpenAI, etc.), you can easily plug them in too!
 
 ---
@@ -42,6 +48,7 @@ Works completely free with zero API keys required, and can even run 100% private
 | **Bible Verses** | Guessed from AI memory (prone to errors) | **Direct from offline Bible database** |
 | **Study Duration** | One generic wall of text | **Custom days + exact minutes per day** |
 | **Editing** | Start over if you don't like an answer | **Highlight & refine any specific part** |
+| **Historical Geography** | None or modern road grids | **Bible Map Crafter dual-plate peel slider + 1,200+ sites** |
 | **Perspectives & Sentiment** | One generic opinion | **Analyzed historical & real-world feelings** |
 | **Questions & Journaling** | None (lost when you close the tab) | **Interactive questions + auto-saving notes** |
 | **Visuals & Audio** | Plain text only | **Mood artwork, infographics & audio narrator** |
