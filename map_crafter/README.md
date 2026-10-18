@@ -17,6 +17,7 @@
 - 📖 **Parent Platform**: [BibleStudy-Crafter](https://github.com/GetBack2Basics/BibleStudy-Crafter)
 - 🗺️ **Upstream Core Engine**: [Highlight Map Crafter](https://github.com/GetBack2Basics/Highlight_Map_Crafter)
 - 📘 **Integration Blueprint**: [docs/highlight_map_crafter_integration_blueprint.md](../docs/highlight_map_crafter_integration_blueprint.md)
+- 🏛️ **OpenBible Integration Report**: [docs/openbible_geocoding_integration_report.md](../docs/openbible_geocoding_integration_report.md)
 
 ---
 
@@ -129,7 +130,7 @@ The script automatically:
 ## 🤝 Upstream Credits & Attribution
 
 - **Geospatial Engine Core**: Derived from **[Highlight Map Crafter](https://github.com/GetBack2Basics/Highlight_Map_Crafter)** by GetBack2Basics.
-- **Gazetteer & Geocoding**: [OpenBible.info](https://www.openbible.info/geo/) under CC-BY, with cross-references to [Pleiades](https://pleiades.stoa.org/) and [Wikidata](https://www.wikidata.org/).
+- **Gazetteer & Geocoding**: [OpenBible.info](https://www.openbible.info/geo/) under CC-BY (see our detailed [OpenBible Integration Report](../docs/openbible_geocoding_integration_report.md)), with cross-references to [Pleiades](https://pleiades.stoa.org/) and [Wikidata](https://www.wikidata.org/).
 - **Mapping Framework**: [MapLibre GL JS 4.x](https://maplibre.org/) and [@tmcw/togeojson](https://github.com/tmcw/togeojson).
 - **Cartographic Basemaps**: OpenTopoMap, ESRI World Imagery, CARTO Voyager, and Stamen Watercolor.
 

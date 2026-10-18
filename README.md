@@ -32,7 +32,7 @@ Every day includes meaningful reflection questions to help you apply the lesson 
 
 ### 7. 🗺️ Bible Map Crafter & Interactive Cartography (Ancient Atlas vs. Modern Satellite)
 - **Interactive Peel Slider**: Compare vintage historical parchment maps against high-resolution modern satellite imagery side-by-side with an intuitive split slider.
-- **1,200+ Archaeological Sites**: Geocoded locations with verified photos, scripture links, and ancient names from OpenBible.info and Pleiades.
+- **1,200+ Archaeological Sites**: Geocoded locations with verified photos, scripture links, and ancient names from OpenBible.info and Pleiades (read our [OpenBible Integration Showcase](docs/openbible_geocoding_integration_report.md)).
 - **Dedicated Map Crafter Studio**: Open the dedicated, serverless [Bible Map Crafter Studio](map_crafter/) (live on GCS at [https://storage.googleapis.com/biblestudy-map-crafter/index.html](https://storage.googleapis.com/biblestudy-map-crafter/index.html)) to filter by biblical era, inspect travel vectors, and export publication-ready dual map plates.
 - **Powered by Highlight Map Crafter**: Adapted from the open-source spatial engine of [Highlight Map Crafter](https://github.com/GetBack2Basics/Highlight_Map_Crafter).
 
