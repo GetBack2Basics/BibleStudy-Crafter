@@ -18,7 +18,7 @@
   <script src="https://unpkg.com/@tmcw/togeojson@5.8.1/dist/togeojson.umd.js"></script>
 
   <!-- Custom CSS -->
-  <link rel="stylesheet" href="style.css?v=20261017_all_popups">
+  <link rel="stylesheet" href="style.css?v=20261019_atlas_a">
 </head>
 <body>
   <div id="app-container">
@@ -46,11 +46,11 @@
 
       <!-- Historical Era Filter -->
       <select id="select-era" class="select-pill" title="Filter sites and boundaries by biblical epoch">
-        <option value="all">All Biblical Eras</option>
+        <option value="all" selected>All Biblical Eras</option>
         <option value="patriarchal">Patriarchal (~2000-1600 BC)</option>
         <option value="exodus">Exodus & Wilderness (~1446 BC)</option>
         <option value="monarchy">United Monarchy (~1000 BC)</option>
-        <option value="roman_judea" selected>Roman Judea & Galilee (~30 AD)</option>
+        <option value="roman_judea">Roman Judea & Galilee (~30 AD)</option>
         <option value="early_church">Early Church / Paul (~50-95 AD)</option>
       </select>
 
@@ -138,7 +138,7 @@
         <!-- Floating Active Template Badge -->
         <div class="map-floating-status">
           <span id="badge-active-template" class="status-badge ancient">📜 Historical Biblical Setting</span>
-          <span id="badge-active-era" style="font-size: 0.75rem; color: var(--text-secondary);">Roman Judea (~30 AD)</span>
+          <span id="badge-active-era" style="font-size: 0.75rem; color: var(--text-secondary);">All Biblical Eras</span>
         </div>
       </div>
     </div>
@@ -301,6 +301,6 @@
   </div>
 
   <!-- Application Logic -->
-  <script src="app.js?v=20261017_all_popups"></script>
+  <script src="app.js?v=20261019_atlas_a"></script>
 </body>
 </html>
