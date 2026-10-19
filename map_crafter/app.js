@@ -30,6 +30,22 @@ let siteActivePhotoIndices = {};
 let currentLightboxSite = null;
 let currentLightboxIndex = 0;
 
+// Sidebar & Pinned Site Filtering State
+let activeSidebarTab = 'top10'; // 'top10' | 'pinned' | 'all'
+let selectedAlphaLetter = 'all';
+let searchQuery = '';
+let pinnedSiteIds = new Set();
+try {
+  const saved = localStorage.getItem('biblestudy_map_crafter_pinned');
+  if (saved) {
+    JSON.parse(saved).forEach((id) => pinnedSiteIds.add(id));
+  }
+} catch (e) {
+  console.warn('Could not read pinned sites from localStorage', e);
+}
+
+let renderMarkersDebounceTimer = null;
+
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', async () => {
   await loadData();
@@ -38,6 +54,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupUIEventListeners();
   setupSidebarResizer();
   setupGlobalPopupDismiss();
+  buildAlphabetJumper();
+  updatePinnedCounter();
   renderSidebarList();
 });
 
@@ -119,7 +137,18 @@ function initMap() {
     if (currentBookKml) {
       loadBookKML(currentBookKml);
     }
+    map.on('zoomend', () => scheduleRenderMarkers());
+    map.on('moveend', () => {
+      if (map && map.getZoom() >= 9.5) scheduleRenderMarkers();
+    });
   });
+}
+
+function scheduleRenderMarkers() {
+  if (renderMarkersDebounceTimer) clearTimeout(renderMarkersDebounceTimer);
+  renderMarkersDebounceTimer = setTimeout(() => {
+    renderMarkers();
+  }, 75);
 }
 
 // 4. Add 3D Terrain DEM, Shaded Relief Surface & Dynamic Hillshade
@@ -375,37 +404,70 @@ function switchBasemap(basemapKey, updateSelect = true) {
   );
 }
 
-// 8. Render Markers (Simple Small Round Icon with Ancient/Modern Name)
+// 8. Render Markers (Tiered Priority: Major, Moderate, Minor + Pinned)
 function renderMarkers() {
   // Clear existing markers
   markersList.forEach((m) => (m.marker ? m.marker.remove() : m.remove()));
   markersList = [];
 
-  if (!sitesGeoJSON?.features) return;
+  if (!sitesGeoJSON?.features || !map) return;
 
   const isAncient = currentTemplate === 'ancient';
+  const currentZoom = map.getZoom();
+
+  // If zoomed in close (zoom >= 9.5), calculate viewport bounding box with 25% margin
+  let bounds = null;
+  if (currentZoom >= 9.5) {
+    const b = map.getBounds();
+    const spanLng = b.getEast() - b.getWest();
+    const spanLat = b.getNorth() - b.getSouth();
+    bounds = {
+      west: b.getWest() - spanLng * 0.25,
+      east: b.getEast() + spanLng * 0.25,
+      south: b.getSouth() - spanLat * 0.25,
+      north: b.getNorth() + spanLat * 0.25,
+    };
+  }
 
   sitesGeoJSON.features.forEach((feature) => {
     const props = feature.properties;
     const [lng, lat] = feature.geometry.coordinates;
+    const isPinned = pinnedSiteIds.has(props.id);
 
-    // Filter by Era if specified
+    // 1. Filter by Era if specified (Pinned sites can be shown or adhere to era)
     if (currentEra !== 'all' && props.period !== 'all' && !props.period.includes(currentEra)) {
-      return;
+      if (!isPinned) return;
+    }
+
+    // 2. Zoom & Priority Tier Filtering
+    // Pinned sites are ALWAYS visible at all zoom levels!
+    if (!isPinned) {
+      const tier = props.tier || 3;
+      if (tier === 2 && currentZoom < 6.8) {
+        return;
+      }
+      if (tier === 3 && currentZoom < 9.5) {
+        return;
+      }
+      // At high zoom, cull minor markers outside current viewport bounds
+      if (bounds && (lng < bounds.west || lng > bounds.east || lat < bounds.south || lat > bounds.north)) {
+        return;
+      }
     }
 
     // Determine label text: short version of ancient or modern name
     const rawName = isAncient ? (props.ancient_name || props.name) : (props.modern_name || props.name);
     const shortName = rawName.split('/')[0].trim();
 
-    // Create Pin Element: Simple Small Round Icon + Name Label
+    // Create Pin Element
     const el = document.createElement('div');
-    el.className = `site-marker-node ${isAncient ? 'ancient' : 'modern'}`;
-    el.setAttribute('title', `${props.name} — Click for full details`);
+    el.className = `site-marker-node ${isAncient ? 'ancient' : 'modern'} tier-${props.tier || 3} ${isPinned ? 'is-pinned' : ''}`;
+    el.setAttribute('title', `${props.name} (${(props.tier_name || 'site').toUpperCase()}) — Click for details`);
 
     el.innerHTML = `
       <span class="site-dot"></span>
-      <span class="site-label-text">${shortName}</span>
+      ${isPinned ? '<span class="pin-badge-icon" title="Pinned by you">📌</span>' : ''}
+      <span class="site-label-text">${escapeHtml(shortName)}</span>
     `;
 
     const photos = Array.isArray(props.photos) && props.photos.length > 0 ? props.photos : (props.photo_url ? [{
@@ -421,7 +483,7 @@ function renderMarkers() {
     const primary = photos[activePhotoIdx] || photos[0];
     const hasMultiple = photos.length > 1;
 
-    // Rich Interactive Popup with Authoritative OpenBible Photos & Details (Draggable)
+    // Rich Interactive Popup with Pin Button
     const popupHtml = `
       <div class="site-popup-card ${isAncient ? 'ancient-popup' : 'modern-popup'}">
         ${primary ? `
@@ -456,10 +518,15 @@ function renderMarkers() {
             <span class="popup-drag-handle" title="Drag to move popup">⠿</span>
             <div>
               <h3 class="site-popup-title">${props.name}</h3>
-              <span class="site-popup-badge">${props.category ? props.category.toUpperCase() : 'BIBLICAL SITE'}</span>
+              <span class="site-popup-badge">${props.tier_name ? props.tier_name.toUpperCase() : (props.category ? props.category.toUpperCase() : 'BIBLICAL SITE')}</span>
             </div>
           </div>
-          <span class="site-popup-era" style="margin-right: 18px;">${isAncient ? '📜 Ancient' : '🛰️ Modern'}</span>
+          <div style="display: flex; align-items: center; gap: 6px; margin-right: 18px;">
+            <button type="button" class="btn-pin-site ${isPinned ? 'is-pinned' : ''}" onclick="togglePinSite('${props.id}', event)" title="Pin or unpin from your active map view">
+              ${isPinned ? '📌 Pinned' : '➕ Pin'}
+            </button>
+            <span class="site-popup-era">${isAncient ? '📜 Ancient' : '🛰️ Modern'}</span>
+          </div>
         </div>
         
         <div class="site-popup-body">
@@ -475,6 +542,11 @@ function renderMarkers() {
           <div class="site-popup-row">
             <span class="label">🏛️ Biblical Region:</span>
             <span class="val">${props.biblical_region}</span>
+          </div>` : ''}
+          ${props.verses_summary ? `
+          <div class="site-popup-row">
+            <span class="label">📖 Verses (${props.verse_count || 1}):</span>
+            <span class="val" style="font-size: 0.72rem; color: var(--ancient-gold);">${props.verses_summary}</span>
           </div>` : ''}
           <div class="site-popup-row">
             <span class="label">🏔️ Elevation:</span>
@@ -521,44 +593,183 @@ function renderMarkers() {
   });
 }
 
-// 9. Sidebar List Rendering
+// Global Toggle Pin Function
+window.togglePinSite = function(siteId, event) {
+  if (event) {
+    event.stopPropagation();
+    event.preventDefault();
+  }
+  const isPinned = pinnedSiteIds.has(siteId);
+  const feature = sitesGeoJSON?.features?.find((f) => f.properties.id === siteId);
+  const name = feature?.properties?.name || 'Site';
+
+  if (isPinned) {
+    pinnedSiteIds.delete(siteId);
+    showToast(`Removed ${name} from pinned map sites.`);
+  } else {
+    pinnedSiteIds.add(siteId);
+    showToast(`📌 Pinned ${name} to your active map!`);
+    if (feature && map) {
+      const [lng, lat] = feature.geometry.coordinates;
+      map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 10), duration: 1000 });
+    }
+  }
+
+  try {
+    localStorage.setItem('biblestudy_map_crafter_pinned', JSON.stringify([...pinnedSiteIds]));
+  } catch (e) {}
+
+  updatePinnedCounter();
+  renderMarkers();
+  renderSidebarList();
+};
+
+function updatePinnedCounter() {
+  const el = document.getElementById('pinned-count');
+  if (el) el.textContent = pinnedSiteIds.size;
+}
+
+// Alphabet Quick Jump Bar Builder
+function buildAlphabetJumper() {
+  const container = document.getElementById('alphabet-jumper');
+  if (!container || !sitesGeoJSON?.features) return;
+
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  const counts = {};
+  sitesGeoJSON.features.forEach((f) => {
+    const first = (f.properties.name || '').trim()[0]?.toUpperCase();
+    if (first) counts[first] = (counts[first] || 0) + 1;
+  });
+
+  let html = `<button class="alpha-chip ${selectedAlphaLetter === 'all' ? 'active' : ''}" data-letter="all">All (${sitesGeoJSON.features.length})</button>`;
+  alphabet.forEach((letter) => {
+    const c = counts[letter] || 0;
+    if (c > 0) {
+      html += `<button class="alpha-chip ${selectedAlphaLetter === letter ? 'active' : ''}" data-letter="${letter}">${letter} <span style="opacity: 0.65; font-size: 0.6rem;">${c}</span></button>`;
+    }
+  });
+
+  container.innerHTML = html;
+
+  container.querySelectorAll('.alpha-chip').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      selectedAlphaLetter = btn.getAttribute('data-letter');
+      container.querySelectorAll('.alpha-chip').forEach((c) => c.classList.remove('active'));
+      btn.classList.add('active');
+      renderSidebarList();
+    });
+  });
+}
+
+// 9. Sidebar List Rendering (Top 10 Major, Pinned, All A-Z & Real-Time Search)
 function renderSidebarList() {
   const container = document.getElementById('sites-list');
   const countLabel = document.getElementById('sites-count-label');
+  const alphabetJumper = document.getElementById('alphabet-jumper');
   if (!container || !sitesGeoJSON) return;
 
   container.innerHTML = '';
   const features = sitesGeoJSON.features;
-  countLabel.textContent = `${features.length} Sites In Gazetteer`;
+  let displayList = [];
 
-  features.forEach((feature) => {
+  // A. Search Query Mode: searches across all 1,342 sites
+  if (searchQuery.trim().length > 0) {
+    if (alphabetJumper) alphabetJumper.style.display = 'none';
+    const q = searchQuery.toLowerCase();
+    displayList = features.filter((f) => {
+      const p = f.properties;
+      return (
+        p.name.toLowerCase().includes(q) ||
+        (p.ancient_name && p.ancient_name.toLowerCase().includes(q)) ||
+        (p.modern_name && p.modern_name.toLowerCase().includes(q)) ||
+        (p.modern_country && p.modern_country.toLowerCase().includes(q)) ||
+        (p.biblical_region && p.biblical_region.toLowerCase().includes(q)) ||
+        (p.verses_summary && p.verses_summary.toLowerCase().includes(q)) ||
+        (p.description && p.description.toLowerCase().includes(q))
+      );
+    });
+    countLabel.textContent = `${displayList.length} Sites Matching "${searchQuery}"`;
+  }
+  // B. Top 10 Major Entries Mode (Default Initial View)
+  else if (activeSidebarTab === 'top10') {
+    if (alphabetJumper) alphabetJumper.style.display = 'none';
+    displayList = features.filter((f) => f.properties.is_top_10 || f.properties.tier === 1).slice(0, 10);
+    countLabel.textContent = `Top 10 Major Biblical Centers`;
+  }
+  // C. Pinned Sites Mode
+  else if (activeSidebarTab === 'pinned') {
+    if (alphabetJumper) alphabetJumper.style.display = 'none';
+    displayList = features.filter((f) => pinnedSiteIds.has(f.properties.id));
+    countLabel.textContent = `${displayList.length} Pinned Sites on Map`;
+
+    if (displayList.length === 0) {
+      container.innerHTML = `
+        <div style="padding: 32px 16px; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+          <div style="font-size: 2rem; margin-bottom: 8px;">📌</div>
+          <p style="font-weight: 600; color: #fff;">No sites pinned yet</p>
+          <p style="margin-top: 6px; font-size: 0.75rem; line-height: 1.4;">
+            Search or browse any biblical site and click <strong>➕ Pin to Map</strong> to keep it permanently highlighted on your study map.
+          </p>
+        </div>
+      `;
+      return;
+    }
+  }
+  // D. Full A-to-Z Directory Mode
+  else if (activeSidebarTab === 'all') {
+    if (alphabetJumper) alphabetJumper.style.display = 'flex';
+    if (selectedAlphaLetter !== 'all') {
+      displayList = features.filter((f) => f.properties.name.toUpperCase().startsWith(selectedAlphaLetter));
+      countLabel.textContent = `${displayList.length} Sites Starting with '${selectedAlphaLetter}'`;
+    } else {
+      // Show first 60 for instant DOM rendering, with count
+      displayList = features.slice(0, 60);
+      countLabel.textContent = `Showing 60 of ${features.length} Sites (Select Letter Above)`;
+    }
+  }
+
+  // Render cards
+  displayList.forEach((feature) => {
     const props = feature.properties;
     const [lng, lat] = feature.geometry.coordinates;
+    const isPinned = pinnedSiteIds.has(props.id);
+    const tierNum = props.tier || 3;
+    const tierLabel = tierNum === 1 ? 'MAJOR' : (tierNum === 2 ? 'MODERATE' : 'MINOR');
 
     const card = document.createElement('div');
-    card.className = 'site-card';
+    card.className = `site-card ${isPinned ? 'is-pinned-card' : ''}`;
     card.innerHTML = `
       <div style="display: flex; gap: 8px; align-items: flex-start;">
-        ${props.photo_url ? `<img src="${props.photo_url}" alt="${props.name}" style="width: 44px; height: 44px; border-radius: 6px; object-fit: cover; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.12);" loading="lazy" />` : ''}
+        ${props.photo_url ? `<img src="${props.photo_url}" alt="${escapeHtml(props.name)}" style="width: 44px; height: 44px; border-radius: 6px; object-fit: cover; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.12);" loading="lazy" />` : ''}
         <div style="flex: 1; min-width: 0;">
           <div class="site-card-title">
-            <span style="font-weight: 700;">${props.name}</span>
-            <span style="font-size: 0.65rem; padding: 1px 5px; border-radius: 4px; background: rgba(255,255,255,0.08);">${props.modern_country}</span>
+            <span style="font-weight: 700;">${escapeHtml(props.name)}</span>
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <span class="tier-badge tier-badge-${tierNum}">${tierLabel}</span>
+              <span style="font-size: 0.65rem; padding: 1px 5px; border-radius: 4px; background: rgba(255,255,255,0.08);">${escapeHtml(props.modern_country || 'Levant')}</span>
+            </div>
           </div>
-          <div class="site-card-ancient">${props.ancient_name}</div>
+          <div class="site-card-ancient">${escapeHtml(props.ancient_name || props.name)}</div>
         </div>
       </div>
-      <div class="site-card-modern">${props.modern_name} (${lat.toFixed(3)}°N, ${lng.toFixed(3)}°E)</div>
-      <div class="site-card-desc">${props.description || ''}</div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+        <span class="site-card-modern">${escapeHtml(props.modern_name || props.name)} (${lat.toFixed(2)}°N, ${lng.toFixed(2)}°E)</span>
+        <button type="button" class="btn-pin-site ${isPinned ? 'is-pinned' : ''}" onclick="togglePinSite('${props.id}', event)" title="Pin or unpin from active map">
+          ${isPinned ? '📌 Pinned' : '➕ Pin to Map'}
+        </button>
+      </div>
+      ${props.verses_summary ? `<div style="font-size: 0.68rem; color: var(--ancient-gold); margin-top: 4px;">📖 ${escapeHtml(props.verses_summary)}</div>` : ''}
+      <div class="site-card-desc">${escapeHtml(props.description || '')}</div>
     `;
 
     card.addEventListener('click', () => {
       document.querySelectorAll('.site-card').forEach((c) => c.classList.remove('active'));
       card.classList.add('active');
-      map.flyTo({ center: [lng, lat], zoom: 12, pitch: 35, duration: 1000 });
-      // Open the corresponding marker's popup
-      const item = markersList.find((m) => Math.abs(m.lng - lng) < 0.001 && Math.abs(m.lat - lat) < 0.001);
-      if (item) {
+      map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 11), pitch: 35, duration: 1000 });
+      
+      // Open the corresponding marker popup or create one
+      const item = markersList.find((m) => m.props && m.props.id === props.id);
+      if (item && item.marker) {
         item.marker.togglePopup();
       }
     });
@@ -682,13 +893,41 @@ function setupUIEventListeners() {
     map.flyTo({ center: LEVANT_CENTER, zoom: DEFAULT_ZOOM, pitch: 30, bearing: 0 });
   });
 
-  // Search Box
+  // Search Box (Real-time search across all 1,342 sites)
   document.getElementById('site-search')?.addEventListener('input', (e) => {
-    const q = e.target.value.toLowerCase();
-    document.querySelectorAll('.site-card').forEach((card) => {
-      const text = card.textContent.toLowerCase();
-      card.style.display = text.includes(q) ? 'block' : 'none';
-    });
+    searchQuery = e.target.value;
+    renderSidebarList();
+  });
+
+  // Sidebar Filter Tabs: Top 10 Major, Pinned, All A-Z
+  document.getElementById('tab-top-10')?.addEventListener('click', () => {
+    activeSidebarTab = 'top10';
+    searchQuery = '';
+    const searchInput = document.getElementById('site-search');
+    if (searchInput) searchInput.value = '';
+    document.querySelectorAll('.sidebar-tab').forEach((t) => t.classList.remove('active'));
+    document.getElementById('tab-top-10')?.classList.add('active');
+    renderSidebarList();
+  });
+
+  document.getElementById('tab-pinned')?.addEventListener('click', () => {
+    activeSidebarTab = 'pinned';
+    searchQuery = '';
+    const searchInput = document.getElementById('site-search');
+    if (searchInput) searchInput.value = '';
+    document.querySelectorAll('.sidebar-tab').forEach((t) => t.classList.remove('active'));
+    document.getElementById('tab-pinned')?.classList.add('active');
+    renderSidebarList();
+  });
+
+  document.getElementById('tab-all-az')?.addEventListener('click', () => {
+    activeSidebarTab = 'all';
+    searchQuery = '';
+    const searchInput = document.getElementById('site-search');
+    if (searchInput) searchInput.value = '';
+    document.querySelectorAll('.sidebar-tab').forEach((t) => t.classList.remove('active'));
+    document.getElementById('tab-all-az')?.classList.add('active');
+    renderSidebarList();
   });
 
   // Add Site Form Submit

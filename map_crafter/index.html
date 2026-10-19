@@ -18,7 +18,7 @@
   <script src="https://unpkg.com/@tmcw/togeojson@5.8.1/dist/togeojson.umd.js"></script>
 
   <!-- Custom CSS -->
-  <link rel="stylesheet" href="style.css?v=20261019_atlas_a">
+  <link rel="stylesheet" href="style.css?v=20261019_tier_ranking">
 </head>
 <body>
   <div id="app-container">
@@ -114,11 +114,30 @@
       <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
           <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-            <input type="text" id="site-search" class="search-box" placeholder="🔍 Search biblical sites..." />
+            <input type="text" id="site-search" class="search-box" placeholder="🔍 Search 1,300+ sites (A-Z)..." autocomplete="off" />
             <button id="btn-collapse-sidebar" class="sidebar-icon-btn" title="Minimize Panel (◀)">◀</button>
           </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--text-secondary);">
-            <span id="sites-count-label">Loading sites...</span>
+
+          <!-- Quick View Filter Tabs -->
+          <div class="sidebar-tabs" id="sidebar-tabs">
+            <button id="tab-top-10" class="sidebar-tab active" title="Show 10 iconic biblical centers">
+              ⭐ Top 10 Major
+            </button>
+            <button id="tab-pinned" class="sidebar-tab" title="View places you've pinned to this map">
+              📌 Pinned (<span id="pinned-count">0</span>)
+            </button>
+            <button id="tab-all-az" class="sidebar-tab" title="Browse all 1,342 biblical sites alphabetically">
+              All A-Z
+            </button>
+          </div>
+
+          <!-- Alphabet Quick Jump (Visible when All A-Z is active) -->
+          <div class="alphabet-jumper" id="alphabet-jumper" style="display: none;">
+            <!-- Generated dynamically -->
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">
+            <span id="sites-count-label">Top 10 Major Biblical Centers</span>
             <button id="btn-reset-view" class="btn-pill" style="padding: 2px 7px; font-size: 0.7rem;">📍 Fit View</button>
           </div>
         </div>
@@ -301,6 +320,6 @@
   </div>
 
   <!-- Application Logic -->
-  <script src="app.js?v=20261019_atlas_a"></script>
+  <script src="app.js?v=20261019_tier_ranking"></script>
 </body>
 </html>

@@ -313,6 +313,79 @@ body {
   outline: 1px solid var(--ancient-gold);
 }
 
+/* Sidebar Filter Tabs */
+.sidebar-tabs {
+  display: flex;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  margin-top: 8px;
+  margin-bottom: 4px;
+}
+
+.sidebar-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 5px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.sidebar-tab:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-tab.active {
+  background: var(--ancient-gold);
+  color: #1a1510;
+  font-weight: 700;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+
+/* Alphabet Quick Jumper */
+.alphabet-jumper {
+  display: flex;
+  gap: 3px;
+  overflow-x: auto;
+  padding: 4px 2px 6px 2px;
+  margin-top: 4px;
+  scrollbar-width: thin;
+}
+
+.alpha-chip {
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.alpha-chip:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.alpha-chip.active {
+  background: var(--ancient-gold);
+  border-color: var(--ancient-gold);
+  color: #1a1510;
+}
+
 .sites-list {
   flex: 1;
   overflow-y: auto;
@@ -329,6 +402,7 @@ body {
   padding: 12px;
   cursor: pointer;
   transition: all 0.15s ease;
+  position: relative;
 }
 
 .site-card:hover {
@@ -340,6 +414,69 @@ body {
   border-color: var(--ancient-gold);
   background: rgba(212, 163, 115, 0.12);
   box-shadow: 0 0 0 1px var(--ancient-gold);
+}
+
+.site-card.is-pinned-card {
+  border-color: rgba(245, 158, 11, 0.5);
+  background: rgba(245, 158, 11, 0.05);
+}
+
+/* Tier Badges in Sidebar Cards */
+.tier-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 1.5px 5px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.tier-badge-1 {
+  background: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.tier-badge-2 {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.tier-badge-3 {
+  background: rgba(148, 163, 184, 0.12);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+/* Pin to Map Action Button */
+.btn-pin-site {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.btn-pin-site:hover {
+  background: rgba(245, 158, 11, 0.18);
+  border-color: #f59e0b;
+  color: #fcd34d;
+}
+
+.btn-pin-site.is-pinned {
+  background: rgba(245, 158, 11, 0.22);
+  border-color: #f59e0b;
+  color: #fcd34d;
+  font-weight: 700;
 }
 
 .site-card-title {
@@ -533,7 +670,7 @@ body {
 }
 
 /* ==============================================================================
-   Site Point Markers (Simple Small Round Icon + Ancient/Modern Name)
+   Site Point Markers (Tiered Priority: Major, Moderate, Minor + Pinned)
    ============================================================================== */
 .site-marker-node {
   display: inline-flex;
@@ -541,77 +678,200 @@ body {
   gap: 3.5px;
   cursor: pointer;
   user-select: none;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  padding: 1.5px 5px 1.5px 3px;
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s ease;
+  padding: 1.5px 5.5px 1.5px 3.5px;
   border-radius: 12px;
   backdrop-filter: blur(4px);
+  will-change: transform;
 }
 
 .site-marker-node:hover {
-  transform: scale(1.15);
-  z-index: 50 !important;
+  transform: scale(1.18);
+  z-index: 100 !important;
 }
 
-/* Simple small round icon */
+/* Base Dot */
 .site-marker-node .site-dot {
-  width: 6px;
-  height: 6px;
   border-radius: 50%;
   display: inline-block;
   flex-shrink: 0;
   transition: all 0.2s ease;
 }
 
-/* Ancient Mode Pin Styling */
-.site-marker-node.ancient {
-  background: rgba(254, 252, 248, 0.94);
-  border: 1px solid #d7ccc8;
-  box-shadow: 0 1px 4px rgba(62, 39, 35, 0.25);
+/* ------------------------------------------------------------------------------
+   Tier 1 (Major Sites): Prominent, Golden Halo, Higher Z-Index
+   ------------------------------------------------------------------------------ */
+.site-marker-node.tier-1 {
+  z-index: 35;
 }
 
-.site-marker-node.ancient .site-dot {
+.site-marker-node.ancient.tier-1 {
+  background: rgba(254, 252, 248, 0.96);
+  border: 1.5px solid #8d1616;
+  box-shadow: 0 2px 7px rgba(62, 39, 35, 0.35);
+}
+
+.site-marker-node.ancient.tier-1 .site-dot {
+  width: 8px;
+  height: 8px;
   background: #b71c1c;
-  box-shadow: 0 0 0 1.5px #fff8e7;
+  box-shadow: 0 0 0 1.5px #fff8e7, 0 0 6px rgba(183, 28, 28, 0.6);
 }
 
-.site-marker-node.ancient:hover .site-dot {
-  background: #d32f2f;
-  box-shadow: 0 0 0 2px #ffebee;
-}
-
-.site-marker-node.ancient .site-label-text {
-  font-family: 'Cinzel', Georgia, 'Times New Roman', serif;
-  font-size: 0.76rem;
-  font-weight: 700;
+.site-marker-node.ancient.tier-1 .site-label-text {
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 0.80rem;
+  font-weight: 800;
   color: #3e2723;
   letter-spacing: 0.02em;
-  white-space: nowrap;
+  text-shadow: 0 0 3px #fff, 0 0 6px #fff;
 }
 
-/* Modern Mode Pin Styling */
-.site-marker-node.modern {
-  background: rgba(15, 23, 42, 0.90);
-  border: 1px solid rgba(56, 189, 248, 0.35);
-  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.45);
+.site-marker-node.modern.tier-1 {
+  background: rgba(15, 23, 42, 0.94);
+  border: 1.5px solid #00e5ff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
 }
 
-.site-marker-node.modern .site-dot {
+.site-marker-node.modern.tier-1 .site-dot {
+  width: 8px;
+  height: 8px;
   background: #00e5ff;
-  box-shadow: 0 0 0 1.5px #0f172a, 0 0 6px rgba(0, 229, 255, 0.6);
+  box-shadow: 0 0 0 1.5px #0f172a, 0 0 8px rgba(0, 229, 255, 0.8);
 }
 
-.site-marker-node.modern:hover .site-dot {
-  background: #38bdf8;
-  box-shadow: 0 0 0 2px #0369a1, 0 0 8px rgba(56, 189, 248, 0.8);
-}
-
-.site-marker-node.modern .site-label-text {
+.site-marker-node.modern.tier-1 .site-label-text {
   font-family: 'Inter', -apple-system, sans-serif;
-  font-size: 0.74rem;
-  font-weight: 600;
+  font-size: 0.78rem;
+  font-weight: 700;
   color: #f8fafc;
-  letter-spacing: 0.01em;
-  white-space: nowrap;
+  text-shadow: 0 0 4px #000, 0 0 8px #000;
+}
+
+/* ------------------------------------------------------------------------------
+   Tier 2 (Moderate Sites): Crisp Compact Label & Balanced Dot
+   ------------------------------------------------------------------------------ */
+.site-marker-node.tier-2 {
+  z-index: 25;
+}
+
+.site-marker-node.ancient.tier-2 {
+  background: rgba(254, 252, 248, 0.90);
+  border: 1px solid #c7bca5;
+  box-shadow: 0 1px 4px rgba(62, 39, 35, 0.2);
+}
+
+.site-marker-node.ancient.tier-2 .site-dot {
+  width: 6px;
+  height: 6px;
+  background: #c62828;
+  box-shadow: 0 0 0 1px #fff8e7;
+}
+
+.site-marker-node.ancient.tier-2 .site-label-text {
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #4e342e;
+  text-shadow: 0 0 2px #fff;
+}
+
+.site-marker-node.modern.tier-2 {
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+}
+
+.site-marker-node.modern.tier-2 .site-dot {
+  width: 6px;
+  height: 6px;
+  background: #38bdf8;
+  box-shadow: 0 0 0 1px #0f172a;
+}
+
+.site-marker-node.modern.tier-2 .site-label-text {
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+/* ------------------------------------------------------------------------------
+   Tier 3 (Minor Sites): Discrete Dot, Subtle Label
+   ------------------------------------------------------------------------------ */
+.site-marker-node.tier-3 {
+  z-index: 15;
+  padding: 1px 4px 1px 2.5px;
+}
+
+.site-marker-node.ancient.tier-3 {
+  background: rgba(254, 252, 248, 0.82);
+  border: 1px solid rgba(199, 188, 165, 0.6);
+  box-shadow: 0 1px 2px rgba(62, 39, 35, 0.15);
+}
+
+.site-marker-node.ancient.tier-3 .site-dot {
+  width: 5px;
+  height: 5px;
+  background: #d84315;
+}
+
+.site-marker-node.ancient.tier-3 .site-label-text {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #5d4037;
+}
+
+.site-marker-node.modern.tier-3 {
+  background: rgba(15, 23, 42, 0.80);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.site-marker-node.modern.tier-3 .site-dot {
+  width: 5px;
+  height: 5px;
+  background: #94a3b8;
+}
+
+.site-marker-node.modern.tier-3 .site-label-text {
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: #cbd5e1;
+}
+
+/* ------------------------------------------------------------------------------
+   User-Pinned Sites: High Priority Glowing Accent
+   ------------------------------------------------------------------------------ */
+.site-marker-node.is-pinned {
+  z-index: 90 !important;
+  border: 1.5px solid #f59e0b !important;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.75), 0 2px 6px rgba(0, 0, 0, 0.5) !important;
+}
+
+.site-marker-node.ancient.is-pinned {
+  background: rgba(254, 243, 199, 0.98) !important;
+}
+
+.site-marker-node.ancient.is-pinned .site-label-text {
+  color: #78350f !important;
+  font-weight: 800 !important;
+}
+
+.site-marker-node.modern.is-pinned {
+  background: rgba(30, 27, 75, 0.95) !important;
+}
+
+.site-marker-node.modern.is-pinned .site-label-text {
+  color: #fde68a !important;
+  font-weight: 700 !important;
+}
+
+.pin-badge-icon {
+  font-size: 0.75rem;
+  margin-right: 1px;
 }
 
 /* ==============================================================================
