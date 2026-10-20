@@ -19,6 +19,8 @@ export default function QuestionsSection({
   onReadAloud,
   isReading = false,
 }: QuestionsSectionProps) {
+  const safeQuestions = Array.isArray(questions) ? questions : []
+
   // Local state for answers so user can type freely without parent or polling interrupting
   const [answers, setAnswers] = useState<Record<number, string>>({})
   const [savingIndex, setSavingIndex] = useState<number | null>(null)
@@ -38,7 +40,7 @@ export default function QuestionsSection({
   useEffect(() => {
     setAnswers((prevAnswers) => {
       const nextAnswers = { ...prevAnswers }
-      questions.forEach((_, idx) => {
+      safeQuestions.forEach((_, idx) => {
         const serverVal = notes[`question_${idx}`] ?? notes[`q_${idx}`] ?? ''
 
         // If not initialized, or if not dirty and not currently focused, sync from server
@@ -119,9 +121,9 @@ export default function QuestionsSection({
   // In full-editing mode of Day Draft, show the question prompt editor
   if (editing && onQuestionsChange) {
     const updateQ = (i: number, v: string) =>
-      onQuestionsChange(questions.map((q, j) => (j === i ? v : q)))
-    const addQ = () => onQuestionsChange([...questions, ''])
-    const removeQ = (i: number) => onQuestionsChange(questions.filter((_, j) => j !== i))
+      onQuestionsChange(safeQuestions.map((q, j) => (j === i ? v : q)))
+    const addQ = () => onQuestionsChange([...safeQuestions, ''])
+    const removeQ = (i: number) => onQuestionsChange(safeQuestions.filter((_, j) => j !== i))
 
     return (
       <div className="space-y-4">
@@ -129,7 +131,7 @@ export default function QuestionsSection({
           <div className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
             Edit Question Prompts
           </div>
-          {questions.map((q, i) => (
+          {safeQuestions.map((q, i) => (
             <div key={i} className="flex items-start gap-2">
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary mt-1">
                 {i + 1}
@@ -200,7 +202,7 @@ export default function QuestionsSection({
 
       {/* List of interactive questions */}
       <div className="space-y-4">
-        {questions.map((q, idx) => {
+        {safeQuestions.map((q, idx) => {
           const currentAnswer = answers[idx] ?? ''
           const isSaved = savedIndex === idx
           const isSaving = savingIndex === idx

@@ -283,7 +283,15 @@ async def complete(
         else:
             chain = sorted(chain, key=lambda p: 0 if p.api_key(custom_keys) else 1)
 
-    if not chain:
+    # Fallback to paid chain if free pool is exhausted and an API key is available
+    fallback_chain: list[Provider] = []
+    if effective_tier == "free":
+        all_avail = registry.available_chain("text", tier=None, custom_keys=custom_keys)
+        fallback_chain = [p for p in all_avail if p not in chain]
+
+    all_providers = list(chain) + fallback_chain
+
+    if not all_providers:
         events.emit("error", "llm", "No text provider available - set a key or run Ollama")
         raise NoProviderAvailable(
             "No text provider is configured. Add OPENROUTER_API_KEY or GEMINI_API_KEY "
@@ -291,8 +299,13 @@ async def complete(
         )
 
     errors: list[str] = []
+    has_warned_fallback = False
     async with httpx.AsyncClient() as client:
-        for provider in chain:
+        for provider in all_providers:
+            if provider in fallback_chain and not has_warned_fallback:
+                events.emit("info", "llm", f"Free providers unavailable, falling over to {provider.label}…")
+                has_warned_fallback = True
+
             transport = _TRANSPORTS.get(provider.kind)
             if transport is None:
                 continue

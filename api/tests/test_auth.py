@@ -139,6 +139,12 @@ def test_demo_account_copies_coreagc_study(anon_client):
 
     # Setup coreagc user and a study with a day, passage, and asset
     with Session(get_engine()) as session:
+        demo_u = session.exec(select(User).where(User.email.in_(["demo@biblestudy.local", "demo"]))).first()
+        if demo_u:
+            from app.seeder.demo_studies import clear_demo_studies
+            clear_demo_studies(session, demo_u.id)
+            session.commit()
+
         core_user = session.exec(select(User).where(User.email == "coreagc@gmail.com")).first()
         if not core_user:
             core_user = User(

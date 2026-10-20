@@ -67,7 +67,7 @@ def _make_study(c):
         sid = c.post("/api/studies", json={"topic": "Peace", "total_days": 1}).json()["study_id"]
         for _ in range(100):
             d = c.get(f"/api/studies/{sid}").json()
-            if d["days"] and d["days"][0]["blocks_json"]:
+            if d.get("days") and d["days"][0]["blocks_json"]:
                 break
             time.sleep(0.1)
     return sid

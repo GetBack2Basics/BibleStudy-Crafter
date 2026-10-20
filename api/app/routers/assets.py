@@ -167,12 +167,33 @@ async def suggest_prompt_for_day(
     if day is None:
         raise HTTPException(404, "day not found")
 
+    from app.routers.keys import get_user_keys
+    user_keys = get_user_keys(session, user.id)
+    custom_keys = user_keys if user_keys.get("use_custom_keys") else None
+
+    events.emit(
+        "info",
+        "art",
+        f"Study {study_id} day {day_number}: Crafting AI art prompts for {body.style_id}…",
+        study_id=study_id,
+        day_number=day_number,
+    )
+
     res = await art_service.suggest_art_prompts(
         study=study,
         day=day,
         style_id=body.style_id,
         mood_id=body.mood_id,
         custom_guidance=body.custom_guidance,
+        user_keys=custom_keys,
+    )
+
+    events.emit(
+        "success",
+        "art",
+        f"Study {study_id} day {day_number}: AI art prompts generated",
+        study_id=study_id,
+        day_number=day_number,
     )
     return SuggestPromptOut(**res)
 
@@ -196,6 +217,10 @@ async def render_art_for_day(
 
     if not body.prompt.strip():
         raise HTTPException(400, "prompt cannot be empty")
+
+    from app.routers.keys import get_user_keys
+    user_keys = get_user_keys(session, user.id)
+    custom_keys = user_keys if user_keys.get("use_custom_keys") else None
 
     # If new asset is active, mark previous ones inactive
     if body.is_active:
@@ -227,6 +252,7 @@ async def render_art_for_day(
         "art",
         f"Art generation started for study {study_id} day {day_number} ({body.kind} asset {asset.id})",
         study_id=study_id,
+        day_number=day_number,
     )
 
     # Launch background renderer
@@ -236,6 +262,7 @@ async def render_art_for_day(
             asset_id=asset.id,
             prompt=body.prompt.strip(),
             aspect_ratio=body.aspect_ratio,
+            custom_keys=custom_keys,
             engine=engine,
         )
     )
@@ -259,7 +286,27 @@ async def get_structured_infographic(
     if day is None:
         raise HTTPException(404, "day not found")
 
-    data = await art_service.extract_structured_infographic(study, day)
+    from app.routers.keys import get_user_keys
+    user_keys = get_user_keys(session, user.id)
+    custom_keys = user_keys if user_keys.get("use_custom_keys") else None
+
+    events.emit(
+        "info",
+        "art",
+        f"Study {study_id} day {day_number}: Extracting structured infographic takeaways…",
+        study_id=study_id,
+        day_number=day_number,
+    )
+
+    data = await art_service.extract_structured_infographic(study, day, user_keys=custom_keys)
+
+    events.emit(
+        "success",
+        "art",
+        f"Study {study_id} day {day_number}: Structured infographic takeaways ready",
+        study_id=study_id,
+        day_number=day_number,
+    )
     return StructuredInfographicOut(**data)
 
 
@@ -279,7 +326,19 @@ async def generate_svg_infographic_asset(
     if day is None:
         raise HTTPException(404, "day not found")
 
-    info_data = await art_service.extract_structured_infographic(study, day)
+    from app.routers.keys import get_user_keys
+    user_keys = get_user_keys(session, user.id)
+    custom_keys = user_keys if user_keys.get("use_custom_keys") else None
+
+    events.emit(
+        "info",
+        "art",
+        f"Study {study_id} day {day_number}: Generating SVG Key Learnings Infographic…",
+        study_id=study_id,
+        day_number=day_number,
+    )
+
+    info_data = await art_service.extract_structured_infographic(study, day, user_keys=custom_keys)
     svg_str = art_service.generate_svg_infographic(info_data)
 
     # Deactivate previous active infographic assets
@@ -312,7 +371,7 @@ async def generate_svg_infographic_asset(
     session.commit()
     session.refresh(asset)
 
-    events.emit("success", "art", f"SVG Infographic created for day {day_number} (asset {asset.id})", study_id=study_id)
+    events.emit("success", "art", f"SVG Infographic created for day {day_number} (asset {asset.id})", study_id=study_id, day_number=day_number)
 
     return AssetOut(
         id=asset.id,

@@ -203,6 +203,13 @@ def get_current_user_optional(
     elif token:
         raw_token = token
     if not raw_token:
+        try:
+            from app.main import app
+            if get_current_user in app.dependency_overrides:
+                override = app.dependency_overrides[get_current_user]
+                return override()
+        except Exception:
+            pass
         return None
     try:
         payload = _verify_access_token(raw_token)

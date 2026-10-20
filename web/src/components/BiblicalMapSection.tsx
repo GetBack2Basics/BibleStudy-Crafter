@@ -105,7 +105,7 @@ export default function BiblicalMapSection({
 
   if (!hasCommentary) return null
 
-  const locations = mapsData?.locations ?? []
+  const locations = Array.isArray(mapsData?.locations) ? mapsData.locations : []
   const eraTitle = mapsData?.period_title || 'Biblical Setting'
 
   return (
@@ -270,11 +270,12 @@ export default function BiblicalMapSection({
             <I name="location_on" cls="text-[14px] text-tertiary" />
             Key Sites:
           </span>
-          {locations.map((loc) => {
-            const isSelected = selectedPlace?.name.toLowerCase() === loc.name.toLowerCase()
+          {locations.map((loc, idx) => {
+            const locName = loc.name || loc.ancient_name || loc.modern_name || `Site ${idx + 1}`
+            const isSelected = (selectedPlace?.name || '').toLowerCase() === locName.toLowerCase()
             return (
               <button
-                key={loc.name}
+                key={locName + idx}
                 type="button"
                 onClick={() => setSelectedPlace(loc)}
                 className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
@@ -283,8 +284,10 @@ export default function BiblicalMapSection({
                     : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high border border-outline-variant/30'
                 }`}
               >
-                <span>{loc.name}</span>
-                <span className="text-[10px] opacity-75">({loc.modern_country})</span>
+                <span>{locName}</span>
+                {loc.modern_country && (
+                  <span className="text-[10px] opacity-75">({loc.modern_country})</span>
+                )}
               </button>
             )
           })}
@@ -822,8 +825,13 @@ function MapPane({
 
   // Bounding box for visual pin placement normalization (Levant & Near East viewport)
   // Default Levant bounds approx: lat 30.5 to 33.6, lng 34.0 to 36.6
-  const lats = locations.map((l) => l.lat)
-  const lngs = locations.map((l) => l.lng)
+  const safeLocations = Array.isArray(locations) ? locations : []
+  const lats = safeLocations
+    .map((l) => (typeof l.lat === 'number' ? l.lat : typeof (l as any).latitude === 'number' ? (l as any).latitude : null))
+    .filter((v): v is number => v !== null && !isNaN(v))
+  const lngs = safeLocations
+    .map((l) => (typeof l.lng === 'number' ? l.lng : typeof (l as any).longitude === 'number' ? (l as any).longitude : null))
+    .filter((v): v is number => v !== null && !isNaN(v))
   const minLat = lats.length ? Math.min(...lats) : 31.0
   const maxLat = lats.length ? Math.max(...lats) : 33.5
   const minLng = lngs.length ? Math.min(...lngs) : 34.5
@@ -950,13 +958,16 @@ function MapPane({
 
       {/* Render Location Pins */}
       <div className="absolute inset-0 z-10 pointer-events-auto">
-        {locations.map((loc) => {
-          const isSelected = selectedPlace?.name.toLowerCase() === loc.name.toLowerCase()
-          const pos = getPositionPercent(loc.lat, loc.lng)
+        {safeLocations.map((loc, idx) => {
+          const locName = loc.name || loc.ancient_name || loc.modern_name || `Site ${idx + 1}`
+          const isSelected = (selectedPlace?.name || '').toLowerCase() === locName.toLowerCase()
+          const locLat = typeof loc.lat === 'number' ? loc.lat : typeof (loc as any).latitude === 'number' ? (loc as any).latitude : 0
+          const locLng = typeof loc.lng === 'number' ? loc.lng : typeof (loc as any).longitude === 'number' ? (loc as any).longitude : 0
+          const pos = getPositionPercent(locLat, locLng)
 
           return (
             <div
-              key={loc.name}
+              key={locName + idx}
               style={{ top: pos.top, left: pos.left }}
               className="absolute -translate-x-1/2 -translate-y-1/2 group cursor-pointer"
               onClick={() => onSelectPlace(loc)}
@@ -1001,7 +1012,9 @@ function MapPane({
                     isSelected ? 'font-bold' : 'font-semibold'
                   } ${isHist ? 'font-serif text-[#3e2723]' : 'font-sans text-[#f8fafc]'}`}
                 >
-                  {isHist ? loc.ancient_name.split('/')[0].trim() : loc.modern_name.split('/')[0].trim()}
+                  {isHist
+                    ? (loc.ancient_name || loc.name || '').split('/')[0].trim()
+                    : (loc.modern_name || loc.name || '').split('/')[0].trim()}
                 </span>
               </div>
             </div>

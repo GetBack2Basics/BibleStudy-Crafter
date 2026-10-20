@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, createContext, useContext } from 'react'
+import { useEffect, useRef, useState, useMemo, createContext, useContext } from 'react'
 import { Link, Routes, Route, useNavigate, useParams } from 'react-router-dom'
 import StatusDock from './components/StatusDock'
 import AuthScreen from './components/AuthScreen'
@@ -930,7 +930,46 @@ function StudyDetail() {
     return () => setTitle?.(null)
   }, [study, setTitle])
 
+  // Current active day: first generating day, first ready day, or Day 1
+  const currentDayNum = study?.days.find((d) => d.status === 'generating')?.day_number ||
+                        study?.days.find((d) => d.status === 'ready')?.day_number ||
+                        1
+
+  // Collapsible state for each day and the current day
+  const [openDays, setOpenDays] = useState<Record<number, boolean>>(() => ({
+    1: true,
+  }))
+
+  const toggleDay = (dNum: number) => {
+    setOpenDays((prev) => ({
+      ...prev,
+      [dNum]: !prev[dNum],
+    }))
+  }
+
+  const setDayOpenState = (dNum: number, open: boolean) => {
+    setOpenDays((prev) => ({
+      ...prev,
+      [dNum]: open,
+    }))
+  }
+
+  const collapseAllDays = () => {
+    if (!study) return
+    const next: Record<number, boolean> = {}
+    study.days.forEach((d) => { next[d.day_number] = false })
+    setOpenDays(next)
+  }
+
+  const expandAllDays = () => {
+    if (!study) return
+    const next: Record<number, boolean> = {}
+    study.days.forEach((d) => { next[d.day_number] = true })
+    setOpenDays(next)
+  }
+
   const genDay = async (day: number) => {
+    setOpenDays((prev) => ({ ...prev, [day]: true }))
     setStudy((s) => s ? ({ ...s, days: s.days.map((d) => d.day_number === day ? { ...d, status: 'generating' } : d) }) : s)
     setDayProgressMap((prev) => ({
       ...prev,
@@ -973,6 +1012,9 @@ function StudyDetail() {
                          study.days.find((d) => d.blocks_json) ||
                          study.days[0]
 
+  const expandedCount = study.days.filter((d) => Boolean(openDays[d.day_number])).length
+  const collapsedCount = study.days.length - expandedCount
+
   return (
     <div className="w-full flex flex-col items-center pb-24">
       {study.status === 'failed' && (
@@ -1003,13 +1045,58 @@ function StudyDetail() {
         </div>
       )}
 
+      {/* Study Plan Days Control Toolbar */}
+      <div className="w-full max-w-[98%] mb-3 flex flex-wrap items-center justify-between gap-3 bg-surface-container-lowest/90 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-outline-variant/20 shadow-xs">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="inline-flex items-center gap-1.5 font-label-nav text-label-nav font-semibold text-primary">
+            <span className="material-symbols-outlined text-[18px]">calendar_view_day</span>
+            <span>Study Plan</span>
+          </span>
+          <span className="text-outline-variant font-body-ui text-[12px]">•</span>
+          <span className="text-xs text-on-surface-variant font-medium">
+            {study.total_days} {study.total_days === 1 ? 'Day' : 'Days'} · {expandedCount} expanded, {collapsedCount} collapsed
+          </span>
+          {currentDayNum && (
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              Day {currentDayNum} is Current Day
+            </span>
+          )}
+        </div>
+
+        {/* Global Expand All / Collapse All controls */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={expandAllDays}
+            className="h-[30px] px-3 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center gap-1.5 text-xs font-medium transition-all active:scale-95 cursor-pointer shadow-2xs border border-outline-variant/20"
+            title="Expand all days in this study"
+          >
+            <span className="material-symbols-outlined text-[16px] text-primary">unfold_more</span>
+            <span>Expand All</span>
+          </button>
+          <button
+            type="button"
+            onClick={collapseAllDays}
+            className="h-[30px] px-3 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center gap-1.5 text-xs font-medium transition-all active:scale-95 cursor-pointer shadow-2xs border border-outline-variant/20"
+            title="Collapse all days including the current day"
+          >
+            <span className="material-symbols-outlined text-[16px] text-primary">unfold_less</span>
+            <span>Collapse All</span>
+          </button>
+        </div>
+      </div>
+
       <div className="w-full max-w-[98%] space-y-4">
         {study.days.map((d) => (
           <DayCard
             key={d.day_number}
             studyId={studyId}
             day={d}
-            defaultOpen={d.day_number === 1}
+            isOpen={Boolean(openDays[d.day_number])}
+            onToggleOpen={() => toggleDay(d.day_number)}
+            onSetOpen={(open) => setDayOpenState(d.day_number, open)}
+            isCurrentDay={d.day_number === currentDayNum}
             totalDays={study.total_days}
             studyTopic={study.title || study.topic}
             primaryTranslation={study.primary_translation}
@@ -1057,6 +1144,10 @@ function DayCard({
   studyId,
   day,
   onGenerate,
+  isOpen,
+  onToggleOpen,
+  onSetOpen,
+  isCurrentDay = false,
   defaultOpen = false,
   totalDays = 7,
   studyTopic = 'Study',
@@ -1071,6 +1162,10 @@ function DayCard({
   studyId: number
   day: DayOut
   onGenerate: () => void
+  isOpen?: boolean
+  onToggleOpen?: () => void
+  onSetOpen?: (open: boolean) => void
+  isCurrentDay?: boolean
   defaultOpen?: boolean
   totalDays?: number
   studyTopic?: string
@@ -1095,19 +1190,46 @@ function DayCard({
   const notesRef = useRef<Record<string, string>>(notes)
   notesRef.current = notes
 
-  // day-level collapse
-  const [dayOpen, setDayOpen] = useState(defaultOpen)
+  // Controlled vs uncontrolled day-level collapse
+  const isControlled = typeof isOpen === 'boolean'
+  const [localOpen, setLocalOpen] = useState(defaultOpen)
+  const dayOpen = isControlled ? isOpen : localOpen
+
+  const handleToggle = () => {
+    if (isControlled) {
+      onToggleOpen?.()
+    } else {
+      setLocalOpen((o) => !o)
+    }
+  }
+
+  const handleSetOpen = (nextVal: boolean) => {
+    if (isControlled) {
+      if (onSetOpen) {
+        onSetOpen(nextVal)
+      } else if (nextVal !== dayOpen) {
+        onToggleOpen?.()
+      }
+    } else {
+      setLocalOpen(nextVal)
+    }
+  }
 
   useEffect(() => {
-    setDayOpen(defaultOpen)
-  }, [defaultOpen])
+    if (!isControlled) {
+      setLocalOpen(defaultOpen)
+    }
+  }, [defaultOpen, isControlled])
 
   const isGenerating = day.status === 'generating' || Boolean(dayProgress && dayProgress.progress < 100)
+  const prevGeneratingRef = useRef(isGenerating)
 
   useEffect(() => {
-    if (isGenerating) {
-      setDayOpen(true)
+    // Automatically open when generation begins, but allow user to collapse anytime
+    if (isGenerating && !prevGeneratingRef.current) {
+      handleSetOpen(true)
     }
+    prevGeneratingRef.current = isGenerating
   }, [isGenerating])
 
   // Visual Assets & Prompt Crafter State
@@ -1207,19 +1329,31 @@ function DayCard({
     }
   }
 
+  const [closingPrayerErr, setClosingPrayerErr] = useState<string | null>(null)
+
   const handleGenerateClosingPrayer = async (instruction?: string) => {
     setIsGeneratingClosingPrayer(true)
+    setClosingPrayerErr(null)
     setErr(null)
     try {
       const res = await studyApi.generateClosingPrayer(studyId, day.day_number, notes, instruction)
-      if (res && res.closing_prayer) {
-        const current = draft || day.blocks_json
-        if (current) {
-          setDraft({ ...current, closing_prayer: res.closing_prayer })
+      if (res) {
+        if (res.blocks_json) {
+          setDraft(res.blocks_json)
+        } else if (res.closing_prayer) {
+          const current = draftRef.current || day.blocks_json
+          if (current) {
+            setDraft({ ...current, closing_prayer: res.closing_prayer })
+          }
+        }
+        if (day.blocks_json && res.closing_prayer) {
+          day.blocks_json.closing_prayer = res.closing_prayer
         }
       }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e))
+      const msg = e instanceof Error ? e.message : String(e)
+      setClosingPrayerErr(msg)
+      setErr(msg)
     } finally {
       setIsGeneratingClosingPrayer(false)
     }
@@ -1246,35 +1380,103 @@ function DayCard({
     <div id={`day-card-${day.day_number}`} className="w-full flex flex-col items-center scroll-mt-20">
       <article className="w-full max-w-[98%] bg-transparent flex flex-col gap-6">
         {/* Day Card Header Bar */}
-        <div className="bg-surface-container-lowest rounded-2xl p-4 shadow-sm border border-outline-variant/20 flex flex-col gap-2.5">
+        <div
+          role="region"
+          aria-label={`Day ${day.day_number} study overview`}
+          className={`bg-surface-container-lowest rounded-2xl shadow-sm border transition-all ${
+            dayOpen ? 'border-outline-variant/30' : 'border-outline-variant/20 hover:border-primary/40 hover:shadow-md'
+          } flex flex-col p-4 gap-2.5`}
+        >
           <div className="flex items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={() => setDayOpen((o) => !o)}
+            {/* Primary Toggle Area: Chevron + Badges + Title */}
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={handleToggle}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  handleToggle()
+                }
+              }}
               aria-expanded={dayOpen}
               aria-label={dayOpen ? `Collapse Day ${day.day_number}` : `Expand Day ${day.day_number}`}
-              title={dayOpen ? `Collapse Day ${day.day_number}` : `Expand Day ${day.day_number}`}
-              className="shrink-0 rounded-full p-1 text-on-surface-variant transition-colors hover:bg-surface-container cursor-pointer"
+              title={dayOpen ? `Click to collapse Day ${day.day_number}` : `Click to expand Day ${day.day_number}`}
+              className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer select-none group"
             >
-              <I name={dayOpen ? 'expand_less' : 'expand_more'} cls="text-[22px]" />
-            </button>
-            <Link to={dayLink} className="min-w-0 flex-1 group">
-              <h3 className="font-headline-md text-headline-md text-on-surface truncate group-hover:text-primary transition-colors">
-                <span className="text-primary font-semibold">Day {day.day_number}</span>
-                {draft?.heading ? ` — ${draft.heading}` : day.title ? ` — ${day.title}` : ''}
-                {day.theme && <span className="ml-2 font-caption-caps text-secondary text-caption-caps">· {day.theme}</span>}
-              </h3>
-            </Link>
+              {/* Expand / Collapse Icon Button */}
+              <div
+                className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                  dayOpen
+                    ? 'bg-primary/10 text-primary'
+                    : 'bg-surface-container text-on-surface-variant group-hover:bg-primary/10 group-hover:text-primary'
+                }`}
+              >
+                <I name={dayOpen ? 'expand_less' : 'expand_more'} cls="text-[22px] transition-transform duration-200" />
+              </div>
+
+              {/* Title & Theme & Badges */}
+              <div className="min-w-0 flex-1 flex flex-col">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-semibold text-primary text-headline-md font-headline-md leading-tight group-hover:text-primary-container transition-colors">
+                    Day {day.day_number}
+                  </span>
+                  {isCurrentDay && (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-primary text-on-primary shadow-xs">
+                      <span className="w-1.5 h-1.5 rounded-full bg-tertiary-fixed animate-pulse" />
+                      Current Day
+                    </span>
+                  )}
+                  {dayOpen ? (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md bg-surface-container text-secondary">
+                      Expanded
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md bg-surface-container text-secondary">
+                      Collapsed
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 min-w-0 mt-0.5">
+                  <h3 className="font-headline-md text-headline-md text-on-surface truncate group-hover:text-primary transition-colors">
+                    {draft?.heading || day.title || `Day ${day.day_number} Reflection`}
+                  </h3>
+                  {day.theme && (
+                    <span className="hidden md:inline-block font-caption-caps text-secondary text-caption-caps truncate">
+                      · {day.theme}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Right Action Toolbar */}
             <div className="flex shrink-0 items-center gap-2">
+              {/* Prominent Collapse / Expand Button - visible on ALL screens */}
               <button
                 type="button"
-                onClick={() => setDayOpen((o) => !o)}
-                className="hidden sm:inline-flex items-center gap-1 text-xs font-medium text-secondary hover:text-primary transition-colors py-1 px-2.5 rounded-lg hover:bg-surface-container cursor-pointer"
+                onClick={handleToggle}
+                aria-label={dayOpen ? `Collapse Day ${day.day_number}` : `Expand Day ${day.day_number}`}
                 title={dayOpen ? `Collapse Day ${day.day_number}` : `Expand Day ${day.day_number}`}
+                className="inline-flex items-center gap-1 text-xs font-semibold py-1 px-2.5 sm:px-3 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface hover:text-primary transition-all cursor-pointer shadow-xs border border-outline-variant/20 active:scale-95"
               >
-                <I name={dayOpen ? 'expand_less' : 'expand_more'} cls="text-[16px]" />
+                <I name={dayOpen ? 'expand_less' : 'expand_more'} cls="text-[16px] text-primary" />
                 <span>{dayOpen ? 'Collapse' : 'Expand'}</span>
               </button>
+
+              {/* Dedicated Focus / Standalone Page Link */}
+              <Link
+                to={dayLink}
+                onClick={(e) => e.stopPropagation()}
+                title={`Open Day ${day.day_number} in standalone reader`}
+                className="btn-outline text-xs py-1 px-2.5 hidden sm:inline-flex items-center gap-1"
+              >
+                <I name="open_in_new" cls="text-[14px]" />
+                <span className="hidden lg:inline">Focus</span>
+              </Link>
+
+              {/* Status Badge */}
               {isGenerating ? (
                 <span className="text-caption-caps font-caption-caps px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/25 flex items-center gap-1.5 animate-pulse font-semibold">
                   <span className="material-symbols-outlined text-[13px] animate-spin">progress_activity</span>
@@ -1285,17 +1487,27 @@ function DayCard({
                   {day.status}
                 </span>
               )}
+
+              {/* Edit & Regenerate buttons */}
               {!editing && !isGenerating && (
                 <>
-                  <button onClick={startEdit} className="btn-outline text-xs py-1 px-2.5">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleSetOpen(true)
+                      startEdit()
+                    }}
+                    className="btn-outline text-xs py-1 px-2.5 hidden md:inline-flex items-center gap-1"
+                  >
                     <I name="edit" cls="text-[14px]" /> Edit
                   </button>
                   <button
-                    onClick={() => {
-                      setDayOpen(true)
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleSetOpen(true)
                       onGenerate()
                     }}
-                    className="btn-outline text-xs py-1 px-2.5"
+                    className="btn-outline text-xs py-1 px-2.5 hidden sm:inline-flex items-center gap-1"
                   >
                     <I name={day.blocks_json ? 'autorenew' : 'add'} cls="text-[14px]" />
                     {day.blocks_json ? 'Regenerate' : 'Generate'}
@@ -1440,7 +1652,7 @@ function DayCard({
               <div className="flex items-center flex-wrap gap-2 pt-0.5">
                 <button
                   type="button"
-                  onClick={() => setDayOpen(false)}
+                  onClick={() => handleSetOpen(false)}
                   className="h-[28px] px-3 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center gap-1 font-label-nav text-label-nav transition-colors active:scale-95 cursor-pointer shadow-xs border border-outline-variant/20"
                   title={`Collapse Day ${day.day_number}`}
                 >
@@ -1528,7 +1740,7 @@ function DayCard({
                 </p>
                 <button
                   onClick={() => {
-                    setDayOpen(true)
+                    handleSetOpen(true)
                     onGenerate()
                   }}
                   className="btn-primary px-6 py-2.5"
@@ -1571,6 +1783,11 @@ function DayCard({
                     onReadAloud={() => onPlaySection?.('closing_prayer')}
                     isReading={isPlayingAudio && playingSection === 'closing_prayer'}
                   />
+                  {closingPrayerErr && (
+                    <div className="w-full max-w-md p-2.5 rounded-xl bg-error-container/20 border border-error/30 text-error text-xs text-center self-end mb-1">
+                      {closingPrayerErr}
+                    </div>
+                  )}
                   <div className="flex justify-end pr-2">
                     <button
                       type="button"
@@ -1597,6 +1814,15 @@ function DayCard({
                       Conclude your study with a personal closing prayer of response. When you are ready, generate a prayer deeply grounded in today's scripture readings, your personal reflection notes, and the community discussions.
                     </p>
                   </div>
+                  {closingPrayerErr && (
+                    <div className="w-full max-w-md p-3 rounded-xl bg-error-container/20 border border-error/30 text-error text-xs text-center">
+                      {isKeyError(closingPrayerErr) ? (
+                        <ApiKeyAlert error={closingPrayerErr} className="text-left" />
+                      ) : (
+                        <span>{closingPrayerErr}</span>
+                      )}
+                    </div>
+                  )}
                   <button
                     type="button"
                     onClick={() => handleGenerateClosingPrayer()}
@@ -1621,7 +1847,7 @@ function DayCard({
               <button
                 type="button"
                 onClick={() => {
-                  setDayOpen(false)
+                  handleSetOpen(false)
                   const el = document.getElementById(`day-card-${day.day_number}`)
                   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
                 }}
@@ -1709,10 +1935,18 @@ function DraftEditor({
     () => notes.memory_verse_highlighted === 'true'
   )
 
-  // Primary memory verse extraction
-  const memoryVerseRef = draft.scripture?.[0]?.ref || 'ACTS 1:8'
+  // Primary memory verse extraction (robust against array, string, or missing)
+  const scriptureArr = Array.isArray(draft.scripture)
+    ? draft.scripture
+    : typeof draft.scripture === 'string' && draft.scripture
+    ? [{ ref: draft.scripture, text: '' }]
+    : []
+  const memoryVerseRef =
+    scriptureArr[0]?.ref ||
+    (typeof draft.scripture === 'string' && draft.scripture) ||
+    'ACTS 1:8'
   const memoryVerseText =
-    draft.scripture?.[0]?.text ||
+    scriptureArr[0]?.text ||
     '“But ye shall receive power, after that the Holy Ghost is come upon you: and ye shall be witnesses unto me both in Jerusalem, and in all Judaea, and in Samaria, and unto the uttermost part of the earth.”'
 
   const toggleMemoryVerseHighlight = async () => {
@@ -2123,8 +2357,24 @@ function DayDetail() {
     setActiveAudioDayNum(dayNum)
   }, [dayNum])
 
+  const currentDayNum = dayNum
+  const scrolledRef = useRef<number | null>(null)
+
+  // Collapsible state for each day and the current day
+  const [openDays, setOpenDays] = useState<Record<number, boolean>>(() => ({
+    [dayNum]: true,
+  }))
+
   useEffect(() => {
-    if (study && dayNum > 1) {
+    setOpenDays((prev) => ({
+      ...prev,
+      [dayNum]: true,
+    }))
+  }, [dayNum])
+
+  useEffect(() => {
+    if (study && dayNum > 1 && scrolledRef.current !== dayNum) {
+      scrolledRef.current = dayNum
       const el = document.getElementById(`day-card-${dayNum}`)
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -2132,7 +2382,36 @@ function DayDetail() {
     }
   }, [study, dayNum])
 
+  const toggleDay = (dNum: number) => {
+    setOpenDays((prev) => ({
+      ...prev,
+      [dNum]: !prev[dNum],
+    }))
+  }
+
+  const setDayOpenState = (dNum: number, open: boolean) => {
+    setOpenDays((prev) => ({
+      ...prev,
+      [dNum]: open,
+    }))
+  }
+
+  const collapseAllDays = () => {
+    if (!study) return
+    const next: Record<number, boolean> = {}
+    study.days.forEach((d) => { next[d.day_number] = false })
+    setOpenDays(next)
+  }
+
+  const expandAllDays = () => {
+    if (!study) return
+    const next: Record<number, boolean> = {}
+    study.days.forEach((d) => { next[d.day_number] = true })
+    setOpenDays(next)
+  }
+
   const genDay = async (dNum: number) => {
+    setOpenDays((prev) => ({ ...prev, [dNum]: true }))
     setStudy((s) => s ? ({ ...s, days: s.days.map((d) => d.day_number === dNum ? { ...d, status: 'generating' } : d) }) : s)
     setDayProgressMap((prev) => ({
       ...prev,
@@ -2183,6 +2462,9 @@ function DayDetail() {
                          day ||
                          study.days[0]
 
+  const expandedCount = study.days.filter((d) => Boolean(openDays[d.day_number])).length
+  const collapsedCount = study.days.length - expandedCount
+
   return (
     <div className="w-full flex flex-col items-center px-1 sm:px-2 pb-8">
       {study.status === 'failed' && (
@@ -2213,13 +2495,56 @@ function DayDetail() {
         </div>
       )}
 
+      {/* Study Plan Days Control Toolbar */}
+      <div className="w-full max-w-[98%] mb-3 flex flex-wrap items-center justify-between gap-3 bg-surface-container-lowest/90 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-outline-variant/20 shadow-xs">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="inline-flex items-center gap-1.5 font-label-nav text-label-nav font-semibold text-primary">
+            <span className="material-symbols-outlined text-[18px]">calendar_view_day</span>
+            <span>Study Plan</span>
+          </span>
+          <span className="text-outline-variant font-body-ui text-[12px]">•</span>
+          <span className="text-xs text-on-surface-variant font-medium">
+            {study.total_days} {study.total_days === 1 ? 'Day' : 'Days'} · {expandedCount} expanded, {collapsedCount} collapsed
+          </span>
+          <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+            Day {dayNum} is Current Day
+          </span>
+        </div>
+
+        {/* Global Expand All / Collapse All controls */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={expandAllDays}
+            className="h-[30px] px-3 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center gap-1.5 text-xs font-medium transition-all active:scale-95 cursor-pointer shadow-2xs border border-outline-variant/20"
+            title="Expand all days in this study"
+          >
+            <span className="material-symbols-outlined text-[16px] text-primary">unfold_more</span>
+            <span>Expand All</span>
+          </button>
+          <button
+            type="button"
+            onClick={collapseAllDays}
+            className="h-[30px] px-3 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center gap-1.5 text-xs font-medium transition-all active:scale-95 cursor-pointer shadow-2xs border border-outline-variant/20"
+            title="Collapse all days including the current day"
+          >
+            <span className="material-symbols-outlined text-[16px] text-primary">unfold_less</span>
+            <span>Collapse All</span>
+          </button>
+        </div>
+      </div>
+
       <div className="w-full max-w-[98%] space-y-4">
         {study.days.map((d) => (
           <DayCard
             key={d.day_number}
             studyId={studyId}
             day={d}
-            defaultOpen={d.day_number === dayNum}
+            isOpen={Boolean(openDays[d.day_number])}
+            onToggleOpen={() => toggleDay(d.day_number)}
+            onSetOpen={(open) => setDayOpenState(d.day_number, open)}
+            isCurrentDay={d.day_number === currentDayNum}
             totalDays={study.total_days}
             studyTopic={study.title || study.topic}
             primaryTranslation={study.primary_translation}
@@ -3267,7 +3592,7 @@ function PassageEditor({
 }: {
   studyId: number
   day: number
-  fallbackScripture?: Array<{ ref: string; translation?: string; text?: string; rationale?: string }>
+  fallbackScripture?: Array<{ ref: string; translation?: string; text?: string; rationale?: string }> | string | null
   onChanged: () => void
   primaryTranslation?: string
   onReadAloud?: () => void
@@ -3282,6 +3607,25 @@ function PassageEditor({
   const [hlText, setHlText] = useState<string | null>(null)
   const [hlNote, setHlNote] = useState('')
   const [copiedPid, setCopiedPid] = useState<number | null>(null)
+
+  const normalizedFallback = useMemo(() => {
+    if (!fallbackScripture) return []
+    if (Array.isArray(fallbackScripture)) {
+      return fallbackScripture.map((item) => {
+        if (typeof item === 'string') {
+          return { ref: item, translation: primaryTranslation, rationale: 'Focal Scripture' }
+        }
+        if (item && typeof item === 'object' && (item as any).ref) {
+          return item
+        }
+        return { ref: String(item || ''), translation: primaryTranslation }
+      }).filter((s) => Boolean(s.ref))
+    }
+    if (typeof fallbackScripture === 'string' && fallbackScripture.trim()) {
+      return [{ ref: fallbackScripture.trim(), translation: primaryTranslation, rationale: 'Focal Scripture' }]
+    }
+    return []
+  }, [fallbackScripture, primaryTranslation])
 
   const load = async () => {
     setBusy(true)
@@ -3300,7 +3644,7 @@ function PassageEditor({
     }
   }
 
-  const scriptureKey = JSON.stringify(fallbackScripture?.map((s) => s.ref) ?? [])
+  const scriptureKey = JSON.stringify(normalizedFallback.map((s) => s.ref))
   useEffect(() => { load() }, [studyId, day, scriptureKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const reloadWhenDone = async (p: Promise<unknown>) => {
@@ -3310,10 +3654,10 @@ function PassageEditor({
   }
 
   const seedFromDraft = async () => {
-    if (!fallbackScripture || fallbackScripture.length === 0) return
+    if (normalizedFallback.length === 0) return
     setSeeding(true)
     try {
-      for (const item of fallbackScripture) {
+      for (const item of normalizedFallback) {
         if (item.ref) {
           await passages.add(studyId, day, item.ref, item.rationale, item.translation)
         }
@@ -3398,7 +3742,7 @@ function PassageEditor({
     reloadWhenDone(passages.update(studyId, day, pid, { highlights }))
   }
 
-  const hasFallback = fallbackScripture && fallbackScripture.length > 0
+  const hasFallback = normalizedFallback.length > 0
   const activePassages = list.length > 0 ? list : []
 
   return (
@@ -3610,7 +3954,7 @@ function PassageEditor({
       {/* Fallback view when no database DayPassage rows exist yet */}
       {!busy && list.length === 0 && hasFallback && (
         <div className="space-y-3">
-          {fallbackScripture!.map((fs, i) => (
+          {normalizedFallback.map((fs, i) => (
             <article key={i} className="bg-surface-container-lowest rounded-2xl p-6 shadow-sm border border-outline-variant/20 flex flex-col gap-3">
               <div className="flex items-center justify-between pb-1 border-b border-outline-variant/10">
                 <span className="font-headline-md text-headline-md font-semibold text-primary">{fs.ref}</span>

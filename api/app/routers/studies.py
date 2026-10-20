@@ -11,13 +11,13 @@ Status values (plain strings, mirrored from the Study/StudyDay model):
 from __future__ import annotations
 
 import asyncio
-from typing import Any
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlmodel import Session, select
 
-from app.auth import get_current_user
+from app.auth import get_current_user, get_current_user_optional
 from app.config import get_settings
 from app.db import get_engine, get_session
 from app.models import Study, StudyDay, DayPassage, Asset, User
@@ -240,6 +240,7 @@ async def _build_discussions_safe(study_id: int, day_number: int) -> None:
     from sqlmodel import select
     from app.services.studies import build_day_discussions
     try:
+        events.emit("info", "discussions", f"Study {study_id} day {day_number}: Discovering community perspectives & citations in background…", study_id=study_id, day_number=day_number)
         with Session(get_engine()) as session:
             study = session.get(Study, study_id)
             if study is None:
@@ -252,21 +253,47 @@ async def _build_discussions_safe(study_id: int, day_number: int) -> None:
 
 
 @router.get("")
-def list_studies(user: User = Depends(get_current_user),
+def list_studies(user: Optional[User] = Depends(get_current_user_optional),
                 session: Session = Depends(get_session)) -> list[StudyOut]:
-    rows = session.exec(
-        select(Study).where(Study.user_id == user.id).order_by(Study.id.desc())
-    ).all()
+    if user is not None:
+        rows = session.exec(
+            select(Study).where((Study.user_id == user.id) | (Study.user_id == None)).order_by(Study.id.desc())
+        ).all()
+    else:
+        rows = session.exec(
+            select(Study).where(Study.user_id == None).order_by(Study.id.desc())
+        ).all()
     return [_to_out(s, session) for s in rows]
 
 
 @router.get("/{study_id}")
-def get_study(study_id: int, user: User = Depends(get_current_user),
+def get_study(study_id: int, user: Optional[User] = Depends(get_current_user_optional),
              session: Session = Depends(get_session)) -> StudyOut:
     s = session.get(Study, study_id)
-    if s is None or s.user_id != user.id:
+    if s is None:
         raise HTTPException(404, "study not found")
+    if s.user_id is not None:
+        if user is None or (s.user_id != user.id and not getattr(user, "is_admin", False)):
+            raise HTTPException(404, "study not found")
     return _to_out(s, session)
+
+
+@router.post("/reseed-demo")
+def reseed_demo_endpoint(
+    target_study_id: int = 8,
+    session: Session = Depends(get_session),
+    user: Optional[User] = Depends(get_current_user_optional),
+) -> dict:
+    """Purge and reseed the public demo study (Study 8) with all updated systems."""
+    from app.seeder.demo_studies import reseed_study_8
+    study = reseed_study_8(session, target_study_id=target_study_id)
+    events.emit("success", "study", f"Demo Study {study.id} successfully purged and rebuilt with all updated systems.")
+    return {
+        "status": "ok",
+        "study_id": study.id,
+        "title": study.title,
+        "days": len(study.days),
+    }
 
 
 def _delete_study_data(session: Session, study: Study) -> None:
@@ -378,6 +405,14 @@ async def regenerate_discussions(study_id: int, day_number: int,
     neu = req.neutral_count if req else 2
     pos = req.positive_count if req else 2
 
+    events.emit(
+        "info",
+        "discussions",
+        f"Study {study_id} day {day_number}: Gathering community discussions and viewpoints…",
+        study_id=study_id,
+        day_number=day_number,
+    )
+
     result = await build_day_discussions(
         s, day_number, session=session,
         study_id=study_id,
@@ -469,20 +504,25 @@ SCRIPTURE_BLOCK = "- {ref} ({translation}): {text}"
 
 @router.post("/{study_id}/days/{day_number}/revise")
 async def revise_day_endpoint(study_id: int, day_number: int, body: DayRevise,
+                              user: User = Depends(get_current_user),
                               session: Session = Depends(get_session)) -> dict:
     """Revise a day's commentary or prayer with AI. If `selection` is given, only that
     passage is updated based on user prompt using existing text + page text context (CoverLetter-Crafter pattern)."""
     from app.services.llm import NoProviderAvailable, complete
     from app.services.prompts import build_system
+    from app.routers.keys import get_user_keys
     from sqlmodel import select
     from app.models import DayPassage
 
     s = session.get(Study, study_id)
-    if s is None:
+    if s is None or s.user_id != user.id:
         raise HTTPException(404, "study not found")
     target = next((d for d in s.days if d.day_number == day_number), None)
     if target is None:
         raise HTTPException(400, "day out of range")
+
+    user_keys = get_user_keys(session, user.id)
+    custom_keys = user_keys if user_keys.get("use_custom_keys") else None
 
     field_key = body.target_field or "commentary"
     if field_key not in ("commentary", "opening_prayer", "closing_prayer"):
@@ -612,12 +652,24 @@ async def revise_day_endpoint(study_id: int, day_number: int, body: DayRevise,
         specific_rules=specific_rules
     )
 
+    events.emit(
+        "info",
+        "study",
+        f"Study {study_id} day {day_number}: Revising {sec_title} with AI wand…",
+        study_id=study_id,
+        day_number=day_number,
+        step="revise",
+    )
+
     try:
         res = await complete(prompt, system=build_system(tradition=s.tradition),
-                             study_id=study_id, session=session)
+                             study_id=study_id, session=session, custom_keys=custom_keys)
     except NoProviderAvailable:
-        events.emit("error", "llm", "AI Provider unavailable - API key required", study_id=study_id)
+        events.emit("error", "llm", f"Study {study_id} day {day_number}: AI Provider unavailable - API key required", study_id=study_id, day_number=day_number)
         raise HTTPException(status_code=402, detail="KEY_REQUIRED: AI provider is unavailable or quota was exhausted. Please add your API key in Settings/Profile.")
+    except Exception as exc:
+        events.emit("error", "study", f"Study {study_id} day {day_number} revision failed: {exc}", study_id=study_id, day_number=day_number)
+        raise HTTPException(status_code=500, detail=f"Revision failed: {exc}")
     
     revised_piece = res.text.strip()
     # Strip accidental wrapping quotes or markdown fences if returned
@@ -669,7 +721,14 @@ async def revise_day_endpoint(study_id: int, day_number: int, body: DayRevise,
 
     session.add(target)
     session.commit()
-    events.emit("success", "study", f"Study {study_id} day {day_number} {field_key} revised")
+    events.emit(
+        "success",
+        "study",
+        f"Study {study_id} day {day_number}: {sec_title} revised and saved",
+        study_id=study_id,
+        day_number=day_number,
+        step="complete",
+    )
     return {
         "day_number": day_number,
         "revised": final_text,
@@ -685,6 +744,7 @@ async def _generate_closing_prayer_for_day(
     session: Session,
     custom_notes: dict[str, Any] | None = None,
     instruction: str | None = None,
+    custom_keys: dict[str, str] | None = None,
 ) -> str:
     from app.services.llm import complete
     from app.services.prompts import build_system
@@ -769,11 +829,22 @@ async def _generate_closing_prayer_for_day(
         optional_user_instruction=instruction_block,
     )
 
+    events.emit(
+        "info",
+        "study",
+        f"Study {study.id} day {target.day_number}: Grounding closing prayer in community voices and reflection notes…",
+        study_id=study.id,
+        day_number=target.day_number,
+        progress=50,
+        step="prayer",
+    )
+
     res = await complete(
         prompt,
         system=build_system(tradition=study.tradition),
         session=session,
         study_id=study.id,
+        custom_keys=custom_keys,
     )
     return res.text.strip()
 
@@ -783,15 +854,22 @@ async def generate_closing_prayer_endpoint(
     study_id: int,
     day_number: int,
     body: ClosingPrayerRequest | None = None,
+    user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ) -> dict:
     """Generate or regenerate a closing prayer grounded in scripture, user notes, and discussions."""
     s = session.get(Study, study_id)
-    if s is None:
+    if s is None or s.user_id != user.id:
         raise HTTPException(404, "study not found")
     target = next((d for d in s.days if d.day_number == day_number), None)
     if target is None:
         raise HTTPException(400, "day out of range")
+
+    from app.routers.keys import get_user_keys
+    from app.services.llm import NoProviderAvailable
+
+    user_keys = get_user_keys(session, user.id)
+    custom_keys = user_keys if user_keys.get("use_custom_keys") else None
 
     custom_notes = body.notes if body else None
     instruction = body.instruction if body else None
@@ -799,11 +877,53 @@ async def generate_closing_prayer_endpoint(
     if custom_notes:
         target.notes = {**(target.notes or {}), **custom_notes}
 
-    prayer_text = await _generate_closing_prayer_for_day(
-        s, target, session, custom_notes=custom_notes, instruction=instruction
+    events.emit(
+        "info",
+        "study",
+        f"Study {study_id} day {day_number}: Crafting personal closing prayer grounded in scripture & reflections…",
+        study_id=study_id,
+        day_number=day_number,
+        progress=25,
+        step="prayer",
     )
 
+    try:
+        prayer_text = await _generate_closing_prayer_for_day(
+            s, target, session, custom_notes=custom_notes, instruction=instruction, custom_keys=custom_keys
+        )
+    except NoProviderAvailable as exc:
+        events.emit(
+            "error",
+            "llm",
+            f"Study {study_id} day {day_number} closing prayer failed: No text provider available. Please configure your API key in Settings.",
+            study_id=study_id,
+            day_number=day_number,
+        )
+        raise HTTPException(
+            status_code=402,
+            detail="KEY_REQUIRED: AI provider is unavailable or quota exhausted. Please check your API key in Settings/Profile.",
+        )
+    except Exception as exc:
+        events.emit(
+            "error",
+            "study",
+            f"Study {study_id} day {day_number} closing prayer failed: {exc}",
+            study_id=study_id,
+            day_number=day_number,
+        )
+        raise HTTPException(status_code=500, detail=f"Failed to generate closing prayer: {exc}")
+
     target.blocks_json = {**(target.blocks_json or {}), "closing_prayer": prayer_text}
+
+    events.emit(
+        "info",
+        "study",
+        f"Study {study_id} day {day_number}: Synchronizing scripture citations…",
+        study_id=study_id,
+        day_number=day_number,
+        progress=85,
+        step="scripture",
+    )
 
     # Ensure scriptures section includes all verses mentioned
     text_sources = [
@@ -825,7 +945,15 @@ async def generate_closing_prayer_endpoint(
 
     session.add(target)
     session.commit()
-    events.emit("success", "study", f"Study {study_id} day {day_number} closing prayer generated")
+    events.emit(
+        "success",
+        "study",
+        f"Study {study_id} day {day_number}: Closing prayer generated & saved",
+        study_id=study_id,
+        day_number=day_number,
+        progress=100,
+        step="complete",
+    )
     return {
         "day_number": day_number,
         "closing_prayer": prayer_text,
@@ -1111,17 +1239,26 @@ async def get_day_maps(
 async def refresh_day_maps(
     study_id: int,
     day_number: int,
+    user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     """Forces re-extraction and generation of historical and modern map context."""
     s = session.get(Study, study_id)
-    if not s:
+    if not s or s.user_id != user.id:
         raise HTTPException(404, "Study not found")
     day = session.exec(
         select(StudyDay).where(StudyDay.study_id == study_id, StudyDay.day_number == day_number)
     ).first()
     if not day:
         raise HTTPException(404, "Day not found")
+
+    events.emit(
+        "info",
+        "maps",
+        f"Study {study_id} day {day_number}: Refreshing biblical geography & archaeological survey plates…",
+        study_id=study_id,
+        day_number=day_number,
+    )
 
     blocks = day.blocks_json or {}
     passages = []
@@ -1152,5 +1289,13 @@ async def refresh_day_maps(
     session.add(day)
     session.commit()
     session.refresh(day)
+
+    events.emit(
+        "success",
+        "maps",
+        f"Study {study_id} day {day_number}: Resolved {len(resolved.get('locations', []))} biblical sites and {len(resolved.get('historical_plates', []))} archaeological survey plates",
+        study_id=study_id,
+        day_number=day_number,
+    )
     return resolved
 
