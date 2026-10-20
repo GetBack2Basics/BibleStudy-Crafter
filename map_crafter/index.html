@@ -18,66 +18,70 @@
   <script src="https://unpkg.com/@tmcw/togeojson@5.8.1/dist/togeojson.umd.js"></script>
 
   <!-- Custom CSS -->
-  <link rel="stylesheet" href="style.css?v=20261020_attributes_fix">
+  <link rel="stylesheet" href="style.css?v=20261020_header_responsive">
 </head>
 <body>
   <div id="app-container">
     <!-- Main Top Navigation -->
     <header class="app-header">
-      <div class="brand-section">
-        <div class="brand-icon">🗺️</div>
-        <div class="brand-text">
-          <h1>Bible Map Crafter</h1>
+      <div class="header-left">
+        <div class="brand-section">
+          <div class="brand-icon">🗺️</div>
+          <div class="brand-text">
+            <h1>Bible Map Crafter</h1>
+          </div>
+        </div>
+
+        <!-- Active Template Switcher Pill -->
+        <div class="template-switcher">
+          <button id="btn-tmpl-ancient" class="template-btn active ancient" title="Switch to Ancient Historical Atlas styling">
+            <span>📜</span> Ancient
+          </button>
+          <button id="btn-tmpl-modern" class="template-btn" title="Switch to Present-Day Satellite styling">
+            <span>🛰️</span> Modern
+          </button>
         </div>
       </div>
 
-      <!-- Active Template Switcher Pill -->
-      <div class="template-switcher">
-        <button id="btn-tmpl-ancient" class="template-btn active ancient" title="Switch to Ancient Historical Atlas styling">
-          <span>📜</span> Ancient Template
-        </button>
-        <button id="btn-tmpl-modern" class="template-btn" title="Switch to Present-Day Satellite styling">
-          <span>🛰️</span> Modern Template
-        </button>
+      <div class="header-center">
+        <!-- Historical Era Filter -->
+        <select id="select-era" class="select-pill header-select" title="Filter sites and boundaries by biblical epoch">
+          <option value="all" selected>All Eras</option>
+          <option value="patriarchal">Patriarchal (~2000-1600 BC)</option>
+          <option value="exodus">Exodus & Wilderness (~1446 BC)</option>
+          <option value="monarchy">United Monarchy (~1000 BC)</option>
+          <option value="roman_judea">Roman Judea & Galilee (~30 AD)</option>
+          <option value="early_church">Early Church / Paul (~50-95 AD)</option>
+        </select>
+
+        <!-- Basemap Selector -->
+        <select id="select-basemap" class="select-pill header-select" title="Choose underlying cartographic layer">
+          <option value="geolibre_ocean_topo" selected>Topographic Relief & Depth</option>
+          <option value="esri_physical">Physical Relief</option>
+          <option value="osm_terrain">World Topo Classic</option>
+          <option value="esri_satellite">World Satellite</option>
+          <option value="opentopomap">OpenTopoMap</option>
+          <option value="osm_standard">OpenStreetMap Standard</option>
+          <option value="carto_voyager">CARTO Streets</option>
+        </select>
+
+        <!-- Map Sites Display Mode (Major Only by default at all zoom levels) -->
+        <select id="select-sites-mode" class="select-pill header-select" title="Control site marker display density">
+          <option value="major_only" selected>⭐ Sites: Major Only</option>
+          <option value="auto_zoom">🌐 Sites: Auto-Expand</option>
+        </select>
+
+        <!-- Label Density Selector -->
+        <select id="select-label-density" class="select-pill header-select" title="Control map label clutter and collision avoidance">
+          <option value="balanced" selected>🏷️ Labels: Balanced</option>
+          <option value="clean">🏷️ Labels: Clean</option>
+          <option value="dense">🏷️ Labels: Dense</option>
+          <option value="all">🏷️ Labels: Show All</option>
+        </select>
       </div>
 
-      <!-- Historical Era Filter -->
-      <select id="select-era" class="select-pill" title="Filter sites and boundaries by biblical epoch">
-        <option value="all" selected>All Biblical Eras</option>
-        <option value="patriarchal">Patriarchal (~2000-1600 BC)</option>
-        <option value="exodus">Exodus & Wilderness (~1446 BC)</option>
-        <option value="monarchy">United Monarchy (~1000 BC)</option>
-        <option value="roman_judea">Roman Judea & Galilee (~30 AD)</option>
-        <option value="early_church">Early Church / Paul (~50-95 AD)</option>
-      </select>
-
-      <!-- Basemap Selector -->
-      <select id="select-basemap" class="select-pill" title="Choose underlying cartographic layer">
-        <option value="geolibre_ocean_topo" selected>GeoLibre Topographic Relief & Depth Bathymetry</option>
-        <option value="esri_physical">GeoLibre Physical Land Relief</option>
-        <option value="osm_terrain">GeoLibre World Topo (Classic)</option>
-        <option value="esri_satellite">GeoLibre World Satellite</option>
-        <option value="opentopomap">OpenTopoMap (Topography)</option>
-        <option value="osm_standard">OpenStreetMap Standard</option>
-        <option value="carto_voyager">CARTO Voyager (Modern Streets)</option>
-      </select>
-
-      <!-- Map Sites Display Mode (Major Only by default at all zoom levels) -->
-      <select id="select-sites-mode" class="select-pill" title="Control site marker display density">
-        <option value="major_only" selected>⭐ Map Sites: Major Only</option>
-        <option value="auto_zoom">🌐 Map Sites: Auto-expand at zoom</option>
-      </select>
-
-      <!-- Label Density Selector -->
-      <select id="select-label-density" class="select-pill" title="Control map label clutter and collision avoidance">
-        <option value="balanced" selected>🏷️ Labels: Balanced</option>
-        <option value="clean">🏷️ Labels: Clean (Decluttered)</option>
-        <option value="dense">🏷️ Labels: Dense</option>
-        <option value="all">🏷️ Labels: Show All</option>
-      </select>
-
       <!-- Action Tools -->
-      <div class="header-actions">
+      <div class="header-right header-actions">
         <button id="btn-toggle-3d" class="btn-pill" title="Toggle 3D Elevation & Hillshading">
           <span>🏔️</span> 3D Relief
         </button>
@@ -407,6 +411,6 @@
   </div>
 
   <!-- Application Logic -->
-  <script src="app.js?v=20261020_attributes_fix"></script>
+  <script src="app.js?v=20261020_header_responsive"></script>
 </body>
 </html>

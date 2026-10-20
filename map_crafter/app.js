@@ -3125,6 +3125,11 @@ function enableDraggablePopup(popup) {
       window.addEventListener('pointerup', onPointerUp);
     });
   });
+
+  // Window resize handler to ensure MapLibre canvas immediately updates if header wraps or screen resizes
+  window.addEventListener('resize', () => {
+    if (map) map.resize();
+  });
 }
 
 // 13. Sidebar Resizer & Collapse (25% Initial Split)
