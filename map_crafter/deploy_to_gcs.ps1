@@ -46,6 +46,7 @@ Write-Host "[INFO] Setting Cache-Control: no-cache on key web assets..." -Foregr
 & gcloud storage objects update "gs://$BucketName/app.js" --cache-control="no-cache, no-store, must-revalidate"
 & gcloud storage objects update "gs://$BucketName/style.css" --cache-control="no-cache, no-store, must-revalidate"
 & gcloud storage objects update "gs://$BucketName/data/biblical_sites.geojson" --cache-control="no-cache, no-store, must-revalidate"
+& gcloud storage objects update "gs://$BucketName/data/biblical_regions.geojson" --cache-control="no-cache, no-store, must-revalidate"
 
 
 Write-Host "============================================================" -ForegroundColor Cyan

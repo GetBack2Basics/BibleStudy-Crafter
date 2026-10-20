@@ -8,11 +8,123 @@
 const LEVANT_CENTER = [35.2345, 31.7767];
 const DEFAULT_ZOOM = 8.5;
 
+// Canonical Biblical Books Directory (61 Books with OpenBible KML data)
+const BIBLICAL_BOOKS = [
+  // Pentateuch & OT History
+  { code: 'gen', name: 'Genesis', testament: 'OT', category: 'Pentateuch', desc: 'Creation, Patriarchs (Abraham, Isaac, Jacob, Joseph)' },
+  { code: 'exod', name: 'Exodus', testament: 'OT', category: 'Pentateuch', desc: 'Deliverance from Egypt, Red Sea, Mount Sinai' },
+  { code: 'lev', name: 'Leviticus', testament: 'OT', category: 'Pentateuch', desc: 'Tabernacle laws, priesthood, holiness codes' },
+  { code: 'num', name: 'Numbers', testament: 'OT', category: 'Pentateuch', desc: 'Wilderness wanderings from Sinai to Jordan' },
+  { code: 'deut', name: 'Deuteronomy', testament: 'OT', category: 'Pentateuch', desc: 'Moses farewell sermons in Plains of Moab' },
+  { code: 'josh', name: 'Joshua', testament: 'OT', category: 'History', desc: 'Conquest of Canaan, Jericho, tribal allotments' },
+  { code: 'judg', name: 'Judges', testament: 'OT', category: 'History', desc: 'Cycles of deliverance (Gideon, Samson, Deborah)' },
+  { code: 'ruth', name: 'Ruth', testament: 'OT', category: 'History', desc: 'Moab to Bethlehem, David ancestry' },
+  { code: '1sam', name: '1 Samuel', testament: 'OT', category: 'History', desc: 'Samuel, Saul, David rise in Judah' },
+  { code: '2sam', name: '2 Samuel', testament: 'OT', category: 'History', desc: 'Reign of King David in Jerusalem' },
+  { code: '1kgs', name: '1 Kings', testament: 'OT', category: 'History', desc: 'Solomon Temple, divided kingdom, Elijah' },
+  { code: '2kgs', name: '2 Kings', testament: 'OT', category: 'History', desc: 'Elisha, fall of Samaria and Jerusalem exile' },
+  { code: '1chr', name: '1 Chronicles', testament: 'OT', category: 'History', desc: 'Genealogies, Davidic reign and worship' },
+  { code: '2chr', name: '2 Chronicles', testament: 'OT', category: 'History', desc: 'Solomon Temple to Cyrus decree of return' },
+  { code: 'ezra', name: 'Ezra', testament: 'OT', category: 'History', desc: 'Return from Babylon, rebuilding the Temple' },
+  { code: 'neh', name: 'Nehemiah', testament: 'OT', category: 'History', desc: 'Rebuilding the walls of Jerusalem' },
+  { code: 'esth', name: 'Esther', testament: 'OT', category: 'History', desc: 'Jewish deliverance in Persian capital of Susa' },
+  // Wisdom & Poetry
+  { code: 'job', name: 'Job', testament: 'OT', category: 'Wisdom', desc: 'Land of Uz, trials and sovereignty of God' },
+  { code: 'ps', name: 'Psalms', testament: 'OT', category: 'Poetry', desc: 'Songs of Zion, prayers and praises' },
+  { code: 'prov', name: 'Proverbs', testament: 'OT', category: 'Wisdom', desc: 'Solomonic wisdom and guidance' },
+  { code: 'eccl', name: 'Ecclesiastes', testament: 'OT', category: 'Wisdom', desc: 'The Teacher search for meaning in Jerusalem' },
+  { code: 'song', name: 'Song of Songs', testament: 'OT', category: 'Poetry', desc: 'Bridal love across Lebanon and Sharon' },
+  // Major & Minor Prophets
+  { code: 'isa', name: 'Isaiah', testament: 'OT', category: 'Prophets', desc: 'Prophecy to Judah, Jerusalem, and nations' },
+  { code: 'jer', name: 'Jeremiah', testament: 'OT', category: 'Prophets', desc: 'Weeping prophet in Jerusalem and Egypt' },
+  { code: 'lam', name: 'Lamentations', testament: 'OT', category: 'Prophets', desc: 'Mourning the destruction of Jerusalem' },
+  { code: 'ezek', name: 'Ezekiel', testament: 'OT', category: 'Prophets', desc: 'Visions by River Chebar in Babylon' },
+  { code: 'dan', name: 'Daniel', testament: 'OT', category: 'Prophets', desc: 'Babylon and Persia, visions of kingdoms' },
+  { code: 'hos', name: 'Hosea', testament: 'OT', category: 'Minor Prophets', desc: 'Prophecy to northern kingdom of Israel' },
+  { code: 'joel', name: 'Joel', testament: 'OT', category: 'Minor Prophets', desc: 'Locust plague, Day of the Lord in Zion' },
+  { code: 'amos', name: 'Amos', testament: 'OT', category: 'Minor Prophets', desc: 'Shepherd of Tekoa prophesying at Bethel' },
+  { code: 'obad', name: 'Obadiah', testament: 'OT', category: 'Minor Prophets', desc: 'Judgment on Edom' },
+  { code: 'jonah', name: 'Jonah', testament: 'OT', category: 'Minor Prophets', desc: 'Joppa to Tarshish, mission to Nineveh' },
+  { code: 'mic', name: 'Micah', testament: 'OT', category: 'Minor Prophets', desc: 'Moresheth prophet, Bethlehem ruler prophecy' },
+  { code: 'nah', name: 'Nahum', testament: 'OT', category: 'Minor Prophets', desc: 'Oracle concerning the fall of Nineveh' },
+  { code: 'hab', name: 'Habakkuk', testament: 'OT', category: 'Minor Prophets', desc: 'Dialogue with God on Chaldean invasion' },
+  { code: 'zeph', name: 'Zephaniah', testament: 'OT', category: 'Minor Prophets', desc: 'Judgment on Judah and Philistia' },
+  { code: 'hag', name: 'Haggai', testament: 'OT', category: 'Minor Prophets', desc: 'Call to rebuild second Temple in Jerusalem' },
+  { code: 'zech', name: 'Zechariah', testament: 'OT', category: 'Minor Prophets', desc: 'Messianic visions in post-exilic Jerusalem' },
+  { code: 'mal', name: 'Malachi', testament: 'OT', category: 'Minor Prophets', desc: 'Final OT messenger to Jerusalem' },
+  // Gospels & Acts
+  { code: 'matt', name: 'Matthew', testament: 'NT', category: 'Gospel', desc: 'Ministry of Jesus in Galilee and Jerusalem' },
+  { code: 'mark', name: 'Mark', testament: 'NT', category: 'Gospel', desc: 'Servant Jesus through Capernaum and Judea' },
+  { code: 'luke', name: 'Luke', testament: 'NT', category: 'Gospel', desc: 'Historical account from Galilee to the cross' },
+  { code: 'john', name: 'John', testament: 'NT', category: 'Gospel', desc: 'Signs in Cana, Samaria, Jerusalem, and Galilee' },
+  { code: 'acts', name: 'Acts', testament: 'NT', category: 'History', desc: 'Early Church, Paul missionary journeys to Rome' },
+  // Epistles & Revelation
+  { code: 'rom', name: 'Romans', testament: 'NT', category: 'Epistles', desc: 'Paul epistle to the saints in Rome' },
+  { code: '1cor', name: '1 Corinthians', testament: 'NT', category: 'Epistles', desc: 'Epistle to Church at Corinth, Achaia' },
+  { code: '2cor', name: '2 Corinthians', testament: 'NT', category: 'Epistles', desc: 'Paul ministry defense through Macedonia' },
+  { code: 'gal', name: 'Galatians', testament: 'NT', category: 'Epistles', desc: 'Churches of Galatia (Pisidian Antioch, Lystra)' },
+  { code: 'eph', name: 'Ephesians', testament: 'NT', category: 'Epistles', desc: 'Church of Ephesus, Asia Minor' },
+  { code: 'phil', name: 'Philippians', testament: 'NT', category: 'Epistles', desc: 'Church at Philippi in Macedonia' },
+  { code: 'col', name: 'Colossians', testament: 'NT', category: 'Epistles', desc: 'Church in Colossae, Lycus Valley' },
+  { code: '1thess', name: '1 Thessalonians', testament: 'NT', category: 'Epistles', desc: 'Church of Thessalonica in Macedonia' },
+  { code: '2thess', name: '2 Thessalonians', testament: 'NT', category: 'Epistles', desc: 'Comfort concerning the Lord return' },
+  { code: '1tim', name: '1 Timothy', testament: 'NT', category: 'Epistles', desc: 'Pastoral guidance for Ephesus ministry' },
+  { code: '2tim', name: '2 Timothy', testament: 'NT', category: 'Epistles', desc: 'Paul final letter from Roman imprisonment' },
+  { code: 'titus', name: 'Titus', testament: 'NT', category: 'Epistles', desc: 'Establishing elders in the cities of Crete' },
+  { code: 'heb', name: 'Hebrews', testament: 'NT', category: 'Epistles', desc: 'Christ superior covenant and sanctuary' },
+  { code: '1pet', name: '1 Peter', testament: 'NT', category: 'Epistles', desc: 'To exiles in Pontus, Galatia, Cappadocia, Asia' },
+  { code: '2pet', name: '2 Peter', testament: 'NT', category: 'Epistles', desc: 'Warning against false teachers in the churches' },
+  { code: 'jude', name: 'Jude', testament: 'NT', category: 'Epistles', desc: 'Contending for the faith once delivered' },
+  { code: 'rev', name: 'Revelation', testament: 'NT', category: 'Prophecy', desc: 'Visions on Patmos to the 7 Churches of Asia' },
+];
+
+// 36 Historical Biblical Regions & Kingdoms
+const BIBLICAL_REGIONS_META = {
+  'Abilene': { category: 'Syrian Tetrarchy', desc: 'Region northwest of Damascus governed by Lysanias (Luke 3:1)' },
+  'Achaia': { category: 'Roman Province', desc: 'Southern Greece including Corinth and Athens (Acts 18:12)' },
+  'Amalek': { category: 'Desert Realm', desc: 'Negev and Sinai territory of the Amalekites (1 Sam 15:7)' },
+  'Ammon': { category: 'Transjordan Kingdom', desc: 'Territory east of Jordan and Gilead; capital Rabbah (Deut 2:19)' },
+  'Arabah': { category: 'Rift Valley', desc: 'Deep rift depression south from Dead Sea to Gulf of Aqaba' },
+  'Aram': { category: 'Syrian Realm', desc: 'Aramean kingdoms centered on Damascus, Hamath, and Zobah' },
+  'Asia': { category: 'Roman Province', desc: 'Western Asia Minor containing the Seven Churches of Revelation' },
+  'Assyria': { category: 'Mesopotamian Empire', desc: 'Ancient northern empire centered on Nineveh along the Tigris' },
+  'Babylonia': { category: 'Mesopotamian Empire', desc: 'Southern Mesopotamia; land of exile, Shinar, Euphrates' },
+  'Bashan': { category: 'Northern Realm', desc: 'Fertile volcanic plateau east of Galilee, realm of King Og' },
+  'Bithynia': { category: 'Roman Province', desc: 'Northern Asia Minor bordering Black Sea (Acts 16:7)' },
+  'Canaan': { category: 'Promised Land', desc: 'Historical land west of Jordan promised to Abraham seed' },
+  'Cappadocia': { category: 'Anatolian Plateau', desc: 'Eastern Asia Minor plateau region (Acts 2:9, 1 Pet 1:1)' },
+  'Cilicia': { category: 'Roman Province', desc: 'Southeastern Asia Minor; homeland of apostle Paul at Tarsus' },
+  'Crete': { category: 'Mediterranean Island', desc: 'Large island with Fair Havens where Titus was left (Titus 1:5)' },
+  'Cyprus': { category: 'Mediterranean Island', desc: 'Homeland of Barnabas, first stop on Paul journey (Acts 13:4)' },
+  'Decapolis': { category: 'Hellenistic League', desc: 'Ten Hellenistic cities east of Galilee and Jordan (Matt 4:25)' },
+  'Edom': { category: 'Southern Kingdom', desc: 'Mountainous realm of Esau descendants south of Dead Sea (Mount Seir)' },
+  'Galatia': { category: 'Roman Province', desc: 'Central Asia Minor territory visited by Paul (Acts 16:6)' },
+  'Gilead': { category: 'Transjordan Region', desc: 'Hilly forested region east of Jordan between Yarmuk and Arnon' },
+  'Goshen': { category: 'Egyptian Land', desc: 'Fertile Nile delta region inhabited by Israelites (Gen 45:10)' },
+  'Lycaonia': { category: 'Anatolian District', desc: 'Region of Iconium, Lystra, and Derbe in southern Asia Minor' },
+  'Lydia': { category: 'Asia Minor Realm', desc: 'Western Anatolia including Sardis and Thyatira' },
+  'Macedonia': { category: 'Greek Province', desc: 'Northern Greek kingdom with Philippi, Thessalonica, and Berea' },
+  'Media': { category: 'Persian Empire', desc: 'Ancient Iranian realm east of Zagros Mountains (Dan 5:28)' },
+  'Midian': { category: 'Arabian Realm', desc: 'Desert territory east of Gulf of Aqaba where Moses fled' },
+  'Moab': { category: 'Transjordan Kingdom', desc: 'High plateau kingdom east of Dead Sea; land of Ruth' },
+  'Mysia': { category: 'Anatolian District', desc: 'Northwestern Asia Minor containing Troas and Pergamum' },
+  'Pamphylia': { category: 'Coastal District', desc: 'Southern coastal plain of Asia Minor; Perga and Attalia' },
+  'Persia': { category: 'Eastern Empire', desc: 'Great empire of Cyrus, Darius, and Xerxes from Susa and Persepolis' },
+  'Philistia': { category: 'Coastal Plain', desc: 'Pentapolis of the Philistines: Gaza, Ashdod, Ashkelon, Gath, Ekron' },
+  'Phoenicia': { category: 'Maritime Realm', desc: 'Coastal seafaring cities of Tyre, Sidon, and Byblos' },
+  'Phrygia': { category: 'Central Anatolia', desc: 'Interior region traversed by Paul during mission journeys' },
+  'Pisidia': { category: 'Taurus Mountain Realm', desc: 'Rugged highlands of Pisidian Antioch' },
+  'Pontus': { category: 'Black Sea Province', desc: 'Northeastern Asia Minor coast; homeland of Aquila' },
+  'Trachonitis': { category: 'Syrian Tetrarchy', desc: 'Lava-field territory east of Golan ruled by Philip (Luke 3:1)' },
+};
+
 // Global State
 let map = null;
 let currentTemplate = 'ancient'; // 'ancient' | 'modern'
 let currentBasemap = 'geolibre_ocean_topo'; // GeoLibre Topographic Terrain with Ocean Depth Bathymetry
 let currentEra = 'all';
+let currentLabelDensity = 'balanced'; // 'balanced' | 'clean' | 'dense' | 'all'
+let currentSitesDisplayMode = 'major_only'; // 'major_only' (Default: only major points at all zoom levels) | 'auto_zoom'
 let currentBookKml = null;
 let bookKmlGeoJSON = null;
 let is3DEnabled = false;
@@ -20,6 +132,11 @@ let is3DEnabled = false;
 let templatesConfig = null;
 let sitesGeoJSON = null;
 let boundariesGeoJSON = null;
+let regionsGeoJSON = null;
+let currentRegionsOverlay = 'none'; // 'none' (Default: OFF!) | 'selected' | 'all'
+let selectedRegions = new Set(); // Set of active region names on map
+let activeBooks = new Set(); // Set of active book codes on map
+let activeBookGeoJSONs = {}; // Map of bookCode -> parsed GeoJSON
 
 let markersList = [];
 let capturedAncientJpg = null;
@@ -30,11 +147,15 @@ let siteActivePhotoIndices = {};
 let currentLightboxSite = null;
 let currentLightboxIndex = 0;
 
-// Sidebar & Pinned Site Filtering State
-let activeSidebarTab = 'top10'; // 'top10' | 'pinned' | 'all'
-let selectedAlphaLetter = 'all';
-let searchQuery = '';
+// LHS Biblical Library & Active Layer Control State
+let activeLibraryScope = 'all'; // 'all' | 'locations' | 'books' | 'regions'
+let librarySearchQuery = '';
+let libraryContextSelection = 'default';
 let pinnedSiteIds = new Set();
+let activeLayers = [];
+let currentAttributesLayer = null;
+let draggedLayerId = null;
+
 try {
   const saved = localStorage.getItem('biblestudy_map_crafter_pinned');
   if (saved) {
@@ -54,23 +175,25 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupUIEventListeners();
   setupSidebarResizer();
   setupGlobalPopupDismiss();
-  buildAlphabetJumper();
-  updatePinnedCounter();
-  renderSidebarList();
+  populateLibraryContextDropdown();
+  initActiveLayers();
+  renderActiveLayersControl();
 });
 
 // 1. Load Data Files
 async function loadData() {
   try {
     const ts = Date.now();
-    const [tmpls, sites, bounds] = await Promise.all([
+    const [tmpls, sites, bounds, regions] = await Promise.all([
       fetch(`data/templates.json?t=${ts}`).then((r) => r.json()),
       fetch(`data/biblical_sites.geojson?t=${ts}`).then((r) => r.json()),
       fetch(`data/ancient_boundaries.geojson?t=${ts}`).then((r) => r.json()),
+      fetch(`data/biblical_regions.geojson?t=${ts}`).then((r) => r.json()).catch(() => null),
     ]);
     templatesConfig = tmpls;
     sitesGeoJSON = sites;
     boundariesGeoJSON = bounds;
+    regionsGeoJSON = regions;
   } catch (err) {
     console.error('Failed to load local data files:', err);
   }
@@ -88,6 +211,11 @@ function parseUrlParameters() {
     currentBookKml = params.get('book').toLowerCase();
     const bookSelect = document.getElementById('select-book-kml');
     if (bookSelect) bookSelect.value = currentBookKml;
+  }
+  if (params.get('density')) {
+    currentLabelDensity = params.get('density');
+    const densitySelect = document.getElementById('select-label-density');
+    if (densitySelect) densitySelect.value = currentLabelDensity;
   }
 }
 
@@ -138,9 +266,7 @@ function initMap() {
       loadBookKML(currentBookKml);
     }
     map.on('zoomend', () => scheduleRenderMarkers());
-    map.on('moveend', () => {
-      if (map && map.getZoom() >= 9.5) scheduleRenderMarkers();
-    });
+    map.on('moveend', () => scheduleRenderMarkers());
   });
 }
 
@@ -315,6 +441,90 @@ function addBoundariesLayers() {
       },
     });
   }
+
+  // 8. OpenBible Historical Regions & Kingdoms (Ammon, Moab, Edom, Philistia, Aram, Bashan, etc.)
+  if (regionsGeoJSON && !map.getSource('ancient-regions-source')) {
+    map.addSource('ancient-regions-source', {
+      type: 'geojson',
+      data: regionsGeoJSON,
+    });
+
+    if (!map.getLayer('ancient-regions-fill')) {
+      map.addLayer(
+        {
+          id: 'ancient-regions-fill',
+          type: 'fill',
+          source: 'ancient-regions-source',
+          filter: ['in', 'name', ''], // Off by default!
+          layout: { visibility: 'none' }, // Off by default!
+          paint: {
+            'fill-color': ['get', 'fill_color'],
+            'fill-opacity': 0.16,
+          },
+        },
+        'ancient-water-shelf'
+      );
+    }
+
+    if (!map.getLayer('ancient-regions-stroke')) {
+      map.addLayer(
+        {
+          id: 'ancient-regions-stroke',
+          type: 'line',
+          source: 'ancient-regions-source',
+          filter: ['in', 'name', ''], // Off by default!
+          layout: { visibility: 'none' }, // Off by default!
+          paint: {
+            'line-color': ['get', 'stroke_color'],
+            'line-width': 1.6,
+            'line-dasharray': [3, 2],
+            'line-opacity': 0.7,
+          },
+        },
+        'ancient-water-shelf'
+      );
+    }
+  }
+
+  updateRegionsFilter();
+}
+
+// Controls visibility and filter of historical regions (Off by default; user selects regions)
+function updateRegionsFilter() {
+  if (!map || !map.getLayer('ancient-regions-fill') || !map.getLayer('ancient-regions-stroke')) return;
+  const isAncient = currentTemplate === 'ancient';
+  if (!isAncient) {
+    map.setLayoutProperty('ancient-regions-fill', 'visibility', 'none');
+    map.setLayoutProperty('ancient-regions-stroke', 'visibility', 'none');
+    return;
+  }
+
+  if (currentRegionsOverlay === 'all') {
+    map.setFilter('ancient-regions-fill', null);
+    map.setFilter('ancient-regions-stroke', null);
+    map.setLayoutProperty('ancient-regions-fill', 'visibility', 'visible');
+    map.setLayoutProperty('ancient-regions-stroke', 'visibility', 'visible');
+  } else if (currentRegionsOverlay === 'none' && selectedRegions.size === 0) {
+    // Off by default
+    map.setLayoutProperty('ancient-regions-fill', 'visibility', 'none');
+    map.setLayoutProperty('ancient-regions-stroke', 'visibility', 'none');
+  } else {
+    // Show only the selected regions that are marked visible in Layer Control
+    const regionNames = Array.from(selectedRegions).filter((rName) => {
+      const l = activeLayers.find((layer) => layer.id === `region:${rName}`);
+      return l ? l.visible : true;
+    });
+    if (regionNames.length === 0) {
+      map.setLayoutProperty('ancient-regions-fill', 'visibility', 'none');
+      map.setLayoutProperty('ancient-regions-stroke', 'visibility', 'none');
+    } else {
+      const filterExpr = ['in', 'name', ...regionNames];
+      map.setFilter('ancient-regions-fill', filterExpr);
+      map.setFilter('ancient-regions-stroke', filterExpr);
+      map.setLayoutProperty('ancient-regions-fill', 'visibility', 'visible');
+      map.setLayoutProperty('ancient-regions-stroke', 'visibility', 'visible');
+    }
+  }
 }
 
 // 6. Apply Active Template (Ancient vs Modern)
@@ -328,6 +538,8 @@ function applyTemplate(tmplKey) {
   const ancientLayers = [
     'shaded-relief-layer',
     'terrain-hillshade',
+    'ancient-regions-fill',
+    'ancient-regions-stroke',
     'ancient-water-shelf',
     'ancient-water-depth',
     'ancient-water-stroke',
@@ -345,8 +557,15 @@ function applyTemplate(tmplKey) {
     switchBasemap(tmpl.basemap || 'geolibre_ocean_topo', false);
     // Show ancient boundaries, waters, and shaded relief
     ancientLayers.forEach((id) => {
-      if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'visible');
+      if (map.getLayer(id)) {
+        if (id === 'ancient-regions-fill' || id === 'ancient-regions-stroke') {
+          // Handled by updateRegionsFilter below
+        } else {
+          map.setLayoutProperty(id, 'visibility', 'visible');
+        }
+      }
     });
+    updateRegionsFilter();
   } else {
     mapEl.classList.remove('ancient-canvas-filter');
     badgeTemplate.className = 'status-badge modern';
@@ -404,7 +623,194 @@ function switchBasemap(basemapKey, updateSelect = true) {
   );
 }
 
-// 8. Render Markers (Tiered Priority: Major, Moderate, Minor + Pinned)
+// Global active floating popup (for sidebar search/clicks on any site)
+let activeFloatingPopup = null;
+
+function buildSitePopupHtml(props, lng, lat) {
+  const isAncient = currentTemplate === 'ancient';
+  const isPinned = pinnedSiteIds.has(props.id);
+  const photos = Array.isArray(props.photos) && props.photos.length > 0 ? props.photos : (props.photo_url ? [{
+    thumb_url: props.photo_url,
+    full_url: props.photo_url,
+    credit: props.photo_credit,
+    credit_url: props.photo_credit_url,
+    license: props.photo_license,
+    caption: props.photo_caption
+  }] : []);
+
+  const activePhotoIdx = siteActivePhotoIndices[props.id] || 0;
+  const primary = photos[activePhotoIdx] || photos[0];
+  const hasMultiple = photos.length > 1;
+
+  const transVariants = Array.isArray(props.translation_variants) ? props.translation_variants : [];
+  const translationVariantsHtml = transVariants.length > 0 ? `
+    <div class="site-popup-row">
+      <span class="label">🔤 Translations:</span>
+      <span class="val ancient-val" style="font-size: 0.70rem;" title="Alternative names in English Bible translations">${escapeHtml(transVariants.slice(0, 3).join(', '))}${transVariants.length > 3 ? ` (+${transVariants.length - 3})` : ''}</span>
+    </div>
+  ` : '';
+
+  const sourcesList = Array.isArray(props.scholarly_sources) ? props.scholarly_sources : [];
+  const totalSources = props.scholarly_sources_count || sourcesList.length;
+  const scholarlySourcesHtml = sourcesList.length > 0 ? `
+    <details class="site-popup-sources-accordion" onclick="event.stopPropagation()">
+      <summary class="sources-summary" title="Click to view scholarly citations and archaeological references">
+        <span>📚 Archaeological Sources (${totalSources})</span>
+        <span class="sources-expand-icon">▾</span>
+      </summary>
+      <div class="sources-content-list">
+        ${sourcesList.map((s) => `
+          <div class="source-item">
+            <div class="source-title-row">
+              ${s.url ? `<a href="${s.url}" target="_blank" rel="noopener noreferrer" class="source-title-link">📖 ${escapeHtml(s.title)}</a>` : `<span class="source-title">📖 ${escapeHtml(s.title)}</span>`}
+              ${s.year ? `<span class="source-year">${s.year}</span>` : ''}
+            </div>
+            ${s.page ? `<span class="source-page">Entry / Page: ${escapeHtml(String(s.page))}</span>` : ''}
+          </div>
+        `).join('')}
+      </div>
+    </details>
+  ` : '';
+
+  const auth = props.authorities || {};
+  const authoritiesHtml = Object.keys(auth).length > 0 ? `
+    <div class="site-popup-authorities-row">
+      ${auth.pleiades ? `<a href="${auth.pleiades}" target="_blank" rel="noopener noreferrer" class="authority-badge pleiades" title="Pleiades Gazetteer of Ancient Mediterranean Geography">🏛️ Pleiades</a>` : ''}
+      ${auth.dare ? `<a href="${auth.dare}" target="_blank" rel="noopener noreferrer" class="authority-badge dare" title="Digital Atlas of the Roman Empire">🏛️ Roman Atlas</a>` : ''}
+      ${auth.wikidata ? `<a href="${auth.wikidata}" target="_blank" rel="noopener noreferrer" class="authority-badge wikidata" title="Wikidata Knowledge Graph">🌐 Wikidata</a>` : ''}
+      ${auth.biblia ? `<a href="${auth.biblia}" target="_blank" rel="noopener noreferrer" class="authority-badge biblia" title="Biblia / Logos Factbook">📖 Factbook</a>` : ''}
+      ${auth.wikipedia ? `<a href="${auth.wikipedia}" target="_blank" rel="noopener noreferrer" class="authority-badge wikipedia" title="Wikipedia Reference">📖 Wikipedia</a>` : ''}
+    </div>
+  ` : '';
+
+  return `
+    <div class="site-popup-card ${isAncient ? 'ancient-popup' : 'modern-popup'}">
+      ${primary ? `
+      <div class="site-popup-photo-card" id="popup-photo-card-${props.id}">
+        <img src="${primary.thumb_url}" 
+             alt="${escapeHtml(props.name)}" 
+             class="site-popup-photo-img" 
+             id="popup-photo-img-${props.id}"
+             onclick="openLightbox('${props.id}', event)"
+             title="Click to view full image"
+             loading="lazy" />
+
+        ${hasMultiple ? `
+          <button type="button" class="carousel-nav-btn prev" onclick="navigatePopupPhoto('${props.id}', -1, event)" title="Previous photo" aria-label="Previous photo">‹</button>
+          <button type="button" class="carousel-nav-btn next" onclick="navigatePopupPhoto('${props.id}', 1, event)" title="Next photo" aria-label="Next photo">›</button>
+          <div class="carousel-counter-badge" id="popup-counter-${props.id}">${activePhotoIdx + 1} / ${photos.length}</div>
+        ` : ''}
+
+        <div class="site-popup-photo-meta" onclick="openLightbox('${props.id}', event)" title="Click to view full image">
+          <span class="site-popup-photo-caption" id="popup-caption-${props.id}">${escapeHtml(primary.caption || props.name)}</span>
+          <div class="site-popup-photo-credit" onclick="event.stopPropagation()">
+            <span id="popup-credit-container-${props.id}">
+              ${primary.credit_url ? `<a href="${primary.credit_url}" target="_blank" rel="noopener noreferrer">© ${escapeHtml(primary.credit || 'Wikimedia Commons')}</a>` : `<span>© ${escapeHtml(primary.credit || 'Wikimedia Commons')}</span>`}
+            </span>
+            <span class="site-popup-license-badge" id="popup-license-${props.id}">${primary.license || 'CC'}</span>
+          </div>
+        </div>
+      </div>` : ''}
+
+      <div class="site-popup-header" title="Click and drag to move popup">
+        <div style="display: flex; align-items: center; gap: 4px;">
+          <span class="popup-drag-handle" title="Drag to move popup">⠿</span>
+          <div>
+            <h3 class="site-popup-title">${props.name}</h3>
+            <span class="site-popup-badge">${props.tier_name ? props.tier_name.toUpperCase() : (props.category ? props.category.toUpperCase() : 'BIBLICAL SITE')}</span>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; margin-right: 18px;">
+          <button type="button" class="btn-pin-site ${isPinned ? 'is-pinned' : ''}" onclick="togglePinSite('${props.id}', event)" title="Pin or unpin from your active map view">
+            ${isPinned ? '📌 Pinned' : '➕ Pin'}
+          </button>
+          <span class="site-popup-era">${isAncient ? '📜 Ancient' : '🛰️ Modern'}</span>
+        </div>
+      </div>
+      
+      <div class="site-popup-body">
+        <div class="site-popup-row">
+          <span class="label">📜 Ancient Name:</span>
+          <span class="val ancient-val">${props.ancient_name || 'N/A'}</span>
+        </div>
+        <div class="site-popup-row">
+          <span class="label">📍 Modern Name:</span>
+          <span class="val">${props.modern_name || props.name} (${props.modern_country || 'Levant'})</span>
+        </div>
+        ${translationVariantsHtml}
+        ${props.biblical_region ? `
+        <div class="site-popup-row">
+          <span class="label">🏛️ Biblical Region:</span>
+          <span class="val">${props.biblical_region}</span>
+        </div>` : ''}
+        ${props.verses_summary ? `
+        <div class="site-popup-row">
+          <span class="label">📖 Verses (${props.verse_count || 1}):</span>
+          <span class="val" style="font-size: 0.72rem; color: var(--ancient-gold);">${props.verses_summary}</span>
+        </div>` : ''}
+        <div class="site-popup-row">
+          <span class="label">🏔️ Elevation:</span>
+          <span class="val">${props.elevation_m} m (${Math.round(props.elevation_m * 3.28084)} ft)</span>
+        </div>
+        <div class="site-popup-row">
+          <span class="label">🌐 Coordinates:</span>
+          <span class="val" style="font-family: monospace;">${lat.toFixed(4)}°N, ${lng.toFixed(4)}°E</span>
+        </div>
+        ${props.description ? `
+        <div class="site-popup-desc">
+          <p>${props.description}</p>
+        </div>` : ''}
+        ${scholarlySourcesHtml}
+      </div>
+
+      <div class="site-popup-footer">
+        ${authoritiesHtml}
+        <div style="display: flex; align-items: center; gap: 6px; width: 100%;">
+          ${props.openbible_url ? `
+          <a href="${props.openbible_url}" target="_blank" rel="noopener noreferrer" class="popup-btn-openbible" title="View authoritative scholarly dossier on OpenBible.info">
+            📖 OpenBible ↗
+          </a>` : ''}
+          <button class="popup-btn-center" onclick="map.flyTo({ center: [${lng}, ${lat}], zoom: 12, pitch: 45, duration: 1000 })">
+            🔍 Zoom & Center
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function openPopupForFeature(feature) {
+  if (activeFloatingPopup) {
+    try { activeFloatingPopup.remove(); } catch (_) {}
+    activeFloatingPopup = null;
+  }
+  const props = feature.properties;
+  const [lng, lat] = feature.geometry.coordinates;
+
+  // Check if marker exists on map and toggle its popup
+  const item = markersList.find((m) => m.props && m.props.id === props.id);
+  if (item && item.marker) {
+    item.marker.togglePopup();
+    return;
+  }
+
+  // Otherwise, create an immediate popup at the exact coordinates
+  const popupHtml = buildSitePopupHtml(props, lng, lat);
+  activeFloatingPopup = new maplibregl.Popup({
+    offset: 10,
+    maxWidth: '280px',
+    className: 'biblical-maplibre-popup',
+    closeOnClick: true,
+    closeButton: true,
+  })
+    .setLngLat([lng, lat])
+    .setHTML(popupHtml)
+    .addTo(map);
+
+  enableDraggablePopup(activeFloatingPopup);
+}
+
+// 8. Render Markers (5-Tier Priority + Screen-Space Label Collision Avoidance)
 function renderMarkers() {
   // Clear existing markers
   markersList.forEach((m) => (m.marker ? m.marker.remove() : m.remove()));
@@ -415,43 +821,142 @@ function renderMarkers() {
   const isAncient = currentTemplate === 'ancient';
   const currentZoom = map.getZoom();
 
-  // If zoomed in close (zoom >= 9.5), calculate viewport bounding box with 25% margin
-  let bounds = null;
-  if (currentZoom >= 9.5) {
+  // Viewport culling bounds with 20% margin for snappy DOM performance
+  let viewportBounds = null;
+  if (currentZoom >= 5.5) {
     const b = map.getBounds();
     const spanLng = b.getEast() - b.getWest();
     const spanLat = b.getNorth() - b.getSouth();
-    bounds = {
-      west: b.getWest() - spanLng * 0.25,
-      east: b.getEast() + spanLng * 0.25,
-      south: b.getSouth() - spanLat * 0.25,
-      north: b.getNorth() + spanLat * 0.25,
+    const margin = 0.20;
+    viewportBounds = {
+      west: b.getWest() - spanLng * margin,
+      east: b.getEast() + spanLng * margin,
+      south: b.getSouth() - spanLat * margin,
+      north: b.getNorth() + spanLat * margin,
     };
   }
 
+  // 1. Filter candidates by Era, Tier Zoom Thresholds & Viewport Bounds
+  const candidates = [];
   sitesGeoJSON.features.forEach((feature) => {
     const props = feature.properties;
     const [lng, lat] = feature.geometry.coordinates;
     const isPinned = pinnedSiteIds.has(props.id);
 
-    // 1. Filter by Era if specified (Pinned sites can be shown or adhere to era)
-    if (currentEra !== 'all' && props.period !== 'all' && !props.period.includes(currentEra)) {
-      if (!isPinned) return;
+    // Layer Control Visibility Check: Hidden pinned site
+    const siteLayer = activeLayers.find((l) => l.id === `site:${props.id}`);
+    if (siteLayer && !siteLayer.visible) {
+      return;
     }
 
-    // 2. Zoom & Priority Tier Filtering
+    // Filter by Era if specified (Pinned sites always bypass era filtering)
+    if (!isPinned && currentEra !== 'all' && props.period !== 'all' && !props.period.includes(currentEra)) {
+      return;
+    }
+
+    // Zoom & Priority Tier Filtering
     // Pinned sites are ALWAYS visible at all zoom levels!
     if (!isPinned) {
       const tier = props.tier || 3;
-      if (tier === 2 && currentZoom < 6.8) {
+      const isMajor = tier === 1 || props.is_top_10;
+
+      // Layer Control Check: If Major Sites layer is toggled off, skip major sites
+      const majorLayer = activeLayers.find((l) => l.id === 'layer_major_sites');
+      const showMajor = majorLayer ? majorLayer.visible : true;
+      if (!showMajor) return;
+
+      // User requirement: By default at ANY zoom level only the major points should be shown!
+      if (currentSitesDisplayMode === 'major_only') {
+        if (!isMajor) return;
+      } else {
+        const minZoom = props.min_zoom !== undefined ? props.min_zoom : (
+          tier === 1 ? 2.0 :
+          tier === 2 ? 6.5 :
+          tier === 3 ? 8.5 :
+          tier === 4 ? 10.2 : 11.8
+        );
+        if (currentZoom < minZoom) return;
+      }
+
+      // Viewport culling to keep DOM markers snappy
+      if (viewportBounds && (lng < viewportBounds.west || lng > viewportBounds.east || lat < viewportBounds.south || lat > viewportBounds.north)) {
         return;
       }
-      if (tier === 3 && currentZoom < 9.5) {
-        return;
+    }
+
+    candidates.push(feature);
+  });
+
+  // 2. Sort Candidates by Priority:
+  // - Pinned sites FIRST
+  // - Then Tier ascending (Tier 1 Major -> Tier 2 Regional -> Tier 3 Prominent -> ...)
+  // - Then Verse count descending
+  candidates.sort((a, b) => {
+    const aPinned = pinnedSiteIds.has(a.properties.id);
+    const bPinned = pinnedSiteIds.has(b.properties.id);
+    if (aPinned && !bPinned) return -1;
+    if (!aPinned && bPinned) return 1;
+    const aTier = a.properties.tier || 3;
+    const bTier = b.properties.tier || 3;
+    if (aTier !== bTier) return aTier - bTier;
+    return (b.properties.verse_count || 1) - (a.properties.verse_count || 1);
+  });
+
+  // 3. Screen-Space Label Collision Detection
+  let padX = 76;
+  let padY = 22;
+  if (currentLabelDensity === 'clean') {
+    padX = 98;
+    padY = 28;
+  } else if (currentLabelDensity === 'dense') {
+    padX = 46;
+    padY = 16;
+  }
+
+  const placedBoxes = [];
+  let visibleLabelsCount = 0;
+
+  candidates.forEach((feature) => {
+    const props = feature.properties;
+    const [lng, lat] = feature.geometry.coordinates;
+    const isPinned = pinnedSiteIds.has(props.id);
+
+    // Project coordinates to 2D screen pixels
+    const pt = map.project([lng, lat]);
+    const sx = pt.x;
+    const sy = pt.y;
+
+    // Label bounding box estimation in screen space
+    const box = {
+      x1: sx - 8,
+      y1: sy - padY / 2,
+      x2: sx + padX,
+      y2: sy + padY / 2,
+    };
+
+    let showFullLabel = true;
+
+    // Pinned sites always show full label!
+    if (isPinned) {
+      showFullLabel = true;
+      placedBoxes.push(box);
+      visibleLabelsCount++;
+    } else if (currentLabelDensity === 'all') {
+      showFullLabel = true;
+      visibleLabelsCount++;
+    } else {
+      // Check collision against already placed higher-priority boxes
+      for (let i = 0; i < placedBoxes.length; i++) {
+        const pb = placedBoxes[i];
+        if (!(box.x2 < pb.x1 || box.x1 > pb.x2 || box.y2 < pb.y1 || box.y1 > pb.y2)) {
+          showFullLabel = false;
+          break;
+        }
       }
-      // At high zoom, cull minor markers outside current viewport bounds
-      if (bounds && (lng < bounds.west || lng > bounds.east || lat < bounds.south || lat > bounds.north)) {
-        return;
+
+      if (showFullLabel) {
+        placedBoxes.push(box);
+        visibleLabelsCount++;
       }
     }
 
@@ -461,7 +966,7 @@ function renderMarkers() {
 
     // Create Pin Element
     const el = document.createElement('div');
-    el.className = `site-marker-node ${isAncient ? 'ancient' : 'modern'} tier-${props.tier || 3} ${isPinned ? 'is-pinned' : ''}`;
+    el.className = `site-marker-node ${isAncient ? 'ancient' : 'modern'} tier-${props.tier || 3} ${isPinned ? 'is-pinned' : ''} ${!showFullLabel ? 'label-collapsed' : ''}`;
     el.setAttribute('title', `${props.name} (${(props.tier_name || 'site').toUpperCase()}) — Click for details`);
 
     el.innerHTML = `
@@ -470,109 +975,7 @@ function renderMarkers() {
       <span class="site-label-text">${escapeHtml(shortName)}</span>
     `;
 
-    const photos = Array.isArray(props.photos) && props.photos.length > 0 ? props.photos : (props.photo_url ? [{
-      thumb_url: props.photo_url,
-      full_url: props.photo_url,
-      credit: props.photo_credit,
-      credit_url: props.photo_credit_url,
-      license: props.photo_license,
-      caption: props.photo_caption
-    }] : []);
-
-    const activePhotoIdx = siteActivePhotoIndices[props.id] || 0;
-    const primary = photos[activePhotoIdx] || photos[0];
-    const hasMultiple = photos.length > 1;
-
-    // Rich Interactive Popup with Pin Button
-    const popupHtml = `
-      <div class="site-popup-card ${isAncient ? 'ancient-popup' : 'modern-popup'}">
-        ${primary ? `
-        <div class="site-popup-photo-card" id="popup-photo-card-${props.id}">
-          <img src="${primary.thumb_url}" 
-               alt="${escapeHtml(props.name)}" 
-               class="site-popup-photo-img" 
-               id="popup-photo-img-${props.id}"
-               onclick="openLightbox('${props.id}', event)"
-               title="Click to view full image"
-               loading="lazy" />
-
-          ${hasMultiple ? `
-            <button type="button" class="carousel-nav-btn prev" onclick="navigatePopupPhoto('${props.id}', -1, event)" title="Previous photo" aria-label="Previous photo">‹</button>
-            <button type="button" class="carousel-nav-btn next" onclick="navigatePopupPhoto('${props.id}', 1, event)" title="Next photo" aria-label="Next photo">›</button>
-            <div class="carousel-counter-badge" id="popup-counter-${props.id}">${activePhotoIdx + 1} / ${photos.length}</div>
-          ` : ''}
-
-          <div class="site-popup-photo-meta" onclick="openLightbox('${props.id}', event)" title="Click to view full image">
-            <span class="site-popup-photo-caption" id="popup-caption-${props.id}">${escapeHtml(primary.caption || props.name)}</span>
-            <div class="site-popup-photo-credit" onclick="event.stopPropagation()">
-              <span id="popup-credit-container-${props.id}">
-                ${primary.credit_url ? `<a href="${primary.credit_url}" target="_blank" rel="noopener noreferrer">© ${escapeHtml(primary.credit || 'Wikimedia Commons')}</a>` : `<span>© ${escapeHtml(primary.credit || 'Wikimedia Commons')}</span>`}
-              </span>
-              <span class="site-popup-license-badge" id="popup-license-${props.id}">${primary.license || 'CC'}</span>
-            </div>
-          </div>
-        </div>` : ''}
-
-        <div class="site-popup-header" title="Click and drag to move popup">
-          <div style="display: flex; align-items: center; gap: 4px;">
-            <span class="popup-drag-handle" title="Drag to move popup">⠿</span>
-            <div>
-              <h3 class="site-popup-title">${props.name}</h3>
-              <span class="site-popup-badge">${props.tier_name ? props.tier_name.toUpperCase() : (props.category ? props.category.toUpperCase() : 'BIBLICAL SITE')}</span>
-            </div>
-          </div>
-          <div style="display: flex; align-items: center; gap: 6px; margin-right: 18px;">
-            <button type="button" class="btn-pin-site ${isPinned ? 'is-pinned' : ''}" onclick="togglePinSite('${props.id}', event)" title="Pin or unpin from your active map view">
-              ${isPinned ? '📌 Pinned' : '➕ Pin'}
-            </button>
-            <span class="site-popup-era">${isAncient ? '📜 Ancient' : '🛰️ Modern'}</span>
-          </div>
-        </div>
-        
-        <div class="site-popup-body">
-          <div class="site-popup-row">
-            <span class="label">📜 Ancient Name:</span>
-            <span class="val ancient-val">${props.ancient_name || 'N/A'}</span>
-          </div>
-          <div class="site-popup-row">
-            <span class="label">📍 Modern Name:</span>
-            <span class="val">${props.modern_name || props.name} (${props.modern_country || 'Levant'})</span>
-          </div>
-          ${props.biblical_region ? `
-          <div class="site-popup-row">
-            <span class="label">🏛️ Biblical Region:</span>
-            <span class="val">${props.biblical_region}</span>
-          </div>` : ''}
-          ${props.verses_summary ? `
-          <div class="site-popup-row">
-            <span class="label">📖 Verses (${props.verse_count || 1}):</span>
-            <span class="val" style="font-size: 0.72rem; color: var(--ancient-gold);">${props.verses_summary}</span>
-          </div>` : ''}
-          <div class="site-popup-row">
-            <span class="label">🏔️ Elevation:</span>
-            <span class="val">${props.elevation_m} m (${Math.round(props.elevation_m * 3.28084)} ft)</span>
-          </div>
-          <div class="site-popup-row">
-            <span class="label">🌐 Coordinates:</span>
-            <span class="val" style="font-family: monospace;">${lat.toFixed(4)}°N, ${lng.toFixed(4)}°E</span>
-          </div>
-          ${props.description ? `
-          <div class="site-popup-desc">
-            <p>${props.description}</p>
-          </div>` : ''}
-        </div>
-
-        <div class="site-popup-footer">
-          ${props.openbible_url ? `
-          <a href="${props.openbible_url}" target="_blank" rel="noopener noreferrer" class="popup-btn-openbible" title="View authoritative scholarly dossier on OpenBible.info">
-            📖 OpenBible ↗
-          </a>` : ''}
-          <button class="popup-btn-center" onclick="map.flyTo({ center: [${lng}, ${lat}], zoom: 12, pitch: 45, duration: 1000 })">
-            🔍 Zoom & Center
-          </button>
-        </div>
-      </div>
-    `;
+    const popupHtml = buildSitePopupHtml(props, lng, lat);
 
     const popup = new maplibregl.Popup({
       offset: 10,
@@ -591,192 +994,1320 @@ function renderMarkers() {
 
     markersList.push({ marker, props, lng, lat });
   });
+
+  // Update Status Indicator
+  const badgeSites = document.getElementById('badge-active-sites');
+  if (badgeSites) {
+    badgeSites.textContent = `• 🏷️ ${visibleLabelsCount} labels (${candidates.length} sites)`;
+  }
 }
 
 // Global Toggle Pin Function
-window.togglePinSite = function(siteId, event) {
+// ==============================================================================
+// 9. UNIFIED BIBLICAL LIBRARY & ADD-TO-MAP ENGINE
+// Supports: Locations (1,342 sites), Regions (36 kingdoms), Books (61 with KML)
+// ==============================================================================
+
+// Populate Contextual Dropdown based on active scope
+function populateLibraryContextDropdown() {
+  const sel = document.getElementById('select-library-context');
+  if (!sel) return;
+
+  sel.innerHTML = '';
+  if (activeLibraryScope === 'all') {
+    sel.innerHTML = `
+      <option value="default" selected>⭐ Top 10 Major Biblical Centers</option>
+      <option value="all_major_sites">📍 All Major Sites (Tier 1)</option>
+      <option value="all_regions">🗺️ Historical Kingdoms & Regions (36)</option>
+      <option value="gospels_acts">📖 Gospels & Acts (Matthew – Acts)</option>
+      <option value="ot_history">📖 Pentateuch & History Books</option>
+      <option value="all_books">📖 All 61 Biblical Books</option>
+      <option value="all_sites_az">📍 All 1,342 Sites (A-Z Directory)</option>
+    `;
+    libraryContextSelection = 'default';
+  } else if (activeLibraryScope === 'locations') {
+    sel.innerHTML = `
+      <option value="major_only" selected>⭐ Top 10 Major Centers</option>
+      <option value="galilee">🌊 Galilee & North (Capernaum, Nazareth, Cana...)</option>
+      <option value="judea">🏛️ Judea & Dead Sea (Jerusalem, Bethlehem, Jericho...)</option>
+      <option value="coastal">⚓ Coastal Plain & Sharon (Joppa, Caesarea, Gaza...)</option>
+      <option value="transjordan">🧭 Transjordan & Decapolis (Gadara, Pella, Heshbon...)</option>
+      <option value="all_az">🔤 All 1,342 Sites (A-Z Alphabetical)</option>
+    `;
+    libraryContextSelection = 'major_only';
+  } else if (activeLibraryScope === 'books') {
+    let opts = '<option value="all_books" selected>📖 All 61 Biblical Books (Browse Below)</option>';
+    opts += '<optgroup label="Gospels & Acts">';
+    BIBLICAL_BOOKS.filter((b) => b.category === 'Gospel' || b.code === 'acts').forEach((b) => {
+      opts += `<option value="book:${b.code}">📖 ${b.name} (${b.category})</option>`;
+    });
+    opts += '</optgroup><optgroup label="Pentateuch & History">';
+    BIBLICAL_BOOKS.filter((b) => b.category === 'Pentateuch' || b.category === 'History').forEach((b) => {
+      opts += `<option value="book:${b.code}">📖 ${b.name}</option>`;
+    });
+    opts += '</optgroup><optgroup label="Wisdom & Prophets">';
+    BIBLICAL_BOOKS.filter((b) => b.category.includes('Prophet') || b.category === 'Wisdom' || b.category === 'Poetry').forEach((b) => {
+      opts += `<option value="book:${b.code}">📖 ${b.name}</option>`;
+    });
+    opts += '</optgroup><optgroup label="Epistles & Prophecy">';
+    BIBLICAL_BOOKS.filter((b) => b.category === 'Epistles' || b.category === 'Prophecy').forEach((b) => {
+      opts += `<option value="book:${b.code}">📖 ${b.name}</option>`;
+    });
+    opts += '</optgroup>';
+    sel.innerHTML = opts;
+    libraryContextSelection = 'all_books';
+  } else if (activeLibraryScope === 'regions') {
+    let opts = '<option value="all_regions" selected>🗺️ All 36 Historical Kingdoms & Regions</option>';
+    const regionNames = Object.keys(BIBLICAL_REGIONS_META).sort();
+    opts += '<optgroup label="Holy Land & Transjordan">';
+    ['Canaan', 'Decapolis', 'Gilead', 'Bashan', 'Ammon', 'Moab', 'Edom', 'Philistia', 'Phoenicia'].forEach((r) => {
+      if (BIBLICAL_REGIONS_META[r]) opts += `<option value="region:${r}">🗺️ ${r} (${BIBLICAL_REGIONS_META[r].category})</option>`;
+    });
+    opts += '</optgroup><optgroup label="Egypt, Sinai & Arabia">';
+    ['Goshen', 'Amalek', 'Midian', 'Arabah'].forEach((r) => {
+      if (BIBLICAL_REGIONS_META[r]) opts += `<option value="region:${r}">🗺️ ${r} (${BIBLICAL_REGIONS_META[r].category})</option>`;
+    });
+    opts += '</optgroup><optgroup label="Syria & Mesopotamia">';
+    ['Aram', 'Abilene', 'Trachonitis', 'Assyria', 'Babylonia', 'Persia', 'Media'].forEach((r) => {
+      if (BIBLICAL_REGIONS_META[r]) opts += `<option value="region:${r}">🗺️ ${r} (${BIBLICAL_REGIONS_META[r].category})</option>`;
+    });
+    opts += '</optgroup><optgroup label="Asia Minor & Roman Provinces">';
+    regionNames.filter((r) => !['Canaan', 'Decapolis', 'Gilead', 'Bashan', 'Ammon', 'Moab', 'Edom', 'Philistia', 'Phoenicia', 'Goshen', 'Amalek', 'Midian', 'Arabah', 'Aram', 'Abilene', 'Trachonitis', 'Assyria', 'Babylonia', 'Persia', 'Media'].includes(r)).forEach((r) => {
+      opts += `<option value="region:${r}">🗺️ ${r} (${BIBLICAL_REGIONS_META[r].category})</option>`;
+    });
+    opts += '</optgroup>';
+    sel.innerHTML = opts;
+    libraryContextSelection = 'all_regions';
+  }
+}
+
+// ==============================================================================
+// 9. ACTIVE MAP LAYERS ENGINE & REORDERABLE CONTROL
+// ==============================================================================
+
+function initActiveLayers() {
+  syncActiveLayersFromState();
+  renderActiveLayersControl();
+}
+
+// Synchronize activeLayers array with current state (preserving order and user visibility)
+function syncActiveLayersFromState() {
+  const currentLayersMap = new Map();
+  activeLayers.forEach((l) => currentLayersMap.set(l.id, l));
+
+  const updated = [];
+
+  // 1. Active Books (KML paths)
+  activeBooks.forEach((code) => {
+    const id = `book:${code}`;
+    const book = BIBLICAL_BOOKS.find((b) => b.code === code);
+    const name = book ? `Book of ${book.name}` : `Book of ${code.toUpperCase()}`;
+    const existing = currentLayersMap.get(id);
+    updated.push(
+      existing || {
+        id,
+        refId: code,
+        type: 'book',
+        name,
+        badgeText: 'BOOK',
+        badgeClass: 'badge-book',
+        icon: '📖',
+        sub: `${book?.testament || 'Biblical'} ${book?.category || 'Text'} • OpenBible KML`,
+        visible: true,
+        isBase: false,
+      }
+    );
+  });
+
+  // 2. Active Regions (Selected Kingdoms / Territories)
+  selectedRegions.forEach((regName) => {
+    const id = `region:${regName}`;
+    const meta = BIBLICAL_REGIONS_META[regName] || { category: 'Historical Realm', desc: '' };
+    const existing = currentLayersMap.get(id);
+    updated.push(
+      existing || {
+        id,
+        refId: regName,
+        type: 'region',
+        name: regName,
+        badgeText: 'REGION',
+        badgeClass: 'badge-region',
+        icon: '🗺️',
+        sub: `${meta.category} • Regional Boundary`,
+        visible: true,
+        isBase: false,
+      }
+    );
+  });
+
+  // 3. Custom Pinned Sites
+  pinnedSiteIds.forEach((siteId) => {
+    const id = `site:${siteId}`;
+    const feat = sitesGeoJSON?.features?.find((f) => f.properties.id === siteId);
+    const name = feat?.properties?.name || siteId;
+    const tier = feat?.properties?.tier || 3;
+    const existing = currentLayersMap.get(id);
+    let badgeText = 'SITE';
+    let badgeClass = 'badge-site';
+    if (feat?.properties?.is_top_10 || tier === 1) {
+      badgeText = 'MAJOR';
+      badgeClass = 'badge-major';
+    } else if (tier === 2) {
+      badgeText = 'REGIONAL';
+      badgeClass = 'badge-site';
+    }
+    updated.push(
+      existing || {
+        id,
+        refId: siteId,
+        type: 'location',
+        name,
+        badgeText,
+        badgeClass,
+        icon: '📍',
+        sub: `${feat?.properties?.biblical_region || feat?.properties?.modern_country || 'Levant'} • ${feat?.properties?.verse_count || 1} verses`,
+        visible: true,
+        isBase: false,
+        feature: feat,
+      }
+    );
+  });
+
+  // 4. Base Historical Regions Master (if currentRegionsOverlay === 'all')
+  if (currentRegionsOverlay === 'all') {
+    const id = 'base_regions_all';
+    const existing = currentLayersMap.get(id);
+    updated.push(
+      existing || {
+        id,
+        refId: 'all',
+        type: 'base_regions',
+        name: 'All 36 Biblical Regions',
+        badgeText: 'OVERLAY',
+        badgeClass: 'badge-region',
+        icon: '🗺️',
+        sub: 'Master Regional Kingdoms & Territories',
+        visible: true,
+        isBase: true,
+      }
+    );
+  }
+
+  // 5. Base Sites Layer (Always present at base of stack)
+  const baseSitesId = 'base_sites_layer';
+  const existingBase = currentLayersMap.get(baseSitesId);
+  updated.push(
+    existingBase || {
+      id: baseSitesId,
+      refId: 'base_sites',
+      type: 'base_sites',
+      name: 'Biblical Sites & Gazetteers',
+      badgeText: 'GAZETTEER',
+      badgeClass: 'badge-major',
+      icon: '🏛️',
+      sub: `${sitesGeoJSON?.features?.length || 1342} Geocoded Sites • 5-Tier Zoom Culling`,
+      visible: true,
+      isBase: true,
+    }
+  );
+
+  activeLayers = updated;
+}
+
+// Render the Active Layers Control list in LHS Sidebar
+function renderActiveLayersControl() {
+  const listEl = document.getElementById('active-layers-list');
+  const countBadge = document.getElementById('active-layers-count');
+  if (!listEl) return;
+
+  if (countBadge) {
+    countBadge.textContent = activeLayers.length;
+  }
+
+  if (activeLayers.length === 0) {
+    listEl.innerHTML = `
+      <div style="padding: 16px 10px; text-align: center; color: var(--text-muted); font-size: 0.74rem;">
+        No active map layers.<br/>Use the library above to search and add sites, regions, or books.
+      </div>
+    `;
+    return;
+  }
+
+  listEl.innerHTML = '';
+
+  activeLayers.forEach((layer, idx) => {
+    const itemEl = document.createElement('div');
+    itemEl.className = `active-layer-item ${!layer.visible ? 'is-hidden' : ''}`;
+    itemEl.setAttribute('data-layer-id', layer.id);
+    itemEl.setAttribute('draggable', 'true');
+
+    itemEl.innerHTML = `
+      <span class="layer-drag-handle" title="Drag to reorder layer stack">⠿</span>
+      <button class="layer-toggle-vis ${!layer.visible ? 'muted' : ''}" title="${layer.visible ? 'Hide layer' : 'Show layer'}" onclick="toggleActiveLayerVisibility('${escapeHtml(layer.id)}', event)">
+        ${layer.visible ? '👁️' : '🕶️'}
+      </button>
+      <div class="layer-main-info" onclick="flyToLayer('${escapeHtml(layer.id)}')">
+        <div class="layer-title-row">
+          <span class="layer-name-text">${escapeHtml(layer.name)}</span>
+          <span class="item-badge ${layer.badgeClass || 'badge-site'}">${layer.badgeText || 'LAYER'}</span>
+        </div>
+        <div class="layer-sub-desc">${escapeHtml(layer.sub || '')}</div>
+      </div>
+      <div class="layer-tools-col">
+        <button class="layer-tool-btn" title="Move Up in layer stack" ${idx === 0 ? 'disabled' : ''} onclick="moveActiveLayer('${escapeHtml(layer.id)}', -1, event)">▲</button>
+        <button class="layer-tool-btn" title="Move Down in layer stack" ${idx === activeLayers.length - 1 ? 'disabled' : ''} onclick="moveActiveLayer('${escapeHtml(layer.id)}', 1, event)">▼</button>
+        <button class="layer-tool-btn btn-attr" title="View GIS Attributes Table (Spreadsheet Inspector)" onclick="openAttributesModal('${escapeHtml(layer.id)}', event)">⊞</button>
+        <button class="layer-tool-btn btn-meta" title="View Scholarly Metadata & Academic Dossier" onclick="openMetadataModal('${escapeHtml(layer.id)}', event)">ℹ</button>
+        ${!layer.isBase ? `<button class="layer-tool-btn btn-del" title="Remove Layer" onclick="removeActiveLayer('${escapeHtml(layer.id)}', event)">✕</button>` : ''}
+      </div>
+    `;
+
+    setupLayerDragEvents(itemEl, layer.id);
+    listEl.appendChild(itemEl);
+  });
+}
+
+// Drag & Drop event wiring for active layer cards
+function setupLayerDragEvents(el, layerId) {
+  el.addEventListener('dragstart', (e) => {
+    draggedLayerId = layerId;
+    el.classList.add('is-dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', layerId);
+  });
+
+  el.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    el.classList.add('drag-over');
+  });
+
+  el.addEventListener('dragleave', () => {
+    el.classList.remove('drag-over');
+  });
+
+  el.addEventListener('drop', (e) => {
+    e.preventDefault();
+    el.classList.remove('drag-over');
+    if (!draggedLayerId || draggedLayerId === layerId) return;
+
+    const fromIdx = activeLayers.findIndex((l) => l.id === draggedLayerId);
+    const toIdx = activeLayers.findIndex((l) => l.id === layerId);
+    if (fromIdx !== -1 && toIdx !== -1) {
+      const [moved] = activeLayers.splice(fromIdx, 1);
+      activeLayers.splice(toIdx, 0, moved);
+      renderActiveLayersControl();
+      showToast(`Reordered layer: ${moved.name}`);
+    }
+  });
+
+  el.addEventListener('dragend', () => {
+    el.classList.remove('is-dragging');
+    document.querySelectorAll('.active-layer-item').forEach((item) => item.classList.remove('drag-over'));
+    draggedLayerId = null;
+  });
+}
+
+// Move active layer up or down
+window.moveActiveLayer = function(layerId, delta, event) {
+  if (event) event.stopPropagation();
+  const idx = activeLayers.findIndex((l) => l.id === layerId);
+  if (idx === -1) return;
+  const targetIdx = idx + delta;
+  if (targetIdx < 0 || targetIdx >= activeLayers.length) return;
+
+  const [moved] = activeLayers.splice(idx, 1);
+  activeLayers.splice(targetIdx, 0, moved);
+  renderActiveLayersControl();
+};
+
+// Toggle visibility of a specific active layer
+window.toggleActiveLayerVisibility = function(layerId, event) {
+  if (event) event.stopPropagation();
+  const layer = activeLayers.find((l) => l.id === layerId);
+  if (!layer) return;
+
+  layer.visible = !layer.visible;
+
+  if (layer.type === 'location') {
+    renderMarkers();
+  } else if (layer.type === 'region') {
+    updateRegionsFilter();
+  } else if (layer.type === 'book') {
+    refreshBookLayers();
+  } else if (layer.type === 'base_sites') {
+    renderMarkers();
+  } else if (layer.type === 'base_regions') {
+    updateRegionsFilter();
+  }
+
+  renderActiveLayersControl();
+  showToast(`${layer.visible ? '👁️ Shown' : '🕶️ Hidden'}: ${layer.name}`);
+};
+
+// Remove layer from active list
+window.removeActiveLayer = function(layerId, event) {
+  if (event) event.stopPropagation();
+  const layer = activeLayers.find((l) => l.id === layerId);
+  if (!layer || layer.isBase) return;
+
+  if (layer.type === 'location') {
+    pinnedSiteIds.delete(layer.refId);
+    try {
+      localStorage.setItem('biblestudy_map_crafter_pinned', JSON.stringify([...pinnedSiteIds]));
+    } catch (_) {}
+    renderMarkers();
+  } else if (layer.type === 'region') {
+    selectedRegions.delete(layer.refId);
+    updateRegionsFilter();
+  } else if (layer.type === 'book') {
+    activeBooks.delete(layer.refId);
+    removeBookKmlFromMap(layer.refId);
+  }
+
+  syncActiveLayersFromState();
+  renderActiveLayersControl();
+  refreshSearchMatchesIfOpen();
+  showToast(`Removed layer: ${layer.name}`);
+};
+
+// Fly camera to the geographic extent of a layer
+window.flyToLayer = function(layerId) {
+  const layer = activeLayers.find((l) => l.id === layerId);
+  if (!layer) return;
+
+  if (layer.type === 'location') {
+    const feat = sitesGeoJSON?.features?.find((f) => f.properties.id === layer.refId);
+    if (feat && map) {
+      const [lng, lat] = feat.geometry.coordinates;
+      map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 11), pitch: 35, duration: 1000 });
+      openPopupForFeature(feat);
+    }
+  } else if (layer.type === 'region') {
+    flyToRegion(layer.refId);
+  } else if (layer.type === 'book') {
+    flyToBook(layer.refId);
+  } else if (layer.type === 'base_sites' || layer.type === 'base_regions') {
+    map.flyTo({ center: LEVANT_CENTER, zoom: DEFAULT_ZOOM, pitch: 30, duration: 1000 });
+  }
+};
+
+// Fit view to bounds of all currently active layers
+function fitActiveLayersView() {
+  if (!map) return;
+  const coords = [];
+
+  // Pinned Sites
+  pinnedSiteIds.forEach((id) => {
+    const f = sitesGeoJSON?.features?.find((site) => site.properties.id === id);
+    if (f && f.geometry && f.geometry.coordinates) {
+      coords.push(f.geometry.coordinates);
+    }
+  });
+
+  // Selected Regions
+  if (regionsGeoJSON) {
+    regionsGeoJSON.features.forEach((f) => {
+      if (selectedRegions.has(f.properties.name)) {
+        if (f.geometry.type === 'Polygon') {
+          f.geometry.coordinates[0]?.forEach((c) => coords.push(c));
+        } else if (f.geometry.type === 'MultiPolygon') {
+          f.geometry.coordinates.forEach((poly) => poly[0]?.forEach((c) => coords.push(c)));
+        }
+      }
+    });
+  }
+
+  // Active Books
+  Object.values(activeBookGeoJSONs).forEach((gj) => {
+    gj?.features?.forEach((f) => {
+      if (f.geometry.type === 'Point') coords.push(f.geometry.coordinates);
+      else if (f.geometry.type === 'LineString') f.geometry.coordinates?.forEach((c) => coords.push(c));
+      else if (f.geometry.type === 'Polygon') f.geometry.coordinates[0]?.forEach((c) => coords.push(c));
+    });
+  });
+
+  if (coords.length > 0) {
+    const bounds = coords.reduce(
+      (b, coord) => b.extend(coord),
+      new maplibregl.LngLatBounds(coords[0], coords[0])
+    );
+    map.fitBounds(bounds, { padding: 50, maxZoom: 11, duration: 1100 });
+    showToast('📍 Fitted view to all active layers');
+  } else {
+    map.flyTo({ center: LEVANT_CENTER, zoom: DEFAULT_ZOOM, pitch: 30, duration: 1000 });
+    showToast('📍 Centered on Holy Land view');
+  }
+}
+
+// Clear all custom added layers
+function clearAllActiveLayers() {
+  pinnedSiteIds.clear();
+  selectedRegions.clear();
+  activeBooks.clear();
+  activeBookGeoJSONs = {};
+  refreshBookLayers();
+  currentRegionsOverlay = 'none';
+  const regSelect = document.getElementById('select-regions-overlay');
+  if (regSelect) regSelect.value = 'none';
+  updateRegionsFilter();
+
+  try {
+    localStorage.removeItem('biblestudy_map_crafter_pinned');
+  } catch (_) {}
+
+  renderMarkers();
+  syncActiveLayersFromState();
+  renderActiveLayersControl();
+  refreshSearchMatchesIfOpen();
+  showToast('Reset active map to default major sites view');
+}
+
+// Universal Toggle Item on Map: Location, Region, or Book
+window.toggleMapItem = function(type, id, event) {
   if (event) {
     event.stopPropagation();
     event.preventDefault();
   }
-  const isPinned = pinnedSiteIds.has(siteId);
-  const feature = sitesGeoJSON?.features?.find((f) => f.properties.id === siteId);
-  const name = feature?.properties?.name || 'Site';
 
-  if (isPinned) {
-    pinnedSiteIds.delete(siteId);
-    showToast(`Removed ${name} from pinned map sites.`);
-  } else {
-    pinnedSiteIds.add(siteId);
-    showToast(`📌 Pinned ${name} to your active map!`);
-    if (feature && map) {
-      const [lng, lat] = feature.geometry.coordinates;
-      map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 10), duration: 1000 });
+  if (type === 'location') {
+    const isPinned = pinnedSiteIds.has(id);
+    const feature = sitesGeoJSON?.features?.find((f) => f.properties.id === id);
+    const name = feature?.properties?.name || 'Site';
+    if (isPinned) {
+      pinnedSiteIds.delete(id);
+      showToast(`Removed ${name} from active map`);
+    } else {
+      pinnedSiteIds.add(id);
+      showToast(`📌 Added ${name} to active map!`);
+      if (feature && map) {
+        const [lng, lat] = feature.geometry.coordinates;
+        map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 11), duration: 1000 });
+        openPopupForFeature(feature);
+      }
+    }
+    try {
+      localStorage.setItem('biblestudy_map_crafter_pinned', JSON.stringify([...pinnedSiteIds]));
+    } catch (_) {}
+    renderMarkers();
+  } else if (type === 'region') {
+    const isOn = selectedRegions.has(id);
+    if (isOn) {
+      selectedRegions.delete(id);
+      showToast(`Removed ${id} boundary from active map`);
+    } else {
+      selectedRegions.add(id);
+      showToast(`🗺️ Added ${id} regional territory to active map!`);
+      flyToRegion(id);
+    }
+    updateRegionsFilter();
+  } else if (type === 'book') {
+    const isOn = activeBooks.has(id);
+    const book = BIBLICAL_BOOKS.find((b) => b.code === id);
+    const bookName = book?.name || id.toUpperCase();
+    if (isOn) {
+      activeBooks.delete(id);
+      removeBookKmlFromMap(id);
+      showToast(`Removed Book of ${bookName} overlay`);
+    } else {
+      activeBooks.add(id);
+      loadAndOverlayBookKml(id);
+      showToast(`📖 Added Book of ${bookName} (KML) to active map!`);
     }
   }
 
-  try {
-    localStorage.setItem('biblestudy_map_crafter_pinned', JSON.stringify([...pinnedSiteIds]));
-  } catch (e) {}
-
-  updatePinnedCounter();
-  renderMarkers();
-  renderSidebarList();
+  syncActiveLayersFromState();
+  renderActiveLayersControl();
+  refreshSearchMatchesIfOpen();
 };
 
-function updatePinnedCounter() {
-  const el = document.getElementById('pinned-count');
-  if (el) el.textContent = pinnedSiteIds.size;
-}
+// Book KML Overlay Loader & Layer Manager
+async function loadAndOverlayBookKml(bookCode) {
+  try {
+    const resp = await fetch(`data/kml/${bookCode}.kml`);
+    if (!resp.ok) return;
+    const text = await resp.text();
+    const dom = new DOMParser().parseFromString(text, 'text/xml');
+    if (!window.toGeoJSON) return;
+    const geojson = window.toGeoJSON.kml(dom);
 
-// Alphabet Quick Jump Bar Builder
-function buildAlphabetJumper() {
-  const container = document.getElementById('alphabet-jumper');
-  if (!container || !sitesGeoJSON?.features) return;
+    activeBookGeoJSONs[bookCode] = geojson;
+    refreshBookLayers();
 
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-  const counts = {};
-  sitesGeoJSON.features.forEach((f) => {
-    const first = (f.properties.name || '').trim()[0]?.toUpperCase();
-    if (first) counts[first] = (counts[first] || 0) + 1;
-  });
-
-  let html = `<button class="alpha-chip ${selectedAlphaLetter === 'all' ? 'active' : ''}" data-letter="all">All (${sitesGeoJSON.features.length})</button>`;
-  alphabet.forEach((letter) => {
-    const c = counts[letter] || 0;
-    if (c > 0) {
-      html += `<button class="alpha-chip ${selectedAlphaLetter === letter ? 'active' : ''}" data-letter="${letter}">${letter} <span style="opacity: 0.65; font-size: 0.6rem;">${c}</span></button>`;
-    }
-  });
-
-  container.innerHTML = html;
-
-  container.querySelectorAll('.alpha-chip').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      selectedAlphaLetter = btn.getAttribute('data-letter');
-      container.querySelectorAll('.alpha-chip').forEach((c) => c.classList.remove('active'));
-      btn.classList.add('active');
-      renderSidebarList();
-    });
-  });
-}
-
-// 9. Sidebar List Rendering (Top 10 Major, Pinned, All A-Z & Real-Time Search)
-function renderSidebarList() {
-  const container = document.getElementById('sites-list');
-  const countLabel = document.getElementById('sites-count-label');
-  const alphabetJumper = document.getElementById('alphabet-jumper');
-  if (!container || !sitesGeoJSON) return;
-
-  container.innerHTML = '';
-  const features = sitesGeoJSON.features;
-  let displayList = [];
-
-  // A. Search Query Mode: searches across all 1,342 sites
-  if (searchQuery.trim().length > 0) {
-    if (alphabetJumper) alphabetJumper.style.display = 'none';
-    const q = searchQuery.toLowerCase();
-    displayList = features.filter((f) => {
-      const p = f.properties;
-      return (
-        p.name.toLowerCase().includes(q) ||
-        (p.ancient_name && p.ancient_name.toLowerCase().includes(q)) ||
-        (p.modern_name && p.modern_name.toLowerCase().includes(q)) ||
-        (p.modern_country && p.modern_country.toLowerCase().includes(q)) ||
-        (p.biblical_region && p.biblical_region.toLowerCase().includes(q)) ||
-        (p.verses_summary && p.verses_summary.toLowerCase().includes(q)) ||
-        (p.description && p.description.toLowerCase().includes(q))
-      );
-    });
-    countLabel.textContent = `${displayList.length} Sites Matching "${searchQuery}"`;
-  }
-  // B. Top 10 Major Entries Mode (Default Initial View)
-  else if (activeSidebarTab === 'top10') {
-    if (alphabetJumper) alphabetJumper.style.display = 'none';
-    displayList = features.filter((f) => f.properties.is_top_10 || f.properties.tier === 1).slice(0, 10);
-    countLabel.textContent = `Top 10 Major Biblical Centers`;
-  }
-  // C. Pinned Sites Mode
-  else if (activeSidebarTab === 'pinned') {
-    if (alphabetJumper) alphabetJumper.style.display = 'none';
-    displayList = features.filter((f) => pinnedSiteIds.has(f.properties.id));
-    countLabel.textContent = `${displayList.length} Pinned Sites on Map`;
-
-    if (displayList.length === 0) {
-      container.innerHTML = `
-        <div style="padding: 32px 16px; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
-          <div style="font-size: 2rem; margin-bottom: 8px;">📌</div>
-          <p style="font-weight: 600; color: #fff;">No sites pinned yet</p>
-          <p style="margin-top: 6px; font-size: 0.75rem; line-height: 1.4;">
-            Search or browse any biblical site and click <strong>➕ Pin to Map</strong> to keep it permanently highlighted on your study map.
-          </p>
-        </div>
-      `;
-      return;
-    }
-  }
-  // D. Full A-to-Z Directory Mode
-  else if (activeSidebarTab === 'all') {
-    if (alphabetJumper) alphabetJumper.style.display = 'flex';
-    if (selectedAlphaLetter !== 'all') {
-      displayList = features.filter((f) => f.properties.name.toUpperCase().startsWith(selectedAlphaLetter));
-      countLabel.textContent = `${displayList.length} Sites Starting with '${selectedAlphaLetter}'`;
-    } else {
-      // Show first 60 for instant DOM rendering, with count
-      displayList = features.slice(0, 60);
-      countLabel.textContent = `Showing 60 of ${features.length} Sites (Select Letter Above)`;
-    }
-  }
-
-  // Render cards
-  displayList.forEach((feature) => {
-    const props = feature.properties;
-    const [lng, lat] = feature.geometry.coordinates;
-    const isPinned = pinnedSiteIds.has(props.id);
-    const tierNum = props.tier || 3;
-    const tierLabel = tierNum === 1 ? 'MAJOR' : (tierNum === 2 ? 'MODERATE' : 'MINOR');
-
-    const card = document.createElement('div');
-    card.className = `site-card ${isPinned ? 'is-pinned-card' : ''}`;
-    card.innerHTML = `
-      <div style="display: flex; gap: 8px; align-items: flex-start;">
-        ${props.photo_url ? `<img src="${props.photo_url}" alt="${escapeHtml(props.name)}" style="width: 44px; height: 44px; border-radius: 6px; object-fit: cover; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.12);" loading="lazy" />` : ''}
-        <div style="flex: 1; min-width: 0;">
-          <div class="site-card-title">
-            <span style="font-weight: 700;">${escapeHtml(props.name)}</span>
-            <div style="display: flex; align-items: center; gap: 4px;">
-              <span class="tier-badge tier-badge-${tierNum}">${tierLabel}</span>
-              <span style="font-size: 0.65rem; padding: 1px 5px; border-radius: 4px; background: rgba(255,255,255,0.08);">${escapeHtml(props.modern_country || 'Levant')}</span>
-            </div>
-          </div>
-          <div class="site-card-ancient">${escapeHtml(props.ancient_name || props.name)}</div>
-        </div>
-      </div>
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
-        <span class="site-card-modern">${escapeHtml(props.modern_name || props.name)} (${lat.toFixed(2)}°N, ${lng.toFixed(2)}°E)</span>
-        <button type="button" class="btn-pin-site ${isPinned ? 'is-pinned' : ''}" onclick="togglePinSite('${props.id}', event)" title="Pin or unpin from active map">
-          ${isPinned ? '📌 Pinned' : '➕ Pin to Map'}
-        </button>
-      </div>
-      ${props.verses_summary ? `<div style="font-size: 0.68rem; color: var(--ancient-gold); margin-top: 4px;">📖 ${escapeHtml(props.verses_summary)}</div>` : ''}
-      <div class="site-card-desc">${escapeHtml(props.description || '')}</div>
-    `;
-
-    card.addEventListener('click', () => {
-      document.querySelectorAll('.site-card').forEach((c) => c.classList.remove('active'));
-      card.classList.add('active');
-      map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 11), pitch: 35, duration: 1000 });
-      
-      // Open the corresponding marker popup or create one
-      const item = markersList.find((m) => m.props && m.props.id === props.id);
-      if (item && item.marker) {
-        item.marker.togglePopup();
+    // Fit map bounds to book
+    const coords = [];
+    geojson.features.forEach((f) => {
+      if (f.geometry.type === 'Point') {
+        coords.push(f.geometry.coordinates);
+      } else if (f.geometry.type === 'LineString') {
+        f.geometry.coordinates.forEach((c) => coords.push(c));
+      } else if (f.geometry.type === 'Polygon') {
+        if (f.geometry.coordinates[0]) f.geometry.coordinates[0].forEach((c) => coords.push(c));
       }
     });
 
-    container.appendChild(card);
+    if (coords.length > 0 && map) {
+      const bounds = coords.reduce(
+        (b, coord) => b.extend(coord),
+        new maplibregl.LngLatBounds(coords[0], coords[0])
+      );
+      map.fitBounds(bounds, { padding: 45, maxZoom: 10, duration: 1200 });
+    }
+  } catch (err) {
+    console.warn('Error loading book KML:', err);
+  }
+}
+
+function removeBookKmlFromMap(bookCode) {
+  delete activeBookGeoJSONs[bookCode];
+  refreshBookLayers();
+}
+
+function refreshBookLayers() {
+  if (!map) return;
+  const allFeatures = [];
+  Object.entries(activeBookGeoJSONs).forEach(([code, gj]) => {
+    const layer = activeLayers.find((l) => l.id === `book:${code}`);
+    if (layer && !layer.visible) return;
+    if (gj && gj.features) allFeatures.push(...gj.features);
+  });
+  const combined = { type: 'FeatureCollection', features: allFeatures };
+
+  if (map.getSource('active-books-source')) {
+    map.getSource('active-books-source').setData(combined);
+  } else {
+    map.addSource('active-books-source', {
+      type: 'geojson',
+      data: combined,
+    });
+
+    if (!map.getLayer('active-books-lines')) {
+      map.addLayer({
+        id: 'active-books-lines',
+        type: 'line',
+        source: 'active-books-source',
+        filter: ['any', ['==', '$type', 'LineString'], ['==', '$type', 'MultiLineString']],
+        paint: {
+          'line-color': '#dc2626',
+          'line-width': 2.6,
+          'line-dasharray': [3, 2],
+          'line-opacity': 0.88,
+        },
+      });
+    }
+
+    if (!map.getLayer('active-books-fill')) {
+      map.addLayer(
+        {
+          id: 'active-books-fill',
+          type: 'fill',
+          source: 'active-books-source',
+          filter: ['==', '$type', 'Polygon'],
+          paint: {
+            'fill-color': '#d97706',
+            'fill-opacity': 0.12,
+          },
+        },
+        'ancient-water-shelf'
+      );
+    }
+  }
+}
+
+// Camera Helper: Fit view to Region boundary
+function flyToRegion(regionName) {
+  if (!regionsGeoJSON || !map) return;
+  const feature = regionsGeoJSON.features.find((f) => f.properties.name === regionName);
+  if (!feature) return;
+
+  const coords = [];
+  if (feature.geometry.type === 'Polygon') {
+    feature.geometry.coordinates[0].forEach((c) => coords.push(c));
+  } else if (feature.geometry.type === 'MultiPolygon') {
+    feature.geometry.coordinates.forEach((poly) => poly[0].forEach((c) => coords.push(c)));
+  }
+
+  if (coords.length > 0) {
+    const bounds = coords.reduce(
+      (b, coord) => b.extend(coord),
+      new maplibregl.LngLatBounds(coords[0], coords[0])
+    );
+    map.fitBounds(bounds, { padding: 45, maxZoom: 8.5, duration: 1100 });
+  }
+}
+
+// Camera Helper: Fit view to Book
+function flyToBook(bookCode) {
+  if (activeBookGeoJSONs[bookCode]) {
+    const geojson = activeBookGeoJSONs[bookCode];
+    const coords = [];
+    geojson.features.forEach((f) => {
+      if (f.geometry.type === 'Point') coords.push(f.geometry.coordinates);
+      else if (f.geometry.type === 'LineString') f.geometry.coordinates.forEach((c) => coords.push(c));
+    });
+    if (coords.length > 0 && map) {
+      const bounds = coords.reduce(
+        (b, coord) => b.extend(coord),
+        new maplibregl.LngLatBounds(coords[0], coords[0])
+      );
+      map.fitBounds(bounds, { padding: 45, maxZoom: 10, duration: 1100 });
+    }
+  } else {
+    loadAndOverlayBookKml(bookCode);
+  }
+}
+
+// ==============================================================================
+// REAL-TIME SEARCH & DISCOVERY ENGINE (Popdown Search Matches Panel)
+// ==============================================================================
+
+function handleLibrarySearchInput(query) {
+  librarySearchQuery = (query || '').trim();
+  const clearBtn = document.getElementById('btn-clear-search');
+  if (clearBtn) {
+    clearBtn.style.display = librarySearchQuery.length > 0 ? 'block' : 'none';
+  }
+
+  if (librarySearchQuery.length === 0) {
+    closeLibrarySearchResults();
+    return;
+  }
+
+  const matches = searchLibrary(librarySearchQuery);
+  renderLibrarySearchResults(matches, librarySearchQuery);
+}
+
+function searchLibrary(q) {
+  const query = q.toLowerCase();
+  const results = [];
+
+  // 1. Search Sites
+  if ((activeLibraryScope === 'all' || activeLibraryScope === 'locations') && sitesGeoJSON) {
+    sitesGeoJSON.features.forEach((f) => {
+      const p = f.properties;
+      if (
+        p.name.toLowerCase().includes(query) ||
+        (p.ancient_name && p.ancient_name.toLowerCase().includes(query)) ||
+        (p.modern_name && p.modern_name.toLowerCase().includes(query)) ||
+        (p.modern_country && p.modern_country.toLowerCase().includes(query)) ||
+        (p.biblical_region && p.biblical_region.toLowerCase().includes(query)) ||
+        (p.verses_summary && p.verses_summary.toLowerCase().includes(query))
+      ) {
+        results.push({
+          type: 'location',
+          id: p.id,
+          name: p.name,
+          tier: p.tier || 3,
+          is_top_10: p.is_top_10,
+          sub: `${p.biblical_region || p.modern_country || 'Levant'} • ${p.verse_count || 1} verses`,
+          feature: f,
+        });
+      }
+    });
+  }
+
+  // 2. Search Regions
+  if (activeLibraryScope === 'all' || activeLibraryScope === 'regions') {
+    Object.entries(BIBLICAL_REGIONS_META).forEach(([name, meta]) => {
+      if (name.toLowerCase().includes(query) || meta.category.toLowerCase().includes(query) || meta.desc.toLowerCase().includes(query)) {
+        results.push({
+          type: 'region',
+          id: name,
+          name,
+          sub: `${meta.category} • ${meta.desc}`,
+        });
+      }
+    });
+  }
+
+  // 3. Search Books
+  if (activeLibraryScope === 'all' || activeLibraryScope === 'books') {
+    BIBLICAL_BOOKS.forEach((b) => {
+      if (b.name.toLowerCase().includes(query) || b.category.toLowerCase().includes(query) || b.desc.toLowerCase().includes(query)) {
+        results.push({
+          type: 'book',
+          id: b.code,
+          name: `Book of ${b.name}`,
+          sub: `${b.testament} ${b.category} • ${b.desc}`,
+        });
+      }
+    });
+  }
+
+  return results;
+}
+
+function renderLibrarySearchResults(matches, query) {
+  const box = document.getElementById('library-search-results-box');
+  const list = document.getElementById('library-search-results-list');
+  const countText = document.getElementById('search-results-count-text');
+  if (!box || !list) return;
+
+  box.style.display = 'flex';
+  if (countText) {
+    countText.textContent = `${matches.length} matches for "${query}"`;
+  }
+
+  list.innerHTML = '';
+
+  if (matches.length === 0) {
+    list.innerHTML = `
+      <div style="padding: 12px; text-align: center; color: var(--text-muted); font-size: 0.75rem;">
+        No biblical sites, regions, or books found matching "${escapeHtml(query)}".
+      </div>
+    `;
+    return;
+  }
+
+  // Render top 40 matching cards
+  matches.slice(0, 40).forEach((item) => {
+    const row = document.createElement('div');
+    row.className = 'library-item-row';
+    row.setAttribute('data-id', item.id);
+    row.setAttribute('data-type', item.type);
+
+    let isOnMap = false;
+    let icon = '📍';
+    let iconClass = 'site';
+    let badgeText = 'SITE';
+    let badgeClass = 'badge-site';
+
+    if (item.type === 'location') {
+      isOnMap = pinnedSiteIds.has(item.id);
+      icon = '📍';
+      iconClass = 'site';
+      if (item.is_top_10 || item.tier === 1) {
+        badgeText = 'MAJOR';
+        badgeClass = 'badge-major';
+      } else if (item.tier === 2) {
+        badgeText = 'REGIONAL';
+        badgeClass = 'badge-site';
+      } else {
+        badgeText = 'SITE';
+        badgeClass = 'badge-site';
+      }
+    } else if (item.type === 'region') {
+      isOnMap = selectedRegions.has(item.id);
+      icon = '🗺️';
+      iconClass = 'region';
+      badgeText = 'REGION';
+      badgeClass = 'badge-region';
+    } else if (item.type === 'book') {
+      isOnMap = activeBooks.has(item.id);
+      icon = '📖';
+      iconClass = 'book';
+      badgeText = 'BOOK';
+      badgeClass = 'badge-book';
+    }
+
+    if (isOnMap) row.classList.add('is-on-map');
+
+    row.innerHTML = `
+      <div class="item-icon-col ${iconClass}">
+        <span>${icon}</span>
+      </div>
+      <div class="item-info-col">
+        <div class="item-name-row">
+          <span class="item-primary-name">${escapeHtml(item.name)}</span>
+          <span class="item-badge ${badgeClass}">${badgeText}</span>
+        </div>
+        <div class="item-sub-desc">${escapeHtml(item.sub)}</div>
+      </div>
+      <div class="item-action-col">
+        <button type="button" class="btn-item-action ${isOnMap ? 'is-on-map' : ''}" onclick="toggleMapItem('${item.type}', '${escapeHtml(item.id)}', event)" title="${isOnMap ? 'Remove from active map' : 'Add to active map'}">
+          ${isOnMap ? '✓ Added' : '➕ Add'}
+        </button>
+      </div>
+    `;
+
+    row.addEventListener('click', () => {
+      document.querySelectorAll('.library-item-row').forEach((r) => r.classList.remove('active'));
+      row.classList.add('active');
+
+      if (item.type === 'location' && item.feature) {
+        const [lng, lat] = item.feature.geometry.coordinates;
+        map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 11), pitch: 35, duration: 1000 });
+        openPopupForFeature(item.feature);
+      } else if (item.type === 'region') {
+        flyToRegion(item.id);
+      } else if (item.type === 'book') {
+        flyToBook(item.id);
+      }
+    });
+
+    list.appendChild(row);
   });
 }
+
+function refreshSearchMatchesIfOpen() {
+  const box = document.getElementById('library-search-results-box');
+  if (box && box.style.display !== 'none' && librarySearchQuery.length > 0) {
+    const matches = searchLibrary(librarySearchQuery);
+    renderLibrarySearchResults(matches, librarySearchQuery);
+  }
+}
+
+function closeLibrarySearchResults() {
+  const box = document.getElementById('library-search-results-box');
+  if (box) box.style.display = 'none';
+}
+
+function clearLibrarySearch() {
+  librarySearchQuery = '';
+  const input = document.getElementById('library-search');
+  if (input) input.value = '';
+  const clearBtn = document.getElementById('btn-clear-search');
+  if (clearBtn) clearBtn.style.display = 'none';
+  closeLibrarySearchResults();
+}
+
+// Instant Add selected group or item from Contextual Dropdown
+function addFromContextSelection() {
+  const sel = document.getElementById('select-library-context');
+  if (!sel) return;
+  const val = sel.value;
+
+  if (val.startsWith('book:')) {
+    const code = val.replace('book:', '');
+    toggleMapItem('book', code);
+  } else if (val.startsWith('region:')) {
+    const rName = val.replace('region:', '');
+    toggleMapItem('region', rName);
+  } else if (val === 'all_regions') {
+    currentRegionsOverlay = 'all';
+    const regSelect = document.getElementById('select-regions-overlay');
+    if (regSelect) regSelect.value = 'all';
+    updateRegionsFilter();
+    syncActiveLayersFromState();
+    renderActiveLayersControl();
+    showToast('🗺️ Added all 36 Historical Biblical Regions to map!');
+  } else if (val === 'default' || val === 'all_major_sites' || val === 'major_only') {
+    const majorFeatures = sitesGeoJSON?.features?.filter((f) => f.properties.is_top_10 || f.properties.tier === 1) || [];
+    majorFeatures.slice(0, 10).forEach((f) => pinnedSiteIds.add(f.properties.id));
+    try {
+      localStorage.setItem('biblestudy_map_crafter_pinned', JSON.stringify([...pinnedSiteIds]));
+    } catch (_) {}
+    renderMarkers();
+    syncActiveLayersFromState();
+    renderActiveLayersControl();
+    showToast('⭐ Pinned Top 10 Major Biblical Centers to map!');
+  } else if (val === 'galilee') {
+    ['capernaum', 'nazareth', 'cana', 'tiberias', 'bethsaida', 'chorazin', 'magdala'].forEach((slug) => {
+      const f = sitesGeoJSON?.features?.find((site) => site.properties.id.includes(slug));
+      if (f) pinnedSiteIds.add(f.properties.id);
+    });
+    renderMarkers();
+    syncActiveLayersFromState();
+    renderActiveLayersControl();
+    showToast('🌊 Added Galilee & Northern Ministry Sites to map!');
+  } else if (val === 'judea') {
+    ['jerusalem', 'bethlehem', 'jericho', 'bethany', 'hebron', 'emmaus'].forEach((slug) => {
+      const f = sitesGeoJSON?.features?.find((site) => site.properties.id.includes(slug));
+      if (f) pinnedSiteIds.add(f.properties.id);
+    });
+    renderMarkers();
+    syncActiveLayersFromState();
+    renderActiveLayersControl();
+    showToast('🏛️ Added Judea & Jerusalem Sites to map!');
+  } else if (val === 'gospels_acts') {
+    ['matt', 'mark', 'luke', 'john', 'acts'].forEach((code) => {
+      activeBooks.add(code);
+      loadAndOverlayBookKml(code);
+    });
+    syncActiveLayersFromState();
+    renderActiveLayersControl();
+    showToast('📖 Added Gospels & Acts (5 Books) to map!');
+  } else {
+    showToast(`Added: ${sel.options[sel.selectedIndex]?.text || val}`);
+  }
+}
+
+// ==============================================================================
+// 9b. GIS ATTRIBUTE TABLE INSPECTOR & SCHOLARLY METADATA DOSSIER MODALS
+// ==============================================================================
+
+let currentAttributesData = null;
+let currentAttributesLayerName = 'attributes';
+
+// Open GIS Attributes Table Modal (Spreadsheet Data Inspector)
+window.openAttributesModal = function(layerId, event) {
+  if (event) event.stopPropagation();
+
+  const layer = activeLayers.find((l) => l.id === layerId) || { id: layerId, name: layerId, type: 'unknown' };
+  currentAttributesLayer = layer;
+  currentAttributesLayerName = (layer.name || 'layer').toLowerCase().replace(/\s+/g, '_');
+
+  const modal = document.getElementById('modal-attributes-table');
+  const title = document.getElementById('attr-modal-title');
+  const subtitle = document.getElementById('attr-modal-subtitle');
+  const tbody = document.getElementById('attributes-table-body');
+
+  if (title) title.textContent = `Attributes: ${layer.name}`;
+  if (subtitle) subtitle.textContent = `GIS Coordinates, Biblical References & Scholarly Attributes (${layer.badgeText || 'LAYER'})`;
+
+  const attrRows = [];
+  const attrDict = {};
+
+  function addAttr(key, val) {
+    if (val === null || val === undefined || val === '') return;
+    attrDict[key] = val;
+    attrRows.push(`
+      <tr>
+        <td class="attr-key-cell">${escapeHtml(key.replace(/[_-]/g, ' '))}</td>
+        <td>${escapeHtml(String(val))}</td>
+      </tr>
+    `);
+  }
+
+  // 1. Site Feature Attributes
+  if (layer.type === 'location') {
+    const feat = sitesGeoJSON?.features?.find((f) => f.properties.id === layer.refId) || layer.feature;
+    if (feat) {
+      const p = feat.properties;
+      addAttr('Site Identifier', p.id);
+      addAttr('Primary Name', p.name);
+      addAttr('Ancient Name', p.ancient_name);
+      addAttr('Modern Name', p.modern_name);
+      addAttr('Modern Country', p.modern_country);
+      addAttr('Biblical Region', p.biblical_region);
+      addAttr('Historical Era', p.period);
+      if (feat.geometry && feat.geometry.coordinates) {
+        addAttr('Latitude', `${feat.geometry.coordinates[1].toFixed(5)}° N`);
+        addAttr('Longitude', `${feat.geometry.coordinates[0].toFixed(5)}° E`);
+        addAttr('Geometry Type', feat.geometry.type);
+      }
+      if (p.elevation_m !== undefined && p.elevation_m !== null) {
+        addAttr('Elevation', `${p.elevation_m} m (${Math.round(p.elevation_m * 3.28084)} ft)`);
+      }
+      addAttr('Priority Tier', `Tier ${p.tier || 3} (${p.tier_name || 'Standard'})`);
+      addAttr('Min Visibility Zoom', p.min_zoom !== undefined ? p.min_zoom : 'Default');
+      addAttr('Total Verse Citations', p.verse_count || 1);
+      addAttr('Scripture Verses', p.verses_summary);
+      addAttr('Scholarly Sources Cited', p.scholarly_sources_count || (p.scholarly_sources ? p.scholarly_sources.length : 0));
+      if (p.translation_variants && p.translation_variants.length > 0) {
+        addAttr('Translation Variants', p.translation_variants.join(', '));
+      }
+      if (p.authorities && Object.keys(p.authorities).length > 0) {
+        addAttr('Academic Authorities', Object.keys(p.authorities).join(', '));
+      }
+      addAttr('Photo Credit', p.photo_credit);
+      addAttr('Photo License', p.photo_license);
+      addAttr('Historical Description', p.description);
+    }
+  }
+  // 2. Regional Boundary Attributes
+  else if (layer.type === 'region') {
+    const meta = BIBLICAL_REGIONS_META[layer.refId] || {};
+    const feat = regionsGeoJSON?.features?.find((f) => f.properties.name === layer.refId);
+    addAttr('Region Name', layer.refId);
+    addAttr('Classification', meta.category || 'Biblical Realm');
+    addAttr('Historical Scope', meta.desc);
+    if (feat) {
+      addAttr('Geometry Type', feat.geometry?.type || 'Polygon');
+      if (feat.properties?.fill_color) addAttr('Cartographic Fill', feat.properties.fill_color);
+      if (feat.geometry?.coordinates) {
+        const count = feat.geometry.type === 'MultiPolygon' ? feat.geometry.coordinates.length : 1;
+        addAttr('Boundary Polygons', count);
+      }
+    }
+  }
+  // 3. Biblical Book Overlay Attributes
+  else if (layer.type === 'book') {
+    const book = BIBLICAL_BOOKS.find((b) => b.code === layer.refId);
+    const gj = activeBookGeoJSONs[layer.refId];
+    addAttr('Book Name', book?.name || layer.refId);
+    addAttr('Testament', book?.testament || 'Biblical');
+    addAttr('Category', book?.category || 'Scripture');
+    addAttr('Summary', book?.desc);
+    if (gj && gj.features) {
+      addAttr('OpenBible KML Features', gj.features.length);
+      const points = gj.features.filter((f) => f.geometry.type === 'Point').length;
+      const lines = gj.features.filter((f) => f.geometry.type.includes('Line')).length;
+      const polys = gj.features.filter((f) => f.geometry.type.includes('Polygon')).length;
+      addAttr('KML Breakdown', `${points} sites, ${lines} route paths, ${polys} territories`);
+    }
+  }
+  // 4. Base Sites Gazetteer
+  else if (layer.type === 'base_sites') {
+    addAttr('Layer Title', 'Master Biblical Sites Gazetteer');
+    addAttr('Total Ingested Sites', sitesGeoJSON?.features?.length || 1342);
+    addAttr('Authority Source', 'OpenBible.info Comprehensive Geocoding Dataset');
+    addAttr('Zoom Culling Architecture', '5-Tier Priority Matrix (World Hubs to Villages)');
+    addAttr('Coordinate Reference', 'WGS 84 (EPSG:4326)');
+  }
+  // 5. Base Regions Layer
+  else if (layer.type === 'base_regions') {
+    addAttr('Layer Title', 'Master Biblical Historical Regions');
+    addAttr('Total Regions & Kingdoms', 36);
+    addAttr('Coverage', 'Levant, Sinai, Mesopotamia, Anatolia, Greece, Rome');
+    addAttr('Authority Source', 'OpenBible.info Regional Boundaries & Polygons');
+  }
+
+  currentAttributesData = attrDict;
+
+  if (tbody) {
+    tbody.innerHTML = attrRows.length > 0 ? attrRows.join('') : '<tr><td colspan="2" style="text-align: center; color: var(--text-muted);">No attributes available for this layer.</td></tr>';
+  }
+
+  if (modal) modal.classList.add('open');
+};
+
+window.closeAttributesModal = function() {
+  document.getElementById('modal-attributes-table')?.classList.remove('open');
+};
+
+// Copy layer attributes as formatted JSON
+function copyAttributesJson() {
+  if (!currentAttributesData) return;
+  const jsonStr = JSON.stringify(currentAttributesData, null, 2);
+  navigator.clipboard.writeText(jsonStr).then(() => {
+    showToast('📋 Copied layer attributes JSON to clipboard!');
+  }).catch(() => {
+    showToast('⚠️ Could not access clipboard');
+  });
+}
+
+// Export layer attributes as CSV spreadsheet
+function exportAttributesCsv() {
+  if (!currentAttributesData) return;
+  const rows = [['Attribute', 'Value']];
+  for (const [k, v] of Object.entries(currentAttributesData)) {
+    const cleanKey = `"${String(k).replace(/"/g, '""')}"`;
+    const cleanVal = `"${String(v).replace(/"/g, '""')}"`;
+    rows.push([cleanKey, cleanVal]);
+  }
+  const csvContent = 'data:text/csv;charset=utf-8,' + rows.map((e) => e.join(',')).join('\n');
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement('a');
+  link.setAttribute('href', encodedUri);
+  link.setAttribute('download', `${currentAttributesLayerName}_attributes.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showToast(`📥 Exported ${currentAttributesLayerName}_attributes.csv`);
+}
+
+// Open Scholarly Metadata & Academic Dossier Modal
+window.openMetadataModal = function(layerId, event) {
+  if (event) event.stopPropagation();
+
+  const layer = activeLayers.find((l) => l.id === layerId) || { id: layerId, name: layerId, type: 'unknown' };
+  const modal = document.getElementById('modal-layer-metadata');
+  const title = document.getElementById('meta-modal-title');
+  const body = document.getElementById('meta-modal-body');
+
+  if (title) title.textContent = `Dossier: ${layer.name}`;
+  if (!body) return;
+
+  // 1. Site Metadata Dossier
+  if (layer.type === 'location') {
+    const feat = sitesGeoJSON?.features?.find((f) => f.properties.id === layer.refId) || layer.feature;
+    if (!feat) {
+      body.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--text-muted);">No dossier data found.</div>`;
+      if (modal) modal.classList.add('open');
+      return;
+    }
+
+    const p = feat.properties;
+    const sources = Array.isArray(p.scholarly_sources) ? p.scholarly_sources : [];
+    const authorities = p.authorities || {};
+    const trans = Array.isArray(p.translation_variants) ? p.translation_variants : [];
+    const photos = Array.isArray(p.photos) && p.photos.length > 0 ? p.photos : (p.photo_url ? [{
+      thumb_url: p.photo_url,
+      full_url: p.photo_url,
+      credit: p.photo_credit,
+      credit_url: p.photo_credit_url,
+      license: p.photo_license,
+      caption: p.photo_caption
+    }] : []);
+
+    let html = `
+      <!-- Hero Header -->
+      <div class="meta-hero-header">
+        <div class="meta-hero-icon">📍</div>
+        <div style="flex: 1;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <h3 style="margin: 0; font-size: 1.15rem; font-family: var(--font-serif);">${escapeHtml(p.name)}</h3>
+            <span class="item-badge ${p.is_top_10 || p.tier === 1 ? 'badge-major' : 'badge-site'}">${p.is_top_10 || p.tier === 1 ? 'MAJOR CENTER' : 'BIBLICAL SITE'}</span>
+          </div>
+          <div style="font-size: 0.76rem; color: var(--text-secondary); margin-top: 3px;">
+            ${p.ancient_name && p.ancient_name !== p.name ? `Ancient: <em>${escapeHtml(p.ancient_name)}</em> &bull; ` : ''}
+            Modern: <strong>${escapeHtml(p.modern_name || p.name)}</strong> (${escapeHtml(p.modern_country || 'Levant')})
+            ${p.elevation_m !== undefined && p.elevation_m !== null ? ` &bull; ⛰️ ${p.elevation_m}m` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Section: Historical Overview & Description
+    if (p.description) {
+      html += `
+        <div class="meta-section-box">
+          <div class="meta-section-title">🏛️ Historical & Archaeological Overview</div>
+          <div style="font-size: 0.82rem; line-height: 1.5; color: #cbd5e1;">${escapeHtml(p.description)}</div>
+        </div>
+      `;
+    }
+
+    // Section: Scripture References
+    if (p.verses_summary) {
+      html += `
+        <div class="meta-section-box">
+          <div class="meta-section-title">📖 Biblical Scriptures (${p.verse_count || 1} Occurrences)</div>
+          <div style="font-size: 0.80rem; line-height: 1.5; color: #f1f5f9; font-style: italic;">
+            "${escapeHtml(p.verses_summary)}"
+          </div>
+        </div>
+      `;
+    }
+
+    // Section: Scholarly Bibliographic Sources
+    html += `
+      <div class="meta-section-box">
+        <div class="meta-section-title">📚 Scholarly Archaeological Identifications (${sources.length} Cited Sources)</div>
+        ${sources.length > 0 ? `
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
+            ${sources.map((s) => `
+              <div style="padding: 6px 10px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 6px; font-size: 0.76rem;">
+                <div style="font-weight: 600; color: #fff;">
+                  ${s.url ? `<a href="${s.url}" target="_blank" rel="noopener noreferrer" style="color: var(--ancient-gold); text-decoration: none;">📖 ${escapeHtml(s.title || 'Scholarly Reference')} ↗</a>` : `📖 ${escapeHtml(s.title || 'Scholarly Reference')}`}
+                </div>
+                <div style="font-size: 0.70rem; color: var(--text-muted); margin-top: 2px;">
+                  ${s.year ? `Published ${s.year}` : ''} ${s.page ? `&bull; Page ${s.page}` : ''} ${s.type ? `&bull; Type: ${s.type}` : ''}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        ` : `
+          <div style="font-size: 0.76rem; color: var(--text-muted); font-style: italic;">Standard biblical identification verified by OpenBible Geocoding Project.</div>
+        `}
+      </div>
+    `;
+
+    // Section: Academic Authorities & Linked Data
+    const authKeys = Object.keys(authorities);
+    if (authKeys.length > 0) {
+      html += `
+        <div class="meta-section-box">
+          <div class="meta-section-title">🏛️ Academic Authorities & Linked Data</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px;">
+            ${authorities.pleiades ? `<a href="${authorities.pleiades}" target="_blank" rel="noopener noreferrer" class="btn-pill" style="font-size: 0.72rem; text-decoration: none;">🏛️ Pleiades Gazetteer ↗</a>` : ''}
+            ${authorities.dare ? `<a href="${authorities.dare}" target="_blank" rel="noopener noreferrer" class="btn-pill" style="font-size: 0.72rem; text-decoration: none;">🏛️ DARE Roman Atlas ↗</a>` : ''}
+            ${authorities.wikidata ? `<a href="${authorities.wikidata}" target="_blank" rel="noopener noreferrer" class="btn-pill" style="font-size: 0.72rem; text-decoration: none;">🌐 Wikidata ↗</a>` : ''}
+            ${authorities.wikipedia ? `<a href="${authorities.wikipedia}" target="_blank" rel="noopener noreferrer" class="btn-pill" style="font-size: 0.72rem; text-decoration: none;">📖 Wikipedia ↗</a>` : ''}
+            ${authorities.biblia ? `<a href="${authorities.biblia}" target="_blank" rel="noopener noreferrer" class="btn-pill" style="font-size: 0.72rem; text-decoration: none;">📜 Biblia.com ↗</a>` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    // Section: Translation Variants
+    if (trans.length > 0) {
+      html += `
+        <div class="meta-section-box">
+          <div class="meta-section-title">🔤 Translation Name Variants (Across 10 English Translations)</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px;">
+            ${trans.map((v) => `<span class="badge-pill" style="background: rgba(255,255,255,0.06); padding: 3px 8px; border-radius: 4px; font-size: 0.74rem;">${escapeHtml(v)}</span>`).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // Section: Photography Dossier
+    if (photos.length > 0) {
+      const p1 = photos[0];
+      html += `
+        <div class="meta-section-box">
+          <div class="meta-section-title">📷 Archaeological Photography & Rights Dossier</div>
+          <div class="meta-dossier-photo-card" style="margin-top: 4px;">
+            <img src="${p1.full_url || p1.thumb_url}" class="meta-dossier-img" alt="${escapeHtml(p.name)}" />
+            <div class="meta-dossier-photo-caption">
+              <div>${escapeHtml(p1.caption || p.name)}</div>
+              <div style="margin-top: 2px;">
+                ${p1.credit_url ? `<a href="${p1.credit_url}" target="_blank" rel="noopener noreferrer" style="color: var(--ancient-gold); text-decoration: none;">© ${escapeHtml(p1.credit || 'Wikimedia Commons')}</a>` : `© ${escapeHtml(p1.credit || 'Wikimedia Commons')}`}
+                ${p1.license ? `&bull; License: ${p1.license}` : ''}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    body.innerHTML = html;
+  }
+  // 2. Region Metadata Dossier
+  else if (layer.type === 'region') {
+    const meta = BIBLICAL_REGIONS_META[layer.refId] || {};
+    body.innerHTML = `
+      <div class="meta-hero-header">
+        <div class="meta-hero-icon">🗺️</div>
+        <div>
+          <h3 style="margin: 0; font-size: 1.15rem; font-family: var(--font-serif);">${escapeHtml(layer.refId)}</h3>
+          <div style="font-size: 0.76rem; color: var(--ancient-gold); font-weight: 600; margin-top: 2px;">${escapeHtml(meta.category || 'Historical Biblical Realm')}</div>
+        </div>
+      </div>
+      <div class="meta-section-box">
+        <div class="meta-section-title">📜 Historical Scope & Territorial Description</div>
+        <div style="font-size: 0.84rem; line-height: 1.5; color: #cbd5e1;">${escapeHtml(meta.desc || 'Historical biblical region.')}</div>
+      </div>
+      <div class="meta-section-box">
+        <div class="meta-section-title">🗺️ Vector Spatial Geometry</div>
+        <div style="font-size: 0.78rem; color: var(--text-secondary);">
+          Authoritative vector polygon boundary digitized from OpenBible.info historical regional boundary dataset.
+        </div>
+      </div>
+    `;
+  }
+  // 3. Book Metadata Dossier
+  else if (layer.type === 'book') {
+    const book = BIBLICAL_BOOKS.find((b) => b.code === layer.refId);
+    body.innerHTML = `
+      <div class="meta-hero-header">
+        <div class="meta-hero-icon">📖</div>
+        <div>
+          <h3 style="margin: 0; font-size: 1.15rem; font-family: var(--font-serif);">${escapeHtml(book?.name || layer.refId)}</h3>
+          <div style="font-size: 0.76rem; color: var(--ancient-gold); font-weight: 600; margin-top: 2px;">${escapeHtml(book?.testament || '')} ${escapeHtml(book?.category || '')}</div>
+        </div>
+      </div>
+      <div class="meta-section-box">
+        <div class="meta-section-title">📜 Biblical Book Summary</div>
+        <div style="font-size: 0.84rem; line-height: 1.5; color: #cbd5e1;">${escapeHtml(book?.desc || '')}</div>
+      </div>
+      <div class="meta-section-box">
+        <div class="meta-section-title">🗺️ OpenBible Spatial KML Data</div>
+        <div style="font-size: 0.78rem; color: var(--text-secondary);">
+          Vector routes, locations, and territorial polygon confidence areas compiled from OpenBible Geocoding Project.
+        </div>
+      </div>
+    `;
+  }
+  // 4. Base Layers Dossier
+  else {
+    body.innerHTML = `
+      <div class="meta-hero-header">
+        <div class="meta-hero-icon">🏛️</div>
+        <div>
+          <h3 style="margin: 0; font-size: 1.15rem; font-family: var(--font-serif);">${escapeHtml(layer.name)}</h3>
+          <div style="font-size: 0.76rem; color: var(--ancient-gold); font-weight: 600; margin-top: 2px;">Master Cartographic Gazetteer</div>
+        </div>
+      </div>
+      <div class="meta-section-box">
+        <div class="meta-section-title">📊 Dataset Architecture</div>
+        <div style="font-size: 0.80rem; line-height: 1.5; color: #cbd5e1;">
+          1,342 authoritative geocoded biblical places and historical territories spanning Israel, Jordan, Egypt, Syria, Lebanon, Turkey, Greece, and Italy.
+        </div>
+      </div>
+    `;
+  }
+
+  if (modal) modal.classList.add('open');
+};
+
+window.closeMetadataModal = function() {
+  document.getElementById('modal-layer-metadata')?.classList.remove('open');
+};
+
+
 
 // 10. DUAL JPG EXPORT ENGINE
 // Renders Ancient view -> Captures JPG -> Renders Modern view -> Captures JPG -> Displays in Modal
@@ -861,9 +2392,33 @@ function setupUIEventListeners() {
     switchBasemap(e.target.value, false);
   });
 
+  // Map Sites Display Mode Selector (Major Only vs Auto-expand at Zoom)
+  document.getElementById('select-sites-mode')?.addEventListener('change', (e) => {
+    currentSitesDisplayMode = e.target.value;
+    renderMarkers();
+    showToast(currentSitesDisplayMode === 'major_only' ? '⭐ Map Sites: Major Only' : '🌐 Map Sites: Auto-expand at zoom');
+  });
+
+  // Label Density Selector
+  document.getElementById('select-label-density')?.addEventListener('change', (e) => {
+    currentLabelDensity = e.target.value;
+    renderMarkers();
+  });
+
+  // Historical Regions & Territories Overlay Selector (Off by default)
+  document.getElementById('select-regions-overlay')?.addEventListener('change', (e) => {
+    currentRegionsOverlay = e.target.value;
+    updateRegionsFilter();
+    syncActiveLayersFromState();
+    renderActiveLayersControl();
+    refreshSearchMatchesIfOpen();
+  });
+
   // Book KML Overlay Selector
   document.getElementById('select-book-kml')?.addEventListener('change', (e) => {
-    loadBookKML(e.target.value);
+    if (e.target.value) {
+      toggleMapItem('book', e.target.value);
+    }
   });
 
   // 3D Toggle
@@ -893,44 +2448,66 @@ function setupUIEventListeners() {
     map.flyTo({ center: LEVANT_CENTER, zoom: DEFAULT_ZOOM, pitch: 30, bearing: 0 });
   });
 
-  // Search Box (Real-time search across all 1,342 sites)
-  document.getElementById('site-search')?.addEventListener('input', (e) => {
-    searchQuery = e.target.value;
-    renderSidebarList();
+  // Library Scope Selector Buttons (All, Sites, Books, Regions)
+  document.querySelectorAll('#library-scope-bar .scope-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#library-scope-bar .scope-btn').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeLibraryScope = btn.getAttribute('data-scope') || 'all';
+      populateLibraryContextDropdown();
+      const input = document.getElementById('library-search');
+      if (input && input.value.trim().length > 0) {
+        handleLibrarySearchInput(input.value);
+      }
+    });
   });
 
-  // Sidebar Filter Tabs: Top 10 Major, Pinned, All A-Z
-  document.getElementById('tab-top-10')?.addEventListener('click', () => {
-    activeSidebarTab = 'top10';
-    searchQuery = '';
-    const searchInput = document.getElementById('site-search');
-    if (searchInput) searchInput.value = '';
-    document.querySelectorAll('.sidebar-tab').forEach((t) => t.classList.remove('active'));
-    document.getElementById('tab-top-10')?.classList.add('active');
-    renderSidebarList();
+  // Library Real-time Search Box
+  const librarySearchInput = document.getElementById('library-search');
+  const libraryClearBtn = document.getElementById('btn-clear-search');
+
+  librarySearchInput?.addEventListener('input', (e) => {
+    handleLibrarySearchInput(e.target.value);
   });
 
-  document.getElementById('tab-pinned')?.addEventListener('click', () => {
-    activeSidebarTab = 'pinned';
-    searchQuery = '';
-    const searchInput = document.getElementById('site-search');
-    if (searchInput) searchInput.value = '';
-    document.querySelectorAll('.sidebar-tab').forEach((t) => t.classList.remove('active'));
-    document.getElementById('tab-pinned')?.classList.add('active');
-    renderSidebarList();
+  libraryClearBtn?.addEventListener('click', () => {
+    clearLibrarySearch();
   });
 
-  document.getElementById('tab-all-az')?.addEventListener('click', () => {
-    activeSidebarTab = 'all';
-    searchQuery = '';
-    const searchInput = document.getElementById('site-search');
-    if (searchInput) searchInput.value = '';
-    document.querySelectorAll('.sidebar-tab').forEach((t) => t.classList.remove('active'));
-    document.getElementById('tab-all-az')?.classList.add('active');
-    renderSidebarList();
+  // Close Search Results Dropdown Button
+  document.getElementById('btn-close-search-results')?.addEventListener('click', () => {
+    closeLibrarySearchResults();
   });
 
-  // Add Site Form Submit
+  // Contextual Dropdown Change
+  document.getElementById('select-library-context')?.addEventListener('change', (e) => {
+    libraryContextSelection = e.target.value;
+  });
+
+  // Instant Add from Contextual Dropdown
+  document.getElementById('btn-add-from-context')?.addEventListener('click', () => {
+    addFromContextSelection();
+  });
+
+  // Active Layers Control Header Actions
+  document.getElementById('btn-fit-active-layers')?.addEventListener('click', () => {
+    fitActiveLayersView();
+  });
+
+  document.getElementById('btn-clear-all-layers')?.addEventListener('click', () => {
+    clearAllActiveLayers();
+  });
+
+  // Attributes Modal Toolbar Actions
+  document.getElementById('btn-copy-attributes-json')?.addEventListener('click', () => {
+    copyAttributesJson();
+  });
+
+  document.getElementById('btn-export-attributes-csv')?.addEventListener('click', () => {
+    exportAttributesCsv();
+  });
+
+  // Add Custom Site Form Submit
   document.getElementById('form-add-site')?.addEventListener('submit', (e) => {
     e.preventDefault();
     const name = document.getElementById('input-name').value;
@@ -954,15 +2531,20 @@ function setupUIEventListeners() {
         biblical_region: 'Holy Land',
         elevation_m: elevation,
         description: desc,
+        tier: 1, // Custom added sites are treated as priority
+        is_top_10: true,
       },
       geometry: { type: 'Point', coordinates: [lng, lat] },
     };
 
     sitesGeoJSON.features.push(newFeature);
+    pinnedSiteIds.add(newFeature.properties.id);
     renderMarkers();
-    renderSidebarList();
+    syncActiveLayersFromState();
+    renderActiveLayersControl();
+    refreshSearchMatchesIfOpen();
     closeAddSiteModal();
-    showToast(`Saved ${name}!`);
+    showToast(`Saved & Added ${name} to map!`);
     map.flyTo({ center: [lng, lat], zoom: 11 });
   });
 }
@@ -1237,6 +2819,8 @@ function setupGlobalPopupDismiss() {
         closeAllPopups();
         closeExportModal();
         closeAddSiteModal();
+        closeAttributesModal();
+        closeMetadataModal();
       }
     } else if (e.key === 'ArrowLeft' && isLightboxOpen) {
       navigateLightbox(-1);

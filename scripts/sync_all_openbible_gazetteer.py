@@ -23,17 +23,20 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 OPENBIBLE_DATA_BASE = "https://raw.githubusercontent.com/openbibleinfo/Bible-Geocoding-Data/main/data"
 
-ICONIC_MAJOR_KEYS = {
-    "jerusalem", "bethlehem", "nazareth", "capernaum", "sea of galilee", "dead sea",
-    "jericho", "jordan river", "jordan", "bethany", "caesarea philippi", "caesarea maritima",
-    "caesarea", "hebron", "shechem", "mount carmel", "mount sinai", "antioch",
-    "antioch 1", "damascus", "ephesus", "athens", "corinth", "rome", "babylon",
-    "babylon 1", "ur of the chaldees", "ur", "ur 1", "nineveh", "joppa", "emmaus",
-    "alexandria", "beer-sheba", "beer-sheba 1", "bethel", "bethel 1", "shiloh",
-    "megiddo", "tyre", "sidon", "samaria", "samaria 1", "gath", "ashdod",
-    "ashkelon", "gaza", "haran", "susa", "tarsus", "troas", "philippi",
-    "thessalonica", "patmos", "colossae", "pergamum", "sardis", "smyrna",
-    "laodicea", "philadelphia", "thyatira"
+ICONIC_WORLD_HUBS = {
+    "jerusalem", "rome", "babylon", "babylon 1", "athens", "alexandria",
+    "damascus", "antioch", "antioch 1", "nineveh", "mount sinai", "mount carmel",
+    "sea of galilee", "dead sea", "jordan river", "jordan", "tyre", "sidon",
+    "jericho", "hebron", "bethlehem"
+}
+
+ICONIC_REGIONAL_CITIES = {
+    "nazareth", "capernaum", "caesarea", "caesarea maritima", "caesarea philippi",
+    "ephesus", "corinth", "bethel", "bethel 1", "shiloh", "beer-sheba", "beer-sheba 1",
+    "joppa", "shechem", "megiddo", "samaria", "samaria 1", "gath", "ashdod",
+    "ashkelon", "gaza", "haran", "susa", "philippi", "thessalonica", "tarsus", "troas",
+    "ur", "ur 1", "ur of the chaldees", "emmaus", "bethany", "patmos", "colossae",
+    "pergamum", "sardis", "smyrna", "laodicea", "philadelphia", "thyatira"
 }
 
 TOP_10_MAJOR_IDS = [
@@ -146,12 +149,16 @@ def determine_periods(verses: List[Dict[str, Any]]) -> str:
 def determine_tier(name: str, slug: str, verse_count: int) -> Tuple[int, float, str]:
     clean_name = name.lower().strip()
     clean_slug = slug.lower().strip()
-    if clean_name in ICONIC_MAJOR_KEYS or clean_slug in ICONIC_MAJOR_KEYS or verse_count >= 25:
-        return 1, 0.0, "major"      # Tier 1: Major site, visible at all zoom levels
-    elif verse_count >= 6:
-        return 2, 7.0, "moderate"   # Tier 2: Moderate site, visible at zoom >= 7
+    if clean_name in ICONIC_WORLD_HUBS or clean_slug in ICONIC_WORLD_HUBS or verse_count >= 55:
+        return 1, 2.0, "major"      # Tier 1: World Centers (~30 sites, visible at macro/empire zoom >= 2.0)
+    elif clean_name in ICONIC_REGIONAL_CITIES or clean_slug in ICONIC_REGIONAL_CITIES or verse_count >= 15:
+        return 2, 6.5, "regional"   # Tier 2: Regional Hubs (~90 sites, visible at zoom >= 6.5)
+    elif verse_count >= 5:
+        return 3, 8.5, "prominent"  # Tier 3: Prominent Biblical Towns (~170 sites, visible at zoom >= 8.5)
+    elif verse_count >= 2:
+        return 4, 10.2, "town"      # Tier 4: Minor Biblical Towns (~380 sites, visible at zoom >= 10.2)
     else:
-        return 3, 9.8, "minor"      # Tier 3: Minor site, visible at zoom >= 9.8
+        return 5, 11.8, "village"   # Tier 5: Obscure Villages & Single-Verse Sites (~680 sites, visible at zoom >= 11.8)
 
 def stream_jsonl(filename: str):
     url = f"{OPENBIBLE_DATA_BASE}/{filename}"
@@ -204,6 +211,20 @@ def main():
 
     print(f"Loaded {len(image_map)} image metadata records.")
 
+    print("\n=== Step 3b: Loading source.jsonl bibliographic records ===")
+    source_map: Dict[str, Dict[str, Any]] = {}
+    for item in stream_jsonl("source.jsonl"):
+        sid = item.get("id")
+        if sid:
+            source_map[sid] = {
+                "id": sid,
+                "name": item.get("display_name"),
+                "year": item.get("year"),
+                "type": item.get("type"),
+                "url": item.get("url") or item.get("amazon_url") or item.get("worldcat_url") or item.get("google_books_url")
+            }
+    print(f"Loaded {len(source_map)} bibliographic source records.")
+
     print("\n=== Step 4: Loading existing curated sites for preservation ===")
     geojson_path = os.path.join(os.path.dirname(__file__), "..", "map_crafter", "data", "biblical_sites.geojson")
     existing_curated: Dict[str, Dict[str, Any]] = {}
@@ -222,7 +243,7 @@ def main():
     features = []
     seen_ids = set()
 
-    tier_counts = {1: 0, 2: 0, 3: 0}
+    tier_counts = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
 
     for item in ancient_list:
         aid = item.get("id")
@@ -343,6 +364,47 @@ def main():
             if cp.get("modern_name"):
                 modern_name = cp["modern_name"]
 
+        # Scholarly Sources & Archaeological Identifications
+        id_sources = item.get("identification_sources", {})
+        scholarly_sources = []
+        for sid, sinfo in id_sources.items():
+            if sid in source_map:
+                sm = source_map[sid]
+                entry = {
+                    "title": sm["name"],
+                    "year": sm["year"],
+                    "type": sm["type"],
+                    "url": sm["url"]
+                }
+                if sinfo.get("page"):
+                    entry["page"] = sinfo["page"]
+                scholarly_sources.append(entry)
+
+        # Sort sources by year descending
+        scholarly_sources.sort(key=lambda s: s.get("year") or 0, reverse=True)
+
+        # Linked Data (Academic Authorities: Pleiades, DARE, Wikidata, Wikipedia, Biblia)
+        ld_obj = item.get("linked_data", {})
+        authorities = {}
+        for k, v in ld_obj.items():
+            if isinstance(v, dict):
+                url = v.get("url") or v.get("data_url")
+                vid = str(v.get("id", ""))
+                if url and "pleiades.stoa.org" in url:
+                    authorities["pleiades"] = url
+                elif url and "imperium.ahlfeldt.se" in url:
+                    authorities["dare"] = url
+                elif url and "biblia.com" in url:
+                    authorities["biblia"] = url
+                elif url and "en.wikipedia.org" in url:
+                    authorities["wikipedia"] = url
+                elif vid.startswith("Q"):
+                    authorities["wikidata"] = f"https://www.wikidata.org/wiki/{vid}"
+
+        # Translation name variations across 10 English translations
+        trans_dict = item.get("translation_name_counts", {})
+        translation_variants = [tname for tname in trans_dict.keys() if tname.lower() != name.lower()]
+
         is_top_10 = feature_id in TOP_10_MAJOR_IDS
 
         feat = {
@@ -369,6 +431,10 @@ def main():
                 "min_zoom": min_zoom,
                 "tier_name": tier_name,
                 "is_top_10": is_top_10,
+                "scholarly_sources": scholarly_sources[:6],
+                "scholarly_sources_count": len(scholarly_sources),
+                "authorities": authorities,
+                "translation_variants": translation_variants,
                 "photo_url": photo_url,
                 "photo_credit": credit,
                 "photo_credit_url": credit_url,
@@ -394,10 +460,11 @@ def main():
     with open(geojson_path, "w", encoding="utf-8") as f:
         json.dump(out_geojson, f, indent=2, ensure_ascii=False)
 
-    print(f"\nSaved {len(features)} total features to {geojson_path}.")
-    print(f"  Tier 1 (Major, zoom >= 0):   {tier_counts[1]}")
-    print(f"  Tier 2 (Moderate, zoom >= 7): {tier_counts[2]}")
-    print(f"  Tier 3 (Minor, zoom >= 9.8): {tier_counts[3]}")
+    print(f"  Tier 1 (World Centers, min_zoom 2.0):    {tier_counts[1]}")
+    print(f"  Tier 2 (Regional Hubs, min_zoom 6.5):    {tier_counts[2]}")
+    print(f"  Tier 3 (Prominent Towns, min_zoom 8.5):  {tier_counts[3]}")
+    print(f"  Tier 4 (Minor Towns, min_zoom 10.2):     {tier_counts[4]}")
+    print(f"  Tier 5 (Villages / Minor, min_zoom 11.8):{tier_counts[5]}")
 
     # Synchronize verified database file
     verified_path = os.path.join(os.path.dirname(__file__), "..", "data", "openbible_gazetteer_verified.json")
@@ -425,6 +492,10 @@ def main():
             "photo_license": p.get("photo_license"),
             "photo_caption": p.get("photo_caption"),
             "photos": p.get("photos", []),
+            "scholarly_sources": p.get("scholarly_sources", []),
+            "scholarly_sources_count": p.get("scholarly_sources_count", 0),
+            "authorities": p.get("authorities", {}),
+            "translation_variants": p.get("translation_variants", []),
             "description": p.get("description"),
             "period": p.get("period")
         }
