@@ -47,8 +47,8 @@ def test_bad_login_rejected(anon_client):
 
 
 def test_no_token_is_401(anon_client):
-    # studies list requires auth now
-    assert anon_client.get("/api/studies").status_code == 401
+    # creating a study requires auth
+    assert anon_client.post("/api/studies", json={"topic": "Test"}).status_code == 401
     # preferences require auth now
     assert anon_client.get("/api/preferences/translations").status_code == 401
 

@@ -88,3 +88,41 @@ def test_historical_plates_gospel_matching():
     # Knowing The Bible matches Israel During Time of Jesus
     assert "israel-during-the-time-of-jesus" in plates["knowing_the_bible"]["url"]
 
+
+def test_parse_locations_acts_2_pentecost():
+    acts_2_text = (
+        '7 Utterly amazed, they asked: “Aren’t all these who are speaking Galileans? '
+        '8 Then how is it that each of us hears them in our native language? '
+        '9 Parthians, Medes and Elamites; residents of Mesopotamia, Judea and Cappadocia, '
+        'Pontus and Asia,[[b](https://www.biblegateway.com/passage/?search=Acts%202&version=NIV#fen-NIV-26959b)] '
+        '10 Phrygia and Pamphylia, Egypt and the parts of Libya near Cyrene; visitors from Rome '
+        '11 (both Jews and converts to Judaism); Cretans and Arabs—we hear them declaring the wonders '
+        'of God in our own tongues!” 12 Amazed and perplexed, they asked one another, “What does this mean?”'
+    )
+    detected = geo_service.parse_locations_from_text(acts_2_text)
+    names = {loc["name"].lower() for loc in detected}
+
+    # Verify all expected regions & places from Acts 2:7-12 are resolved
+    expected = [
+        "galilee", "parthia", "media", "elam", "mesopotamia", "judea",
+        "cappadocia", "pontus", "asia", "phrygia", "pamphylia",
+        "egypt", "libya", "cyrene", "rome", "crete", "arabia"
+    ]
+    for exp in expected:
+        assert exp in names, f"Expected {exp} to be parsed from Acts 2 text"
+
+    # Test update_day_maps_with_locations
+    initial_maps = {
+        "status": "ready",
+        "locations": [{"name": "Jerusalem", "lat": 31.77, "lng": 35.23}],
+        "period": "early_church"
+    }
+    updated = geo_service.update_day_maps_with_locations(initial_maps, detected)
+    assert updated["has_locations"] is True
+    assert len(updated["locations"]) >= len(expected)
+    assert "center" in updated
+    assert "bounds" in updated
+    assert "modern_map_url" in updated
+    assert "ancient_map_url" in updated
+
+

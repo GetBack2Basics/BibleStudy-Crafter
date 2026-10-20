@@ -620,6 +620,22 @@ BIBLICAL_GAZETTEER: Dict[str, Dict[str, Any]] = {
         "photo_caption": "ruins at Qalunya",
         "photos": [{'image_id': 'ib67872', 'thumb_url': 'https://a.openbible.info/geo/images/512/m639fec.ib67872.jpg', 'full_url': 'https://upload.wikimedia.org/wikipedia/commons/0/07/PikiWiki_Israel_7415_old_citadel_in_motza.jpg', 'credit': 'אבישי טייכר', 'credit_url': 'https://commons.wikimedia.org/wiki/File:PikiWiki_Israel_7415_old_citadel_in_motza.jpg', 'license': 'CC-BY-2.5', 'caption': 'ruins at Qalunya'}, {'image_id': 'i1af5ba', 'thumb_url': 'https://a.openbible.info/geo/images/512/m77574e.i1af5ba.jpg', 'full_url': 'https://upload.wikimedia.org/wikipedia/commons/d/d7/Emmaus_Nicopolis_basilica.JPG', 'credit': 'Emmaus', 'credit_url': 'https://commons.wikimedia.org/wiki/File:Emmaus_Nicopolis_basilica.JPG', 'license': 'CC-BY-SA-3.0', 'caption': 'ruins at Emmaus Nicopolis'}, {'image_id': 'if02659', 'thumb_url': 'https://upload.wikimedia.org/wikipedia/commons/2/27/Qalunya.jpg', 'full_url': 'https://upload.wikimedia.org/wikipedia/commons/2/27/Qalunya.jpg', 'credit': 'Kippi70', 'credit_url': 'https://commons.wikimedia.org/wiki/File:Qalunya.jpg', 'license': 'PD', 'caption': 'historical cityscape of Qalunya'}],
     },
+    "parthia": {
+        "name": "Parthia",
+        "ancient_name": "Parthia (Parthava)",
+        "modern_name": "Northeastern Iran / Khorasan",
+        "modern_country": "Iran",
+        "lat": 36.0,
+        "lng": 55.0,
+        "period": "Roman / Hellenistic / Early Church",
+        "biblical_region": "Parthian Empire (East of Media)",
+        "description": "Homeland of the Parthian Empire east of Media; home of Jewish pilgrims visiting Jerusalem at Pentecost (Acts 2:9).",
+        "elevation_m": 1100,
+        "openbible_slug": "parthia",
+        "confidence_score": 500,
+        "openbible_url": "https://www.openbible.info/geo/",
+        "photos": [],
+    },
 }
 
 # Book-to-Default-Era and Key Locations mapping
@@ -946,5 +962,330 @@ def resolve_day_maps(
             },
         ],
     }
+
+
+# Comprehensive In-Memory Gazetteer Index & Demonym Parser
+_FULL_SITE_INDEX: Optional[Dict[str, Dict[str, Any]]] = None
+
+# Demonym mapping: connects biblical peoples / demonyms to canonical geographical sites
+BIBLICAL_DEMONYMS: Dict[str, str] = {
+    "galilean": "galilee",
+    "galileans": "galilee",
+    "parthian": "parthia",
+    "parthians": "parthia",
+    "mede": "media",
+    "medes": "media",
+    "elamite": "elam",
+    "elamites": "elam",
+    "mesopotamian": "mesopotamia",
+    "mesopotamians": "mesopotamia",
+    "judean": "judea",
+    "judeans": "judea",
+    "cappadocian": "cappadocia",
+    "cappadocians": "cappadocia",
+    "pontian": "pontus",
+    "pontians": "pontus",
+    "asian": "asia",
+    "asians": "asia",
+    "phrygian": "phrygia",
+    "phrygians": "phrygia",
+    "pamphylian": "pamphylia",
+    "pamphylians": "pamphylia",
+    "egyptian": "egypt",
+    "egyptians": "egypt",
+    "libyan": "libya",
+    "libyans": "libya",
+    "cyrenian": "cyrene",
+    "cyrenians": "cyrene",
+    "roman": "rome",
+    "romans": "rome",
+    "cretan": "crete",
+    "cretans": "crete",
+    "arab": "arabia",
+    "arabs": "arabia",
+    "arabian": "arabia",
+    "arabians": "arabia",
+    "samaritan": "samaria",
+    "samaritans": "samaria",
+    "corinthian": "corinth",
+    "corinthians": "corinth",
+    "ephesian": "ephesus",
+    "ephesians": "ephesus",
+    "philippian": "philippi",
+    "philippians": "philippi",
+    "colossian": "colossae",
+    "colossians": "colossae",
+    "thessalonian": "thessalonica",
+    "thessalonians": "thessalonica",
+    "berean": "berea",
+    "bereans": "berea",
+    "athenian": "athens",
+    "athenians": "athens",
+    "antiochian": "antioch",
+    "antiochians": "antioch",
+    "babylonian": "babylon",
+    "babylonians": "babylon",
+    "chaldean": "chaldea",
+    "chaldeans": "chaldea",
+    "assyrian": "assyria",
+    "assyrians": "assyria",
+    "persian": "persia",
+    "persians": "persia",
+    "syrian": "syria",
+    "syrians": "syria",
+    "nazarene": "nazareth",
+    "nazarenes": "nazareth",
+    "jerusalemite": "jerusalem",
+    "jerusalemites": "jerusalem",
+    "canaanite": "canaan",
+    "canaanites": "canaan",
+    "philistine": "philistia",
+    "philistines": "philistia",
+    "moabite": "moab",
+    "moabites": "moab",
+    "ammonite": "ammon",
+    "ammonites": "ammon",
+    "edomite": "edom",
+    "edomites": "edom",
+    "midianite": "midian",
+    "midianites": "midian",
+    "sidonian": "sidon",
+    "sidonians": "sidon",
+    "tyrian": "tyre",
+    "tyrians": "tyre",
+}
+
+# English stop words that should not trigger false positives if they match tiny ancient sites
+GAZETTEER_STOP_WORDS = {
+    "me", "no", "so", "or", "on", "ai", "to", "am", "in", "it", "at", "an", "is", "of", "as", "he", "we", "be", "by",
+    "if", "my", "up", "do", "go", "all", "are", "and", "the", "not", "who", "then", "how", "each", "them", "near",
+    "both", "from", "with", "this", "what", "one", "another", "our", "will", "have", "been", "said", "lord", "god",
+    "day", "days", "way", "man", "men", "king", "son", "sons", "name", "hand", "great", "house", "city", "sea",
+    "well", "mount", "river", "valley", "land", "hill", "high", "gate", "water", "waters", "rock", "stone", "cave"
+}
+
+
+def get_full_gazetteer() -> Dict[str, Dict[str, Any]]:
+    """Loads and caches the 1,300+ authoritative OpenBible biblical sites index."""
+    global _FULL_SITE_INDEX
+    if _FULL_SITE_INDEX is not None:
+        return _FULL_SITE_INDEX
+
+    index: Dict[str, Dict[str, Any]] = {}
+
+    # Seed with curated BIBLICAL_GAZETTEER entries first
+    for k, v in BIBLICAL_GAZETTEER.items():
+        index[k.lower()] = dict(v)
+
+    # Load 1,342 sites from biblical_sites.geojson
+    geojson_path = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "..", "..", "map_crafter", "data", "biblical_sites.geojson")
+    )
+    if os.path.exists(geojson_path):
+        try:
+            import json
+            with open(geojson_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            for feat in data.get("features", []):
+                props = feat.get("properties", {})
+                coords = feat.get("geometry", {}).get("coordinates", [0, 0])
+                raw_name = props.get("name") or props.get("id") or ""
+                if not raw_name:
+                    continue
+
+                # Strip trailing numbers: "Galilee 1" -> "Galilee", "Bethlehem 1" -> "Bethlehem"
+                clean_name = re.sub(r"\s+\d+$", "", raw_name).strip()
+                k_clean = clean_name.lower()
+
+                # If not already present from curated gazetteer, build entry
+                if k_clean not in index:
+                    index[k_clean] = {
+                        "name": clean_name,
+                        "ancient_name": props.get("ancient_name") or clean_name,
+                        "modern_name": props.get("modern_name") or clean_name,
+                        "modern_country": props.get("modern_country") or "Middle East",
+                        "lat": coords[1],
+                        "lng": coords[0],
+                        "period": props.get("period") or "Biblical Era",
+                        "biblical_region": props.get("biblical_region") or "",
+                        "description": props.get("description") or f"Biblical site of {clean_name}.",
+                        "elevation_m": props.get("elevation_m"),
+                        "openbible_id": props.get("openbible_id"),
+                        "openbible_slug": props.get("openbible_slug"),
+                        "openbible_url": props.get("openbible_url") or f"https://www.openbible.info/geo/ancient/{props.get('openbible_id', '')}/{props.get('openbible_slug', '')}",
+                        "confidence_score": props.get("confidence_score", 500),
+                        "photo_url": props.get("photo_url"),
+                        "photo_credit": props.get("photo_credit"),
+                        "photo_credit_url": props.get("photo_credit_url"),
+                        "photo_license": props.get("photo_license"),
+                        "photo_caption": props.get("photo_caption"),
+                        "photos": props.get("photos", []),
+                    }
+
+                # Also index by openbible_slug if present
+                slug = (props.get("openbible_slug") or "").lower()
+                clean_slug = re.sub(r"-\d+$", "", slug)
+                if clean_slug and clean_slug not in index:
+                    index[clean_slug] = index[k_clean]
+
+        except Exception as e:
+            # Fallback to curated BIBLICAL_GAZETTEER
+            pass
+
+    _FULL_SITE_INDEX = index
+    return _FULL_SITE_INDEX
+
+
+def parse_locations_from_text(
+    text: str,
+    current_locations: Optional[List[Dict[str, Any]]] = None
+) -> List[Dict[str, Any]]:
+    """Scans pasted scripture or arbitrary text for biblical locations and demonyms.
+
+    Returns a rich list of matching BiblicalLocation objects with matched_term
+    and is_already_on_map indicators.
+    """
+    if not text or not text.strip():
+        return []
+
+    index = get_full_gazetteer()
+    existing_names = set()
+    if current_locations:
+        for loc in current_locations:
+            if isinstance(loc, dict):
+                n = loc.get("name") or loc.get("ancient_name") or ""
+                if n:
+                    existing_names.add(n.lower().strip())
+                    clean_n = re.sub(r"\s+\d+$", "", n).lower().strip()
+                    existing_names.add(clean_n)
+
+    # 1. Clean footnote markdown links, URL citations, and brackets
+    clean_text = re.sub(r'\[\[.*?\]\(.*?\)\]', ' ', text)
+    clean_text = re.sub(r'\[.*?\]', ' ', clean_text)
+    clean_text = re.sub(r'https?://\S+', ' ', clean_text)
+    # Normalize curly punctuation
+    clean_text = clean_text.replace("“", '"').replace("”", '"').replace("’", "'").replace("‘", "'")
+
+    detected: Dict[str, Dict[str, Any]] = {}
+
+    # 2. Match demonyms first (e.g. Galileans -> Galilee, Parthians -> Parthia, Cretans -> Crete)
+    for demonym, target_key in BIBLICAL_DEMONYMS.items():
+        pattern = r'\b' + re.escape(demonym) + r'\b'
+        m = re.search(pattern, clean_text, re.IGNORECASE)
+        if m:
+            matched_str = m.group(0)
+            target = target_key.lower()
+            if target in index and target not in detected:
+                entry = dict(index[target])
+                entry["matched_term"] = matched_str
+                entry["is_already_on_map"] = (
+                    entry["name"].lower() in existing_names or
+                    target in existing_names
+                )
+                detected[target] = entry
+
+    # 3. Match direct place names (sorted by descending length to match multi-word names first)
+    sorted_keys = sorted(
+        [k for k in index.keys() if len(k) > 2 and k not in GAZETTEER_STOP_WORDS],
+        key=len,
+        reverse=True
+    )
+
+    for key in sorted_keys:
+        if key in detected:
+            continue
+        pattern = r'\b' + re.escape(key) + r'\b'
+        m = re.search(pattern, clean_text, re.IGNORECASE)
+        if m:
+            matched_str = m.group(0)
+            entry = dict(index[key])
+            entry["matched_term"] = matched_str
+            entry["is_already_on_map"] = (
+                entry["name"].lower() in existing_names or
+                key in existing_names
+            )
+            detected[key] = entry
+
+    # Return list of detected locations
+    return list(detected.values())
+
+
+def update_day_maps_with_locations(
+    existing_maps: Dict[str, Any],
+    new_locations: List[Dict[str, Any]],
+    replace_all: bool = False
+) -> Dict[str, Any]:
+    """Merges new locations into a day's map configuration and recalculates viewport bounds."""
+    current = list(existing_maps.get("locations", [])) if not replace_all else []
+    existing_names = {
+        re.sub(r"\s+\d+$", "", (loc.get("name") or "").lower()).strip()
+        for loc in current if isinstance(loc, dict)
+    }
+
+    added_count = 0
+    for loc in new_locations:
+        if not isinstance(loc, dict) or not loc.get("name"):
+            continue
+        clean_name = re.sub(r"\s+\d+$", "", loc["name"]).strip()
+        if replace_all or clean_name.lower() not in existing_names:
+            loc_copy = dict(loc)
+            loc_copy["name"] = clean_name
+            # Ensure lat and lng are floats
+            try:
+                loc_copy["lat"] = float(loc_copy["lat"])
+                loc_copy["lng"] = float(loc_copy["lng"])
+                current.append(loc_copy)
+                existing_names.add(clean_name.lower())
+                added_count += 1
+            except (ValueError, TypeError):
+                continue
+
+    # Recalculate viewport bounds
+    view_meta = calculate_bounding_box(current)
+
+    min_lat, min_lng = view_meta["bounds"][0]
+    max_lat, max_lng = view_meta["bounds"][1]
+    bbox_str = f"{min_lng},{min_lat},{max_lng},{max_lat}"
+
+    # Recalculate high-resolution raster JPG map plates
+    modern_map_url = (
+        f"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export?"
+        f"bbox={bbox_str}&bboxSR=4326&imageSR=4326&size=1200,750&f=image&format=jpg"
+    )
+    ancient_map_url = (
+        f"https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/export?"
+        f"bbox={bbox_str}&bboxSR=4326&imageSR=4326&size=1200,750&f=image&format=jpg"
+    )
+
+    period_key = existing_maps.get("period") or "roman_judea"
+    site_names_param = ",".join([loc["name"] for loc in current[:10]])
+    map_crafter_url = (
+        f"https://storage.googleapis.com/biblestudy-map-crafter/index.html?"
+        f"period={period_key}&"
+        f"lat={view_meta['center'][0]}&lng={view_meta['center'][1]}&"
+        f"zoom={view_meta['zoom']}&sites={site_names_param}"
+    )
+
+    updated = dict(existing_maps)
+    updated["status"] = "ready"
+    updated["has_locations"] = len(current) > 0
+    updated["locations"] = current
+    updated["center"] = view_meta["center"]
+    updated["zoom"] = view_meta["zoom"]
+    updated["bounds"] = view_meta["bounds"]
+    updated["modern_map_url"] = modern_map_url
+    updated["ancient_map_url"] = ancient_map_url
+    updated["map_crafter_url"] = map_crafter_url
+    updated["historical_summary"] = (
+        f"Depicting {len(current)} biblical site(s) across the ancient Near East and Mediterranean world. "
+        f"Cross-referenced with authoritative OpenBible geocoding and archaeological gazetteers."
+    )
+    updated["modern_summary"] = (
+        f"Contemporary geopolitical context indicating {len(current)} sites across current nations "
+        f"with satellite terrain normalization."
+    )
+
+    return updated
+
 
 

@@ -46,6 +46,7 @@
       <div class="header-center">
         <!-- Historical Era Filter -->
         <select id="select-era" class="select-pill header-select" title="Filter sites and boundaries by biblical epoch">
+          <option value="none">🚫 No Eras (No Data / Clean Map)</option>
           <option value="all" selected>All Eras</option>
           <option value="patriarchal">Patriarchal (~2000-1600 BC)</option>
           <option value="exodus">Exodus & Wilderness (~1446 BC)</option>
@@ -84,6 +85,9 @@
       <div class="header-right header-actions">
         <button id="btn-toggle-3d" class="btn-pill" title="Toggle 3D Elevation & Hillshading">
           <span>🏔️</span> 3D Relief
+        </button>
+        <button id="btn-header-add-locations" class="btn-pill" title="Paste scripture verses or text to parse for locations and add to map">
+          <span>📍</span> Add locations
         </button>
         <button id="btn-export-dual" class="btn-pill btn-primary" title="Export both Ancient and Modern JPGs for this study view">
           <span>📸</span> Export 2 JPGs
@@ -129,6 +133,11 @@
             </select>
             <button id="btn-add-from-context" class="btn-pill btn-primary" style="padding: 6px 11px; font-size: 0.74rem; flex-shrink: 0;" title="Add selected item or group to map">➕ Add</button>
           </div>
+
+          <!-- Add locations via Text / Scripture Parsing -->
+          <button id="btn-open-parse-modal" class="btn-add-locations-lhs" title="Paste scripture verses or text to parse for locations and add to map">
+            <span>📍</span> Add locations
+          </button>
 
           <!-- Real-Time Search / Catalog Matches Dropdown Panel (Shown when searching) -->
           <div id="library-search-results-box" class="library-search-results-box" style="display: none;">
@@ -410,7 +419,99 @@
     </div>
   </div>
 
+  <!-- Modal: Add Locations by Parsing Text / Scripture Verse -->
+  <div id="modal-parse-locations" class="modal-overlay">
+    <div class="modal-content" style="max-width: 720px; width: 92vw;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 1.25rem;">📍</span>
+          <h2 style="margin: 0; font-size: 1.15rem; font-weight: 700;">Add Locations from Text or Scripture</h2>
+        </div>
+        <button class="close-btn" onclick="closeParseModal()">✕</button>
+      </div>
+
+      <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.45;">
+        Paste any passage, study notes, or list of biblical demonyms. The parser automatically detects biblical sites, ancient provinces, and demonyms (e.g. <em>Galileans</em> → Galilee, <em>Parthians</em> → Parthia, <em>Cretans</em> → Crete, <em>Romans</em> → Rome) and lets you choose which locations to add to the map.
+      </div>
+
+      <!-- Quick Scripture Presets -->
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <span style="font-size: 0.72rem; font-weight: 700; color: var(--ancient-gold); text-transform: uppercase; letter-spacing: 0.04em;">Quick Scripture Presets:</span>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+          <button type="button" class="preset-chip-btn" data-preset="acts2">📜 Acts 2:7-12 (Pentecost Pilgrims)</button>
+          <button type="button" class="preset-chip-btn" data-preset="acts13">⛵ Acts 13 (Paul's 1st Journey)</button>
+          <button type="button" class="preset-chip-btn" data-preset="luke24">🚶 Luke 24 (Road to Emmaus)</button>
+          <button type="button" class="preset-chip-btn" data-preset="gen12">🏕️ Genesis 12 (Abram's Journey)</button>
+        </div>
+      </div>
+
+      <!-- Text Input Area -->
+      <div class="form-group" style="position: relative;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+          <label for="parse-text-input" style="font-size: 0.78rem; font-weight: 600; color: #cbd5e1;">Passage / Verse Text</label>
+          <div style="display: flex; gap: 6px;">
+            <button type="button" id="btn-paste-clipboard" class="btn-pill" style="padding: 2px 8px; font-size: 0.68rem;" title="Paste from clipboard">📋 Paste</button>
+            <button type="button" id="btn-clear-parse-text" class="btn-pill" style="padding: 2px 8px; font-size: 0.68rem;" title="Clear text">Clear</button>
+          </div>
+        </div>
+        <textarea id="parse-text-input" rows="4" placeholder="Paste your text or scripture verse here (e.g. 'Parthians, Medes and Elamites; residents of Mesopotamia, Judea and Cappadocia, Pontus and Asia, Phrygia and Pamphylia, Egypt and the parts of Libya near Cyrene; visitors from Rome...')" style="width: 100%; resize: vertical;"></textarea>
+      </div>
+
+      <!-- Parse Action Button -->
+      <div style="display: flex; justify-content: flex-end; gap: 8px;">
+        <button type="button" id="btn-execute-parse" class="btn-pill btn-primary" style="padding: 7px 18px; font-size: 0.82rem; font-weight: 700;">
+          <span>🔍</span> Parse Locations
+        </button>
+      </div>
+
+      <!-- Parsed Results Container -->
+      <div id="parse-results-section" style="display: none; flex-direction: column; gap: 10px; border-top: 1px solid var(--border-subtle); padding-top: 12px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="font-weight: 700; font-size: 0.85rem; color: #fff;">Detected Locations:</span>
+            <span id="parse-count-badge" class="layer-count-badge">0</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <button type="button" id="btn-select-all-parsed" class="layer-hdr-btn">Select All</button>
+            <button type="button" id="btn-deselect-all-parsed" class="layer-hdr-btn">Deselect All</button>
+          </div>
+        </div>
+
+        <!-- Location Checkbox List -->
+        <div id="parse-results-list" class="parse-results-list" style="max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding: 2px;">
+          <!-- Dynamically populated checklist items -->
+        </div>
+
+        <!-- Options: Append vs Replace & Zoom -->
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; background: rgba(0,0,0,0.25); border-radius: 8px; border: 1px solid var(--border-subtle);">
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.76rem; color: #cbd5e1; cursor: pointer;">
+              <input type="radio" name="parse-add-mode" value="append" checked />
+              Append to current map
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.76rem; color: #cbd5e1; cursor: pointer;">
+              <input type="radio" name="parse-add-mode" value="replace" />
+              Replace existing pins
+            </label>
+          </div>
+          <label style="display: flex; align-items: center; gap: 6px; font-size: 0.76rem; color: #cbd5e1; cursor: pointer;">
+            <input type="checkbox" id="check-fit-after-add" checked />
+            Zoom & fit added locations
+          </label>
+        </div>
+
+        <!-- Modal Actions Footer -->
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px;">
+          <button type="button" class="btn-pill" onclick="closeParseModal()">Cancel</button>
+          <button type="button" id="btn-add-parsed-to-map" class="btn-pill btn-primary" style="padding: 8px 18px; font-size: 0.84rem; font-weight: 700;">
+            <span>📍</span> Add Selected Locations to Map (<span id="parsed-selected-count">0</span>)
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Application Logic -->
-  <script src="app.js?v=20261020_header_responsive"></script>
+  <script src="app.js?v=20261020_no_eras"></script>
 </body>
 </html>

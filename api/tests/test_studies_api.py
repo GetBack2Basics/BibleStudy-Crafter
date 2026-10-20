@@ -543,6 +543,32 @@ def test_get_and_refresh_day_maps(client):
     refreshed_data = refresh_res.json()
     assert refreshed_data["status"] == "ready"
 
+    # Test parse-text endpoint in preview mode (Acts 2:7-12 verse excerpt)
+    verse_text = "7 Utterly amazed, they asked: Aren't all these who are speaking Galileans? 9 Parthians, Medes and Elamites; residents of Mesopotamia, Judea and Cappadocia, Pontus and Asia, 10 Phrygia and Pamphylia, Egypt and the parts of Libya near Cyrene; visitors from Rome 11 Cretans and Arabs"
+    parse_res = client.post(f"/api/studies/{sid}/days/1/maps/parse-text", json={"text": verse_text, "mode": "preview"})
+    assert parse_res.status_code == 200
+    p_data = parse_res.json()
+    assert p_data["status"] == "preview"
+    assert p_data["detected_count"] >= 15
+    parsed_names = {l["name"].lower() for l in p_data["locations"]}
+    assert "galilee" in parsed_names
+    assert "parthia" in parsed_names
+    assert "cappadocia" in parsed_names
+    assert "cyrene" in parsed_names
+    assert "rome" in parsed_names
+
+    # Test add-locations endpoint to merge locations to map
+    locs_to_add = [loc for loc in p_data["locations"] if loc["name"].lower() in ("parthia", "cappadocia", "cyrene")]
+    add_res = client.post(f"/api/studies/{sid}/days/1/maps/add-locations", json={"locations": locs_to_add})
+    assert add_res.status_code == 200
+    added_map = add_res.json()
+    assert added_map["status"] == "ready"
+    final_names = {l["name"].lower() for l in added_map["locations"]}
+    assert "parthia" in final_names
+    assert "cappadocia" in final_names
+    assert "cyrene" in final_names
+
+
 
 
 

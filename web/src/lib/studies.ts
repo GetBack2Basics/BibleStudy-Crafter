@@ -389,7 +389,42 @@ export const studies = {
 
   refreshMaps: (studyId: number, dayNumber: number): Promise<DayMapsOut> =>
     api.fetch(`/api/studies/${studyId}/days/${dayNumber}/maps/refresh`, { method: 'POST' }).then(j),
+
+  parseMapText: (
+    studyId: number,
+    dayNumber: number,
+    text: string
+  ): Promise<ParseMapTextOut> =>
+    api.fetch(`/api/studies/${studyId}/days/${dayNumber}/maps/parse-text`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, mode: 'preview' }),
+    }).then(j),
+
+  addMapLocations: (
+    studyId: number,
+    dayNumber: number,
+    locations: BiblicalLocation[],
+    replaceAll: boolean = false
+  ): Promise<DayMapsOut> =>
+    api.fetch(`/api/studies/${studyId}/days/${dayNumber}/maps/add-locations`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ locations, replace_all: replaceAll }),
+    }).then(j),
 }
+
+export interface ParsedLocationMatch extends BiblicalLocation {
+  matched_term?: string
+  is_already_on_map?: boolean
+}
+
+export interface ParseMapTextOut {
+  status: string
+  detected_count: number
+  locations: ParsedLocationMatch[]
+}
+
 
 export interface SourceTextResult {
   title: string

@@ -1299,3 +1299,111 @@ async def refresh_day_maps(
     )
     return resolved
 
+
+class ParseMapTextIn(BaseModel):
+    text: str
+    mode: str = "preview"  # "preview" | "add"
+    replace_all: bool = False
+
+
+class AddMapLocationsIn(BaseModel):
+    locations: list[dict[str, Any]]
+    replace_all: bool = False
+
+
+@router.post("/{study_id}/days/{day_number}/maps/parse-text")
+async def parse_day_maps_text(
+    study_id: int,
+    day_number: int,
+    body: ParseMapTextIn,
+    user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """Parses arbitrary pasted text or scripture for biblical locations.
+
+    If mode == 'preview', returns candidate locations for user review.
+    If mode == 'add', merges into the day's map and saves to the database.
+    """
+    s = session.get(Study, study_id)
+    if not s or s.user_id != user.id:
+        raise HTTPException(404, "Study not found")
+    day = session.exec(
+        select(StudyDay).where(StudyDay.study_id == study_id, StudyDay.day_number == day_number)
+    ).first()
+    if not day:
+        raise HTTPException(404, "Day not found")
+
+    blocks = day.blocks_json or {}
+    existing_maps = blocks.get("maps") or {}
+    current_locations = existing_maps.get("locations", [])
+
+    detected = geo_service.parse_locations_from_text(body.text, current_locations=current_locations)
+
+    if body.mode == "add":
+        updated_maps = geo_service.update_day_maps_with_locations(
+            existing_maps,
+            detected,
+            replace_all=body.replace_all
+        )
+        day.blocks_json = {**blocks, "maps": updated_maps}
+        session.add(day)
+        session.commit()
+        session.refresh(day)
+
+        events.emit(
+            "success",
+            "maps",
+            f"Study {study_id} day {day_number}: Parsed & added {len(detected)} biblical locations to map",
+            study_id=study_id,
+            day_number=day_number,
+        )
+        return updated_maps
+
+    return {
+        "status": "preview",
+        "detected_count": len(detected),
+        "locations": detected,
+    }
+
+
+@router.post("/{study_id}/days/{day_number}/maps/add-locations")
+async def add_day_map_locations(
+    study_id: int,
+    day_number: int,
+    body: AddMapLocationsIn,
+    user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """Adds selected biblical locations to the current map and recalculates coordinates."""
+    s = session.get(Study, study_id)
+    if not s or s.user_id != user.id:
+        raise HTTPException(404, "Study not found")
+    day = session.exec(
+        select(StudyDay).where(StudyDay.study_id == study_id, StudyDay.day_number == day_number)
+    ).first()
+    if not day:
+        raise HTTPException(404, "Day not found")
+
+    blocks = day.blocks_json or {}
+    existing_maps = blocks.get("maps") or {}
+
+    updated_maps = geo_service.update_day_maps_with_locations(
+        existing_maps,
+        body.locations,
+        replace_all=body.replace_all
+    )
+    day.blocks_json = {**blocks, "maps": updated_maps}
+    session.add(day)
+    session.commit()
+    session.refresh(day)
+
+    events.emit(
+        "success",
+        "maps",
+        f"Study {study_id} day {day_number}: Added {len(body.locations)} locations to map",
+        study_id=study_id,
+        day_number=day_number,
+    )
+    return updated_maps
+
+

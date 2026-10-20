@@ -182,6 +182,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   populateLibraryContextDropdown();
   initActiveLayers();
   renderActiveLayersControl();
+  initParseLocationsEngine();
 });
 
 // 1. Load Data Files
@@ -207,9 +208,14 @@ async function loadData() {
 function parseUrlParameters() {
   const params = new URLSearchParams(window.location.search);
   if (params.get('period')) {
-    currentEra = params.get('period');
+    const p = params.get('period').toLowerCase();
+    currentEra = (p === 'none' || p === 'no_era' || p === 'clean') ? 'none' : p;
     const eraSelect = document.getElementById('select-era');
     if (eraSelect) eraSelect.value = currentEra;
+    const badge = document.getElementById('badge-active-era');
+    if (badge) {
+      badge.textContent = currentEra === 'none' ? '🚫 No Eras (Clean Map)' : (eraSelect?.options[eraSelect.selectedIndex]?.text || currentEra);
+    }
   }
   if (params.get('book')) {
     currentBookKml = params.get('book').toLowerCase();
@@ -490,14 +496,51 @@ function addBoundariesLayers() {
     }
   }
 
-  updateRegionsFilter();
+  if (currentEra === 'none') {
+    updateEraBoundaryLayers();
+  } else {
+    updateRegionsFilter();
+  }
+}
+
+// Controls visibility of historical boundaries, roads, rivers & waters based on currentEra
+function updateEraBoundaryLayers() {
+  if (!map) return;
+  const boundaryLayers = [
+    'ancient-provinces-fill',
+    'ancient-provinces-stroke',
+    'ancient-roads-line',
+    'ancient-rivers-line',
+    'ancient-water-shelf',
+    'ancient-water-depth',
+    'ancient-water-stroke',
+    'ancient-regions-fill',
+    'ancient-regions-stroke',
+  ];
+
+  if (currentEra === 'none') {
+    boundaryLayers.forEach((id) => {
+      if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'none');
+    });
+  } else if (currentTemplate === 'ancient') {
+    boundaryLayers.forEach((id) => {
+      if (map.getLayer(id)) {
+        if (id === 'ancient-regions-fill' || id === 'ancient-regions-stroke') {
+          // Handled by updateRegionsFilter()
+        } else {
+          map.setLayoutProperty(id, 'visibility', 'visible');
+        }
+      }
+    });
+    updateRegionsFilter();
+  }
 }
 
 // Controls visibility and filter of historical regions (Off by default; user selects regions)
 function updateRegionsFilter() {
   if (!map || !map.getLayer('ancient-regions-fill') || !map.getLayer('ancient-regions-stroke')) return;
   const isAncient = currentTemplate === 'ancient';
-  if (!isAncient) {
+  if (!isAncient || currentEra === 'none') {
     map.setLayoutProperty('ancient-regions-fill', 'visibility', 'none');
     map.setLayoutProperty('ancient-regions-stroke', 'visibility', 'none');
     return;
@@ -564,12 +607,18 @@ function applyTemplate(tmplKey) {
       if (map.getLayer(id)) {
         if (id === 'ancient-regions-fill' || id === 'ancient-regions-stroke') {
           // Handled by updateRegionsFilter below
+        } else if (currentEra === 'none' && id !== 'shaded-relief-layer' && id !== 'terrain-hillshade') {
+          map.setLayoutProperty(id, 'visibility', 'none');
         } else {
           map.setLayoutProperty(id, 'visibility', 'visible');
         }
       }
     });
-    updateRegionsFilter();
+    if (currentEra === 'none') {
+      updateEraBoundaryLayers();
+    } else {
+      updateRegionsFilter();
+    }
   } else {
     mapEl.classList.remove('ancient-canvas-filter');
     badgeTemplate.className = 'status-badge modern';
@@ -854,6 +903,10 @@ function renderMarkers() {
     }
 
     // Filter by Era if specified (Pinned sites always bypass era filtering)
+    // If currentEra === 'none', hide all default unpinned sites (no data shown on map)
+    if (!isPinned && currentEra === 'none') {
+      return;
+    }
     if (!isPinned && currentEra !== 'all' && props.period !== 'all' && !props.period.includes(currentEra)) {
       return;
     }
@@ -1200,20 +1253,20 @@ function syncActiveLayersFromState() {
   // 5. Base Sites Layer (Always present at base of stack)
   const baseSitesId = 'base_sites_layer';
   const existingBase = currentLayersMap.get(baseSitesId);
-  updated.push(
-    existingBase || {
-      id: baseSitesId,
-      refId: 'base_sites',
-      type: 'base_sites',
-      name: 'Biblical Sites & Gazetteers',
-      badgeText: 'GAZETTEER',
-      badgeClass: 'badge-major',
-      icon: '🏛️',
-      sub: `${sitesGeoJSON?.features?.length || 1342} Geocoded Sites • 5-Tier Zoom Culling`,
-      visible: true,
-      isBase: true,
-    }
-  );
+  const isNoneEra = currentEra === 'none';
+  const baseLayerObj = existingBase || {
+    id: baseSitesId,
+    refId: 'base_sites',
+    type: 'base_sites',
+    icon: '🏛️',
+    isBase: true,
+  };
+  baseLayerObj.name = isNoneEra ? 'Biblical Sites & Gazetteers (Off - No Eras)' : 'Biblical Sites & Gazetteers';
+  baseLayerObj.badgeText = isNoneEra ? 'OFF' : 'GAZETTEER';
+  baseLayerObj.badgeClass = isNoneEra ? 'badge-book' : 'badge-major';
+  baseLayerObj.sub = isNoneEra ? '0 sites displayed • Clean basemap' : `${sitesGeoJSON?.features?.length || 1342} Geocoded Sites • 5-Tier Zoom Culling`;
+  baseLayerObj.visible = !isNoneEra;
+  updated.push(baseLayerObj);
 
   activeLayers = updated;
 }
@@ -2837,8 +2890,14 @@ function setupUIEventListeners() {
   document.getElementById('select-era')?.addEventListener('change', (e) => {
     currentEra = e.target.value;
     const badge = document.getElementById('badge-active-era');
-    if (badge) badge.textContent = e.target.options[e.target.selectedIndex].text;
+    if (badge) {
+      badge.textContent = currentEra === 'none' ? '🚫 No Eras (Clean Map)' : e.target.options[e.target.selectedIndex].text;
+    }
+    updateEraBoundaryLayers();
+    syncActiveLayersFromState();
     renderMarkers();
+    renderActiveLayersControl();
+    showToast(currentEra === 'none' ? '🗺️ No Eras: Clean basemap (no data shown)' : `Biblical Era: ${e.target.options[e.target.selectedIndex].text}`);
   });
 
   // Basemap Selector
@@ -2895,6 +2954,14 @@ function setupUIEventListeners() {
   // Add Site Button
   document.getElementById('btn-add-site')?.addEventListener('click', () => {
     document.getElementById('modal-add-site')?.classList.add('open');
+  });
+
+  // Add locations via Text / Verse Parser Buttons (LHS Panel and Top Header)
+  document.getElementById('btn-open-parse-modal')?.addEventListener('click', () => {
+    openParseModal();
+  });
+  document.getElementById('btn-header-add-locations')?.addEventListener('click', () => {
+    openParseModal();
   });
 
   // Reset View
@@ -3901,4 +3968,595 @@ async function loadBookKML(bookCode) {
     showToast(`⚠️ Error loading KML: ${err.message}`, 4000);
   }
 }
+
+// ==============================================================================
+// 19. Authoritative Scripture & Text Location Parser Engine
+// Parses text or Bible passages for demonyms and biblical sites,
+// allows user review via checkbox checklist, and adds selected pins to map
+// ==============================================================================
+
+const SCRIPTURE_PRESETS = {
+  acts2: `7 Utterly amazed, they asked: "Aren’t all these who are speaking Galileans? 8 Then how is it that each of us hears them in our native language? 9 Parthians, Medes and Elamites; residents of Mesopotamia, Judea and Cappadocia, Pontus and Asia, 10 Phrygia and Pamphylia, Egypt and the parts of Libya near Cyrene; visitors from Rome 11 (both Jews and converts to Judaism); Cretans and Arabs—we hear them declaring the wonders of God in our own tongues!” 12 Amazed and perplexed, they asked one another, “What does this mean?”`,
+  acts13: `1 Now in the church at Antioch there were prophets and teachers... 4 The two of them, sent on their way by the Holy Spirit, went down to Seleucia and sailed from there to Cyprus. 5 When they arrived at Salamis, they proclaimed the word of God in the Jewish synagogues... 6 They traveled through the whole island until they came to Paphos... 13 From Paphos, Paul and his companions sailed to Perga in Pamphylia... 14 From Perga they went on to Pisidian Antioch.`,
+  luke24: `13 Now that same day two of them were going to a village called Emmaus, about seven miles from Jerusalem. 14 They were talking with each other about everything that had happened... 33 They got up and returned at once to Jerusalem.`,
+  gen12: `1 The LORD had said to Abram, "Go from your country, your people and your father's household to the land I will show you... 4 So Abram went, as the LORD had told him; and Lot went with him. Abram was seventy-five years old when he set out from Harran. 5 He took his wife Sarai, his nephew Lot... and they set out for the land of Canaan, and they arrived there. 6 Abram traveled through the land as far as the site of the great tree of Moreh at Shechem... 8 From there he went on toward the hills east of Bethel and pitched his tent, with Bethel on the west and Ai on the east... 9 Then Abram set out and continued toward the Negev. 10 Now there was a famine in the land, and Abram went down to Egypt to live there for a while.`
+};
+
+const BIBLICAL_DEMONYMS = {
+  galileans: 'Galilee',
+  galilean: 'Galilee',
+  parthians: 'Parthia',
+  parthian: 'Parthia',
+  medes: 'Media',
+  mede: 'Media',
+  elamites: 'Elam',
+  elamite: 'Elam',
+  mesopotamians: 'Mesopotamia',
+  cappadocians: 'Cappadocia',
+  cretans: 'Crete',
+  cretan: 'Crete',
+  arabs: 'Arabia',
+  arab: 'Arabia',
+  arabians: 'Arabia',
+  egyptians: 'Egypt',
+  egyptian: 'Egypt',
+  cyrenians: 'Cyrene',
+  cyrenian: 'Cyrene',
+  romans: 'Rome',
+  roman: 'Rome',
+  samaritans: 'Samaria',
+  samaritan: 'Samaria',
+  ephesians: 'Ephesus',
+  corinthians: 'Corinth',
+  philippians: 'Philippi',
+  colossians: 'Colossae',
+  thessalonians: 'Thessalonica',
+  bereans: 'Berea',
+  athenians: 'Athens',
+  antiochians: 'Antioch',
+  damascenes: 'Damascus',
+  nazarenes: 'Nazareth',
+  nazarene: 'Nazareth',
+  bethlehemites: 'Bethlehem',
+  jews: 'Judea',
+  jew: 'Judea'
+};
+
+const REGIONAL_SITE_DEFAULTS = {
+  parthia: {
+    id: 'parthia',
+    name: 'Parthia',
+    ancient_name: 'Parthia (Arsacid Empire)',
+    modern_name: 'Northeastern Iran',
+    modern_country: 'Iran',
+    coordinates: [55.0, 36.0],
+    tier: 2,
+    category: 'region',
+    description: 'Ancient kingdom east of Media; homeland of the Parthian empire and diaspora pilgrims at Pentecost (Acts 2:9).'
+  },
+  media: {
+    id: 'media',
+    name: 'Media',
+    ancient_name: 'Media',
+    modern_name: 'Northwestern Iran',
+    modern_country: 'Iran',
+    coordinates: [48.5, 35.5],
+    tier: 2,
+    category: 'region',
+    description: 'Ancient Iranian realm east of Zagros Mountains; home of Medes pilgrims (Acts 2:9).'
+  },
+  elam: {
+    id: 'elam',
+    name: 'Elam',
+    ancient_name: 'Elam / Susiana',
+    modern_name: 'Khuzestan (Iran)',
+    modern_country: 'Iran',
+    coordinates: [48.5, 32.2],
+    tier: 2,
+    category: 'region',
+    description: 'Ancient civilization centered around Susa; home of Elamites at Pentecost (Acts 2:9).'
+  },
+  mesopotamia: {
+    id: 'mesopotamia',
+    name: 'Mesopotamia',
+    ancient_name: 'Aram-Naharaim / Mesopotamia',
+    modern_name: 'Iraq / Syria',
+    modern_country: 'Iraq',
+    coordinates: [43.5, 34.5],
+    tier: 2,
+    category: 'region',
+    description: 'Tigris-Euphrates river valley and fertile crescent realm (Acts 2:9).'
+  },
+  cappadocia: {
+    id: 'cappadocia',
+    name: 'Cappadocia',
+    ancient_name: 'Cappadocia',
+    modern_name: 'Central Anatolia (Turkey)',
+    modern_country: 'Turkey',
+    coordinates: [35.0, 38.6],
+    tier: 2,
+    category: 'region',
+    description: 'High plateau province in central Asia Minor (Acts 2:9, 1 Pet 1:1).'
+  },
+  pontus: {
+    id: 'pontus',
+    name: 'Pontus',
+    ancient_name: 'Pontus',
+    modern_name: 'Black Sea Coast (Turkey)',
+    modern_country: 'Turkey',
+    coordinates: [36.5, 41.0],
+    tier: 2,
+    category: 'region',
+    description: 'Northern Anatolian province bordering the Euxine (Black) Sea (Acts 2:9).'
+  },
+  asia: {
+    id: 'asia',
+    name: 'Asia',
+    ancient_name: 'Roman Province of Asia',
+    modern_name: 'Western Turkey (Aegean)',
+    modern_country: 'Turkey',
+    coordinates: [28.0, 38.5],
+    tier: 2,
+    category: 'region',
+    description: 'Roman senatorial province containing Ephesus and the Seven Churches (Acts 2:9).'
+  },
+  phrygia: {
+    id: 'phrygia',
+    name: 'Phrygia',
+    ancient_name: 'Phrygia',
+    modern_name: 'Central Anatolia (Turkey)',
+    modern_country: 'Turkey',
+    coordinates: [30.5, 39.0],
+    tier: 2,
+    category: 'region',
+    description: 'Interior Anatolian region traversed by early evangelists (Acts 2:10).'
+  },
+  pamphylia: {
+    id: 'pamphylia',
+    name: 'Pamphylia',
+    ancient_name: 'Pamphylia',
+    modern_name: 'Antalya Coast (Turkey)',
+    modern_country: 'Turkey',
+    coordinates: [31.5, 36.9],
+    tier: 2,
+    category: 'region',
+    description: 'Southern coastal plain of Asia Minor between Lycia and Cilicia (Acts 2:10, Acts 13:13).'
+  },
+  egypt: {
+    id: 'egypt',
+    name: 'Egypt',
+    ancient_name: 'Mizraim / Aegyptus',
+    modern_name: 'Nile Delta & Valley (Egypt)',
+    modern_country: 'Egypt',
+    coordinates: [31.2, 30.0],
+    tier: 1,
+    category: 'region',
+    description: 'Land of the Nile, Goshen, Alexandria, and refuge of the Holy Family (Acts 2:10).'
+  },
+  libya: {
+    id: 'libya',
+    name: 'Libya',
+    ancient_name: 'Libya / Cyrenaica',
+    modern_name: 'North Africa',
+    modern_country: 'Libya',
+    coordinates: [20.0, 32.0],
+    tier: 2,
+    category: 'region',
+    description: 'North African coastal region west of Egypt (Acts 2:10).'
+  },
+  cyrene: {
+    id: 'cyrene',
+    name: 'Cyrene',
+    ancient_name: 'Cyrene',
+    modern_name: 'Shahat (Libya)',
+    modern_country: 'Libya',
+    coordinates: [21.85, 32.82],
+    tier: 2,
+    category: 'settlement',
+    description: 'Greek colony in North Africa; homeland of Simon of Cyrene and Pentecost pilgrims (Acts 2:10).'
+  },
+  rome: {
+    id: 'rome',
+    name: 'Rome',
+    ancient_name: 'Roma',
+    modern_name: 'Rome (Italy)',
+    modern_country: 'Italy',
+    coordinates: [12.49, 41.89],
+    tier: 1,
+    category: 'settlement',
+    description: 'Imperial capital of the Roman Empire; destination of Paul (Acts 2:10, Acts 28).'
+  },
+  crete: {
+    id: 'crete',
+    name: 'Crete',
+    ancient_name: 'Creta',
+    modern_name: 'Crete (Greece)',
+    modern_country: 'Greece',
+    coordinates: [24.8, 35.2],
+    tier: 2,
+    category: 'region',
+    description: 'Large Mediterranean island; home of Cretans at Pentecost and Fair Havens (Acts 2:11, Titus 1:5).'
+  },
+  arabia: {
+    id: 'arabia_1',
+    name: 'Arabia',
+    ancient_name: 'Arabia',
+    modern_name: 'Arabian Peninsula',
+    modern_country: 'Saudi Arabia / Jordan',
+    coordinates: [38.0, 27.5],
+    tier: 2,
+    category: 'region',
+    description: 'Desert kingdom of the Nabateans and Arabs (Acts 2:11, Gal 1:17).'
+  },
+  galilee: {
+    id: 'galilee_1',
+    name: 'Galilee',
+    ancient_name: 'Galilee',
+    modern_name: 'Northern Israel',
+    modern_country: 'Israel',
+    coordinates: [35.527, 32.76],
+    tier: 1,
+    category: 'region',
+    description: 'Northern district of the Holy Land; homeland of the disciples (Acts 2:7).'
+  },
+  judea: {
+    id: 'judea_1',
+    name: 'Judea',
+    ancient_name: 'Iudaea',
+    modern_name: 'Southern Israel / West Bank',
+    modern_country: 'Israel',
+    coordinates: [35.234, 31.776],
+    tier: 1,
+    category: 'region',
+    description: 'Southern biblical province containing Jerusalem and Bethlehem (Acts 2:9).'
+  }
+};
+
+const COMMON_STOP_WORDS = new Set([
+  'in', 'on', 'at', 'to', 'for', 'of', 'by', 'as', 'an', 'a', 'or', 'and', 'the',
+  'is', 'it', 'he', 'we', 'us', 'me', 'my', 'so', 'no', 'up', 'do', 'if', 'be',
+  'all', 'one', 'two', 'who', 'how', 'then', 'them', 'these', 'those', 'what',
+  'with', 'both', 'from', 'near', 'part', 'parts', 'said', 'went', 'came', 'into'
+]);
+
+let currentParsedLocations = [];
+
+function openParseModal() {
+  const modal = document.getElementById('modal-parse-locations');
+  if (!modal) return;
+  modal.classList.add('open');
+  const textarea = document.getElementById('parse-text-input');
+  if (textarea && !textarea.value.trim()) {
+    textarea.value = SCRIPTURE_PRESETS.acts2;
+  }
+  if (textarea) textarea.focus();
+}
+window.openParseModal = openParseModal;
+
+function closeParseModal() {
+  const modal = document.getElementById('modal-parse-locations');
+  if (modal) modal.classList.remove('open');
+}
+window.closeParseModal = closeParseModal;
+
+// Parses raw text for biblical locations and demonyms
+function parseLocationsFromText(rawText) {
+  if (!rawText || !rawText.trim()) return [];
+
+  let text = rawText
+    .replace(/\[\[.*?\]\(.*?\)\]/g, ' ')
+    .replace(/\[\d+\]/g, ' ')
+    .replace(/[“”"']/g, ' ')
+    .replace(/[\n\r\t]/g, ' ');
+
+  const matches = new Map();
+
+  function addMatch(id, name, matchedWord, meta) {
+    if (!id || matches.has(id)) return;
+    matches.set(id, {
+      id,
+      name,
+      matchedWord,
+      coordinates: meta.coordinates,
+      ancient_name: meta.ancient_name || name,
+      modern_name: meta.modern_name || name,
+      modern_country: meta.modern_country || '',
+      category: meta.category || 'settlement',
+      tier: meta.tier || 2,
+      tier_name: meta.tier === 1 ? 'major' : 'regional',
+      description: meta.description || '',
+      selected: true
+    });
+  }
+
+  // 1. Scan demonyms
+  for (const [demonym, targetPlace] of Object.entries(BIBLICAL_DEMONYMS)) {
+    const regex = new RegExp(`\\b${demonym}\\b`, 'i');
+    const match = text.match(regex);
+    if (match) {
+      const targetLower = targetPlace.toLowerCase();
+      let meta = REGIONAL_SITE_DEFAULTS[targetLower];
+      let id = meta ? meta.id : targetLower;
+      if (!meta && sitesGeoJSON?.features) {
+        const feat = sitesGeoJSON.features.find(
+          (f) => f.properties.name.toLowerCase() === targetLower || f.properties.id === targetLower
+        );
+        if (feat) {
+          id = feat.properties.id;
+          meta = {
+            coordinates: feat.geometry.coordinates,
+            ancient_name: feat.properties.ancient_name,
+            modern_name: feat.properties.modern_name,
+            modern_country: feat.properties.modern_country,
+            category: feat.properties.category,
+            tier: feat.properties.tier,
+            description: feat.properties.description
+          };
+        }
+      }
+      if (meta && meta.coordinates) {
+        addMatch(id, targetPlace, `${match[0]} → ${targetPlace}`, meta);
+      }
+    }
+  }
+
+  // 2. Scan regional site defaults directly
+  for (const [key, reg] of Object.entries(REGIONAL_SITE_DEFAULTS)) {
+    const regex = new RegExp(`\\b${reg.name}\\b`, 'i');
+    const match = text.match(regex);
+    if (match) {
+      addMatch(reg.id, reg.name, match[0], reg);
+    }
+  }
+
+  // 3. Scan all 1,342 OpenBible sites in sitesGeoJSON.features
+  if (sitesGeoJSON?.features) {
+    const sortedFeatures = [...sitesGeoJSON.features].sort(
+      (a, b) => (b.properties.name || '').length - (a.properties.name || '').length
+    );
+
+    for (const feat of sortedFeatures) {
+      const p = feat.properties;
+      const rawName = p.name || '';
+      const cleanName = rawName.replace(/ \d+$/, '');
+      const lower = cleanName.toLowerCase();
+
+      if (lower.length < 3 || COMMON_STOP_WORDS.has(lower)) continue;
+
+      const regex = new RegExp(`\\b${cleanName}\\b`, 'i');
+      const match = text.match(regex);
+      if (match) {
+        addMatch(p.id, cleanName, match[0], {
+          coordinates: feat.geometry.coordinates,
+          ancient_name: p.ancient_name,
+          modern_name: p.modern_name,
+          modern_country: p.modern_country,
+          category: p.category,
+          tier: p.tier,
+          description: p.description
+        });
+      }
+    }
+  }
+
+  return Array.from(matches.values());
+}
+
+// Render parsed results checklist in the modal
+function renderParsedResultsList() {
+  const container = document.getElementById('parse-results-list');
+  const countBadge = document.getElementById('parse-count-badge');
+  const selectedCountEl = document.getElementById('parsed-selected-count');
+  const resultsSection = document.getElementById('parse-results-section');
+
+  if (!container || !resultsSection) return;
+
+  resultsSection.style.display = 'flex';
+  countBadge.textContent = currentParsedLocations.length;
+
+  if (currentParsedLocations.length === 0) {
+    container.innerHTML = `
+      <div style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.78rem;">
+        No biblical locations detected in text. Try one of the scripture presets or paste passage text with location names.
+      </div>
+    `;
+    if (selectedCountEl) selectedCountEl.textContent = '0';
+    return;
+  }
+
+  container.innerHTML = '';
+
+  currentParsedLocations.forEach((loc, idx) => {
+    const row = document.createElement('div');
+    row.className = `parse-result-row ${loc.selected ? 'selected' : ''}`;
+    row.setAttribute('data-idx', idx);
+
+    const [lng, lat] = loc.coordinates || [0, 0];
+    const badgeClass = loc.tier === 1 ? 'badge-major' : (loc.category === 'region' ? 'badge-region' : 'badge-site');
+    const badgeText = loc.tier === 1 ? 'MAJOR' : (loc.category === 'region' ? 'REGION' : 'SITE');
+
+    row.innerHTML = `
+      <input type="checkbox" class="parse-result-checkbox" ${loc.selected ? 'checked' : ''} />
+      <div class="parse-result-info">
+        <div class="parse-result-title">
+          <span class="parse-result-name">${escapeHtml(loc.name)}</span>
+          <span class="parse-result-badge ${badgeClass}">${badgeText}</span>
+          ${loc.matchedWord && loc.matchedWord !== loc.name ? `<span style="font-size: 0.65rem; color: var(--ancient-gold);">(${escapeHtml(loc.matchedWord)})</span>` : ''}
+        </div>
+        <div class="parse-result-detail">
+          ${loc.ancient_name && loc.ancient_name !== loc.name ? `<em>${escapeHtml(loc.ancient_name)}</em> &bull; ` : ''}
+          ${escapeHtml(loc.modern_name || '')} ${loc.modern_country ? `(${escapeHtml(loc.modern_country)})` : ''}
+        </div>
+      </div>
+      <span class="parse-result-coords">${lat.toFixed(2)}°N, ${lng.toFixed(2)}°E</span>
+    `;
+
+    row.addEventListener('click', (e) => {
+      if (e.target.tagName !== 'INPUT') {
+        const cb = row.querySelector('.parse-result-checkbox');
+        if (cb) cb.checked = !cb.checked;
+      }
+      const cb = row.querySelector('.parse-result-checkbox');
+      loc.selected = cb ? cb.checked : false;
+      if (loc.selected) {
+        row.classList.add('selected');
+      } else {
+        row.classList.remove('selected');
+      }
+      updateParsedSelectedCount();
+    });
+
+    container.appendChild(row);
+  });
+
+  updateParsedSelectedCount();
+}
+
+function updateParsedSelectedCount() {
+  const selCount = currentParsedLocations.filter((l) => l.selected).length;
+  const countEl = document.getElementById('parsed-selected-count');
+  if (countEl) countEl.textContent = selCount;
+  const btnAdd = document.getElementById('btn-add-parsed-to-map');
+  if (btnAdd) btnAdd.disabled = selCount === 0;
+}
+
+// Add selected locations to the map pins and active layer control
+function addSelectedParsedLocationsToMap() {
+  const selected = currentParsedLocations.filter((l) => l.selected);
+  if (selected.length === 0) {
+    showToast('⚠️ Please select at least one location to add');
+    return;
+  }
+
+  const modeRadio = document.querySelector('input[name="parse-add-mode"]:checked');
+  const mode = modeRadio ? modeRadio.value : 'append';
+  const shouldFit = document.getElementById('check-fit-after-add')?.checked ?? true;
+
+  if (mode === 'replace') {
+    pinnedSiteIds.clear();
+  }
+
+  selected.forEach((loc) => {
+    let feat = sitesGeoJSON?.features?.find((f) => f.properties.id === loc.id);
+    if (!feat && sitesGeoJSON?.features) {
+      feat = {
+        type: 'Feature',
+        properties: {
+          id: loc.id,
+          name: loc.name,
+          ancient_name: loc.ancient_name || loc.name,
+          modern_name: loc.modern_name || loc.name,
+          modern_country: loc.modern_country || '',
+          period: 'all,early_church,roman_judea',
+          biblical_region: loc.modern_country || 'Levant',
+          elevation_m: 200,
+          category: loc.category || 'settlement',
+          description: loc.description || `Biblical site identified from text: ${loc.name}`,
+          verse_count: 5,
+          verses_summary: loc.name,
+          tier: loc.tier || 2,
+          min_zoom: 2.0,
+          tier_name: loc.tier === 1 ? 'major' : 'regional',
+          is_top_10: loc.tier === 1
+        },
+        geometry: {
+          type: 'Point',
+          coordinates: loc.coordinates
+        }
+      };
+      sitesGeoJSON.features.push(feat);
+    }
+    pinnedSiteIds.add(loc.id);
+  });
+
+  try {
+    localStorage.setItem('biblestudy_map_crafter_pinned', JSON.stringify([...pinnedSiteIds]));
+  } catch (_) {}
+
+  syncActiveLayersFromState();
+  renderMarkers();
+  renderActiveLayersControl();
+  refreshSearchMatchesIfOpen();
+
+  if (shouldFit && selected.length > 0) {
+    const coords = selected.map((s) => s.coordinates).filter(Boolean);
+    if (coords.length > 0) {
+      const bounds = coords.reduce(
+        (b, c) => b.extend(c),
+        new maplibregl.LngLatBounds(coords[0], coords[0])
+      );
+      map.fitBounds(bounds, { padding: 50, maxZoom: 11, duration: 1200 });
+    }
+  }
+
+  closeParseModal();
+  showToast(`📍 Added ${selected.length} locations to map!`, 4000);
+}
+
+// Initialize all UI events for scripture/text parse modal
+function initParseLocationsEngine() {
+  document.querySelectorAll('.preset-chip-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const key = btn.getAttribute('data-preset');
+      const text = SCRIPTURE_PRESETS[key];
+      if (text) {
+        const textarea = document.getElementById('parse-text-input');
+        if (textarea) textarea.value = text;
+        currentParsedLocations = parseLocationsFromText(text);
+        renderParsedResultsList();
+      }
+    });
+  });
+
+  document.getElementById('btn-paste-clipboard')?.addEventListener('click', async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      const textarea = document.getElementById('parse-text-input');
+      if (textarea && text) {
+        textarea.value = text;
+        showToast('📋 Pasted text from clipboard');
+      }
+    } catch (_) {
+      showToast('⚠️ Could not read clipboard (check permissions)');
+    }
+  });
+
+  document.getElementById('btn-clear-parse-text')?.addEventListener('click', () => {
+    const textarea = document.getElementById('parse-text-input');
+    if (textarea) textarea.value = '';
+    currentParsedLocations = [];
+    const resultsSection = document.getElementById('parse-results-section');
+    if (resultsSection) resultsSection.style.display = 'none';
+  });
+
+  document.getElementById('btn-execute-parse')?.addEventListener('click', () => {
+    const textarea = document.getElementById('parse-text-input');
+    const text = textarea ? textarea.value : '';
+    if (!text.trim()) {
+      showToast('⚠️ Please enter or paste some text to parse');
+      return;
+    }
+    currentParsedLocations = parseLocationsFromText(text);
+    renderParsedResultsList();
+  });
+
+  document.getElementById('btn-select-all-parsed')?.addEventListener('click', () => {
+    currentParsedLocations.forEach((l) => (l.selected = true));
+    document.querySelectorAll('#parse-results-list .parse-result-checkbox').forEach((cb) => (cb.checked = true));
+    document.querySelectorAll('#parse-results-list .parse-result-row').forEach((r) => r.classList.add('selected'));
+    updateParsedSelectedCount();
+  });
+
+  document.getElementById('btn-deselect-all-parsed')?.addEventListener('click', () => {
+    currentParsedLocations.forEach((l) => (l.selected = false));
+    document.querySelectorAll('#parse-results-list .parse-result-checkbox').forEach((cb) => (cb.checked = false));
+    document.querySelectorAll('#parse-results-list .parse-result-row').forEach((r) => r.classList.remove('selected'));
+    updateParsedSelectedCount();
+  });
+
+  document.getElementById('btn-add-parsed-to-map')?.addEventListener('click', () => {
+    addSelectedParsedLocationsToMap();
+  });
+}
+
 
