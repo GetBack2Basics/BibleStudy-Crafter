@@ -98,9 +98,12 @@ const BIBLICAL_REGIONS_META = {
   'Cyprus': { category: 'Mediterranean Island', desc: 'Homeland of Barnabas, first stop on Paul journey (Acts 13:4)' },
   'Decapolis': { category: 'Hellenistic League', desc: 'Ten Hellenistic cities east of Galilee and Jordan (Matt 4:25)' },
   'Edom': { category: 'Southern Kingdom', desc: 'Mountainous realm of Esau descendants south of Dead Sea (Mount Seir)' },
+  'Egypt': { category: 'Nile Realm & Exodus', desc: 'Land of Goshen, pyramids, Nile delta, and refuge of the Holy Family (Gen 45:10, Matt 2:13)' },
   'Galatia': { category: 'Roman Province', desc: 'Central Asia Minor territory visited by Paul (Acts 16:6)' },
+  'Galilee': { category: 'Northern Tetrarchy', desc: 'Northern district around Sea of Galilee, realm of Nazareth, Capernaum, and Jesus ministry (Matt 4:15)' },
   'Gilead': { category: 'Transjordan Region', desc: 'Hilly forested region east of Jordan between Yarmuk and Arnon' },
   'Goshen': { category: 'Egyptian Land', desc: 'Fertile Nile delta region inhabited by Israelites (Gen 45:10)' },
+  'Judea': { category: 'Southern Province', desc: 'Southern biblical province containing Jerusalem, Bethlehem, and Judean Wilderness (Matt 2:1, Luke 1:5)' },
   'Lycaonia': { category: 'Anatolian District', desc: 'Region of Iconium, Lystra, and Derbe in southern Asia Minor' },
   'Lydia': { category: 'Asia Minor Realm', desc: 'Western Anatolia including Sardis and Thyatira' },
   'Macedonia': { category: 'Greek Province', desc: 'Northern Greek kingdom with Philippi, Thessalonica, and Berea' },
@@ -115,6 +118,7 @@ const BIBLICAL_REGIONS_META = {
   'Phrygia': { category: 'Central Anatolia', desc: 'Interior region traversed by Paul during mission journeys' },
   'Pisidia': { category: 'Taurus Mountain Realm', desc: 'Rugged highlands of Pisidian Antioch' },
   'Pontus': { category: 'Black Sea Province', desc: 'Northeastern Asia Minor coast; homeland of Aquila' },
+  'Samaria': { category: 'Central Hill District', desc: 'Central hill region between Judea and Galilee; capital of northern kingdom of Israel (John 4:4, Acts 8:1)' },
   'Trachonitis': { category: 'Syrian Tetrarchy', desc: 'Lava-field territory east of Golan ruled by Philip (Luke 3:1)' },
 };
 
@@ -1057,14 +1061,14 @@ function populateLibraryContextDropdown() {
     sel.innerHTML = opts;
     libraryContextSelection = 'all_books';
   } else if (activeLibraryScope === 'regions') {
-    let opts = '<option value="all_regions" selected>🗺️ All 36 Historical Kingdoms & Regions</option>';
+    let opts = '<option value="all_regions" selected>🗺️ All 40 Historical Kingdoms & Regions</option>';
     const regionNames = Object.keys(BIBLICAL_REGIONS_META).sort();
     opts += '<optgroup label="Holy Land & Transjordan">';
-    ['Canaan', 'Decapolis', 'Gilead', 'Bashan', 'Ammon', 'Moab', 'Edom', 'Philistia', 'Phoenicia'].forEach((r) => {
+    ['Galilee', 'Judea', 'Samaria', 'Canaan', 'Decapolis', 'Gilead', 'Bashan', 'Ammon', 'Moab', 'Edom', 'Philistia', 'Phoenicia'].forEach((r) => {
       if (BIBLICAL_REGIONS_META[r]) opts += `<option value="region:${r}">🗺️ ${r} (${BIBLICAL_REGIONS_META[r].category})</option>`;
     });
     opts += '</optgroup><optgroup label="Egypt, Sinai & Arabia">';
-    ['Goshen', 'Amalek', 'Midian', 'Arabah'].forEach((r) => {
+    ['Egypt', 'Goshen', 'Amalek', 'Midian', 'Arabah'].forEach((r) => {
       if (BIBLICAL_REGIONS_META[r]) opts += `<option value="region:${r}">🗺️ ${r} (${BIBLICAL_REGIONS_META[r].category})</option>`;
     });
     opts += '</optgroup><optgroup label="Syria & Mesopotamia">';
@@ -1072,7 +1076,7 @@ function populateLibraryContextDropdown() {
       if (BIBLICAL_REGIONS_META[r]) opts += `<option value="region:${r}">🗺️ ${r} (${BIBLICAL_REGIONS_META[r].category})</option>`;
     });
     opts += '</optgroup><optgroup label="Asia Minor & Roman Provinces">';
-    regionNames.filter((r) => !['Canaan', 'Decapolis', 'Gilead', 'Bashan', 'Ammon', 'Moab', 'Edom', 'Philistia', 'Phoenicia', 'Goshen', 'Amalek', 'Midian', 'Arabah', 'Aram', 'Abilene', 'Trachonitis', 'Assyria', 'Babylonia', 'Persia', 'Media'].includes(r)).forEach((r) => {
+    regionNames.filter((r) => !['Galilee', 'Judea', 'Samaria', 'Canaan', 'Decapolis', 'Gilead', 'Bashan', 'Ammon', 'Moab', 'Edom', 'Philistia', 'Phoenicia', 'Egypt', 'Goshen', 'Amalek', 'Midian', 'Arabah', 'Aram', 'Abilene', 'Trachonitis', 'Assyria', 'Babylonia', 'Persia', 'Media'].includes(r)).forEach((r) => {
       opts += `<option value="region:${r}">🗺️ ${r} (${BIBLICAL_REGIONS_META[r].category})</option>`;
     });
     opts += '</optgroup>';
@@ -1927,10 +1931,139 @@ function addFromContextSelection() {
 // ==============================================================================
 
 let currentAttributesData = null;
+let currentAttributesMode = 'keyvalue'; // 'keyvalue' | 'spreadsheet'
+let currentAttributesColumns = [];
+let currentAttributesAllRows = [];
 let currentAttributesLayerName = 'attributes';
 
+// Helper: Query sites belonging to a biblical region
+function getSitesForRegion(regName) {
+  if (!sitesGeoJSON || !sitesGeoJSON.features) return [];
+  const q = (regName || '').toLowerCase().trim();
+  return sitesGeoJSON.features.filter((f) => {
+    const p = f.properties || {};
+    const br = (p.biblical_region || '').toLowerCase();
+    const mc = (p.modern_country || '').toLowerCase();
+    const desc = (p.description || '').toLowerCase();
+    const name = (p.name || '').toLowerCase();
+
+    if (br.includes(q)) return true;
+    if (q === 'galilee' && br.includes('galilee')) return true;
+    if (q === 'judea' && (br.includes('jude') || br.includes('shephelah') || br.includes('dead sea'))) return true;
+    if (q === 'samaria' && br.includes('samaria')) return true;
+    if (q === 'moab' && br.includes('moab')) return true;
+    if (q === 'edom' && br.includes('edom')) return true;
+    if (q === 'ammon' && br.includes('ammon')) return true;
+    if (q === 'gilead' && br.includes('gilead')) return true;
+    if (q === 'bashan' && br.includes('bashan')) return true;
+    if (q === 'achaia' && (br.includes('achaia') || mc === 'greece')) return true;
+    if (q === 'macedonia' && (br.includes('macedonia') || mc === 'greece')) return true;
+    if (q === 'asia' && br.includes('asia minor')) return true;
+    if (q === 'babylonia' && br.includes('babylonia')) return true;
+    if (q === 'assyria' && (br.includes('mesopotamia') || desc.includes('assyria'))) return true;
+    if (q === 'phoenicia' && br.includes('phoenicia')) return true;
+    if (q === 'philistia' && (desc.includes('philist') || br.includes('coastal plain'))) return true;
+    if (q === 'egypt' && (br.includes('egypt') || mc === 'egypt')) return true;
+    if (q === 'canaan' && (mc === 'israel' || mc === 'jordan' || br.includes('jude') || br.includes('galilee') || br.includes('samaria'))) return true;
+    if (q === 'arabah' && (desc.includes('arabah') || br.includes('dead sea') || br.includes('negev'))) return true;
+    if (q === 'negev' && (br.includes('negev') || desc.includes('negev'))) return true;
+    if (q === 'decapolis' && (desc.includes('decapolis') || br.includes('transjordan') || br.includes('bashan'))) return true;
+    if (q === 'cyprus' && mc === 'cyprus') return true;
+    if (q === 'crete' && (desc.includes('crete') || mc === 'greece')) return true;
+    if (['bithynia', 'cappadocia', 'cilicia', 'galatia', 'lycaonia', 'lydia', 'mysia', 'pamphylia', 'phrygia', 'pisidia', 'pontus'].includes(q)) {
+      if (mc === 'turkey' || br.includes('asia minor') || desc.includes(q)) return true;
+    }
+    if (['aram', 'abilene', 'trachonitis'].includes(q)) {
+      if (mc === 'syria' || br.includes('syria') || desc.includes(q)) return true;
+    }
+    if (['persia', 'media'].includes(q)) {
+      if (mc === 'iran' || br.includes('persia') || desc.includes(q)) return true;
+    }
+    if (['amalek', 'midian'].includes(q)) {
+      if (mc === 'saudi arabia' || desc.includes(q) || br.includes('negev')) return true;
+    }
+    return false;
+  });
+}
+
+// Render a single spreadsheet row
+function renderSpreadsheetRow(rowObj, columns) {
+  let cells = '';
+  columns.forEach((col) => {
+    const val = rowObj[col];
+    if (col === '#') {
+      cells += `<td style="color: var(--text-muted); font-size: 0.72rem; width: 4%; text-align: center;">${escapeHtml(val)}</td>`;
+    } else if (col === 'Action' || col === 'Actions') {
+      cells += `<td style="text-align: center; white-space: nowrap;">${val}</td>`;
+    } else if (col === 'Coordinates' || col === 'Coords') {
+      cells += `<td><span class="attr-mono-coord">${escapeHtml(val)}</span></td>`;
+    } else if (col === 'Type') {
+      let badge = 'badge-site';
+      if (String(val).includes('Route')) badge = 'badge-major';
+      else if (String(val).includes('Area') || String(val).includes('Territory')) badge = 'badge-region';
+      cells += `<td><span class="item-badge ${badge}">${escapeHtml(val)}</span></td>`;
+    } else if (col === 'Tier') {
+      let badge = 'badge-site';
+      if (String(val).includes('1')) badge = 'badge-major';
+      cells += `<td><span class="item-badge ${badge}">${escapeHtml(val)}</span></td>`;
+    } else if (col === 'Biblical Site' || col === 'Place Name' || col === 'Region Name' || col === 'Place / Feature Name') {
+      cells += `<td style="font-weight: 600; color: #fff;">${escapeHtml(val)}</td>`;
+    } else {
+      cells += `<td>${escapeHtml(val !== undefined && val !== null ? String(val) : '')}</td>`;
+    }
+  });
+  return `<tr>${cells}</tr>`;
+}
+
+// Live Filter rows inside GIS Attributes Spreadsheet modal
+window.filterAttributesTable = function(query) {
+  const q = (query || '').toLowerCase().trim();
+  const tbody = document.getElementById('attributes-table-body');
+  const countBadge = document.getElementById('attr-modal-count-badge');
+  if (!tbody || !currentAttributesAllRows) return;
+
+  const filtered = currentAttributesAllRows.filter((rowObj) => {
+    if (!q) return true;
+    return Object.values(rowObj).some((val) => String(val).toLowerCase().includes(q));
+  });
+
+  if (countBadge) {
+    countBadge.textContent = `${filtered.length} of ${currentAttributesAllRows.length} records shown`;
+  }
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="${currentAttributesColumns.length || 6}" style="text-align: center; padding: 20px; color: var(--text-muted);">No records found matching "${escapeHtml(q)}".</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.slice(0, 300).map((row) => renderSpreadsheetRow(row, currentAttributesColumns)).join('');
+};
+
+// Map Navigation Helpers for Attributes Table rows
+window.flyToAttrCoordinate = function(lng, lat, name) {
+  closeAttributesModal();
+  if (map) {
+    map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 11), pitch: 35, duration: 1100 });
+    const feat = sitesGeoJSON?.features?.find((f) => {
+      const p = f.properties || {};
+      return p.name.toLowerCase() === (name || '').toLowerCase() ||
+        (f.geometry?.coordinates && Math.abs(f.geometry.coordinates[0] - lng) < 0.005 && Math.abs(f.geometry.coordinates[1] - lat) < 0.005);
+    });
+    if (feat) {
+      openPopupForFeature(feat);
+    }
+    showToast(`📍 Focused on: ${name}`);
+  }
+};
+
+window.flyToAttrRegion = function(regionName) {
+  closeAttributesModal();
+  flyToRegion(regionName);
+  showToast(`🗺️ Focused region: ${regionName}`);
+};
+
 // Open GIS Attributes Table Modal (Spreadsheet Data Inspector)
-window.openAttributesModal = function(layerId, event) {
+window.openAttributesModal = async function(layerId, event) {
   if (event) event.stopPropagation();
 
   const layer = activeLayers.find((l) => l.id === layerId) || { id: layerId, name: layerId, type: 'unknown' };
@@ -1940,27 +2073,375 @@ window.openAttributesModal = function(layerId, event) {
   const modal = document.getElementById('modal-attributes-table');
   const title = document.getElementById('attr-modal-title');
   const subtitle = document.getElementById('attr-modal-subtitle');
+  const countBadge = document.getElementById('attr-modal-count-badge');
+  const banner = document.getElementById('attr-modal-banner');
+  const filterInput = document.getElementById('attr-table-filter-input');
+  const thead = document.getElementById('attributes-table-head');
   const tbody = document.getElementById('attributes-table-body');
 
-  if (title) title.textContent = `Attributes: ${layer.name}`;
-  if (subtitle) subtitle.textContent = `GIS Coordinates, Biblical References & Scholarly Attributes (${layer.badgeText || 'LAYER'})`;
+  currentAttributesAllRows = [];
+  currentAttributesData = null;
 
-  const attrRows = [];
-  const attrDict = {};
+  // 1. Biblical Book Overlay Attributes Table (Spreadsheet of places & routes in book)
+  if (layer.type === 'book') {
+    currentAttributesMode = 'spreadsheet';
+    const book = BIBLICAL_BOOKS.find((b) => b.code === layer.refId);
+    const bookName = book?.name || layer.refId.toUpperCase();
 
-  function addAttr(key, val) {
-    if (val === null || val === undefined || val === '') return;
-    attrDict[key] = val;
-    attrRows.push(`
-      <tr>
-        <td class="attr-key-cell">${escapeHtml(key.replace(/[_-]/g, ' '))}</td>
-        <td>${escapeHtml(String(val))}</td>
-      </tr>
-    `);
+    if (title) title.textContent = `Attributes: Book of ${bookName}`;
+    if (subtitle) subtitle.textContent = `OpenBible Spatial Features, Routes & Scripture Context (${book?.testament || 'Biblical'} ${book?.category || 'Scripture'})`;
+
+    if (filterInput) {
+      filterInput.style.display = 'block';
+      filterInput.value = '';
+    }
+    if (banner) {
+      banner.style.display = 'block';
+      banner.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+          <div><strong>📖 Book of ${escapeHtml(bookName)}</strong> &bull; ${escapeHtml(book?.desc || '')}</div>
+          <div style="font-size: 0.72rem; color: var(--ancient-gold);">OpenBible Vector KML Spatial Feature Collection</div>
+        </div>
+      `;
+    }
+
+    // Ensure GeoJSON is fetched
+    if (!activeBookGeoJSONs[layer.refId]) {
+      if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 24px; color: var(--ancient-gold);">⏳ Downloading & parsing Book of ${escapeHtml(bookName)} KML features from OpenBible…</td></tr>`;
+      if (modal) modal.classList.add('open');
+      await loadAndOverlayBookKml(layer.refId);
+    }
+
+    const gj = activeBookGeoJSONs[layer.refId];
+    const features = gj?.features || [];
+
+    currentAttributesColumns = ['#', 'Place / Feature Name', 'Type', 'Coordinates', 'Biblical Context / Mentions', 'Action'];
+
+    if (thead) {
+      thead.innerHTML = `
+        <tr>
+          <th style="width: 4%;">#</th>
+          <th style="width: 25%;">Place / Feature Name</th>
+          <th style="width: 14%;">Type</th>
+          <th style="width: 20%;">Coordinates</th>
+          <th>Biblical Context / Mentions</th>
+          <th style="width: 12%; text-align: center;">Action</th>
+        </tr>
+      `;
+    }
+
+    const rows = features.map((f, i) => {
+      const p = f.properties || {};
+      const geomType = f.geometry?.type || 'Point';
+      let coordsText = 'No coordinates';
+      let flyBtn = '';
+      let lng = 0, lat = 0;
+
+      if (geomType === 'Point' && f.geometry?.coordinates) {
+        lng = f.geometry.coordinates[0];
+        lat = f.geometry.coordinates[1];
+        coordsText = `${lat.toFixed(4)}° N, ${lng.toFixed(4)}° E`;
+        flyBtn = `<button class="attr-fly-btn" onclick="flyToAttrCoordinate(${lng}, ${lat}, '${escapeHtml(p.name || 'Site')}')">🔍 Fly To</button>`;
+      } else if (geomType === 'LineString' && f.geometry?.coordinates) {
+        const first = f.geometry.coordinates[0];
+        if (first) {
+          lng = first[0];
+          lat = first[1];
+          flyBtn = `<button class="attr-fly-btn" onclick="flyToAttrCoordinate(${lng}, ${lat}, '${escapeHtml(p.name || 'Route')}')">🔍 Fly To</button>`;
+        }
+        coordsText = `${f.geometry.coordinates.length} route waypoints`;
+      } else if (geomType === 'Polygon' && f.geometry?.coordinates?.[0]) {
+        const first = f.geometry.coordinates[0][0];
+        if (first) {
+          lng = first[0];
+          lat = first[1];
+          flyBtn = `<button class="attr-fly-btn" onclick="flyToAttrCoordinate(${lng}, ${lat}, '${escapeHtml(p.name || 'Territory')}')">🔍 Fly To</button>`;
+        }
+        coordsText = `${f.geometry.coordinates[0].length} boundary vertices`;
+      }
+
+      let cleanDesc = (p.description || '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (!cleanDesc) cleanDesc = `Occurrence in ${bookName}`;
+
+      return {
+        '#': i + 1,
+        'Place / Feature Name': p.name || `Feature ${i + 1}`,
+        'Type': geomType === 'Point' ? '📍 Site' : (geomType === 'LineString' ? '🛣️ Route' : '🗺️ Area'),
+        'Coordinates': coordsText,
+        'Biblical Context / Mentions': cleanDesc,
+        'Action': flyBtn,
+        _lng: lng,
+        _lat: lat,
+      };
+    });
+
+    currentAttributesAllRows = rows;
+    currentAttributesData = rows;
+
+    if (countBadge) countBadge.textContent = `${rows.length} total spatial features in Book of ${bookName}`;
+    if (tbody) {
+      tbody.innerHTML = rows.length > 0
+        ? rows.map((r) => renderSpreadsheetRow(r, currentAttributesColumns)).join('')
+        : '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 16px;">No features found in book KML dataset.</td></tr>';
+    }
   }
 
-  // 1. Site Feature Attributes
-  if (layer.type === 'location') {
+  // 2. Regional Territory Layer (Spreadsheet of all biblical sites in this region)
+  else if (layer.type === 'region') {
+    currentAttributesMode = 'spreadsheet';
+    const regName = layer.refId;
+    const meta = BIBLICAL_REGIONS_META[regName] || { category: 'Historical Realm', desc: '' };
+    const feat = regionsGeoJSON?.features?.find((f) => f.properties.name.toLowerCase() === regName.toLowerCase());
+
+    if (title) title.textContent = `Attributes: ${regName} Region`;
+    if (subtitle) subtitle.textContent = `Historical Kingdom / Territory & Biblical Sites (${meta.category || 'Realm'})`;
+
+    if (filterInput) {
+      filterInput.style.display = 'block';
+      filterInput.value = '';
+    }
+
+    const sitesInRegion = getSitesForRegion(regName);
+    const polyCount = feat ? (feat.geometry.type === 'MultiPolygon' ? feat.geometry.coordinates.length : 1) : 0;
+
+    if (banner) {
+      banner.style.display = 'block';
+      banner.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+          <div>
+            <strong>🗺️ ${escapeHtml(regName)}</strong> &bull; <span style="color: var(--ancient-gold); font-weight: 600;">${escapeHtml(meta.category || 'Historical Realm')}</span> &bull; ${escapeHtml(meta.desc || 'Historical biblical region')}
+          </div>
+          <div style="font-size: 0.72rem; color: var(--text-secondary);">
+            ${feat ? `Polygon Boundary: <strong>${feat.geometry.type} (${polyCount} polygon${polyCount > 1 ? 's' : ''})</strong> &bull; ` : ''}
+            Sites in Region: <strong style="color: #fff;">${sitesInRegion.length}</strong>
+          </div>
+        </div>
+      `;
+    }
+
+    currentAttributesColumns = ['#', 'Biblical Site', 'Ancient / Modern Name', 'Coordinates', 'Elevation', 'Tier', 'Scripture Occurrences', 'Action'];
+
+    if (thead) {
+      thead.innerHTML = `
+        <tr>
+          <th style="width: 4%;">#</th>
+          <th style="width: 22%;">Biblical Site</th>
+          <th style="width: 20%;">Ancient / Modern Name</th>
+          <th style="width: 18%;">Coordinates</th>
+          <th style="width: 9%;">Elevation</th>
+          <th style="width: 9%;">Tier</th>
+          <th>Scripture Occurrences</th>
+          <th style="width: 10%; text-align: center;">Action</th>
+        </tr>
+      `;
+    }
+
+    const rows = sitesInRegion.map((f, i) => {
+      const p = f.properties || {};
+      const lng = f.geometry?.coordinates?.[0] || 0;
+      const lat = f.geometry?.coordinates?.[1] || 0;
+      const flyBtn = `<button class="attr-fly-btn" onclick="flyToAttrCoordinate(${lng}, ${lat}, '${escapeHtml(p.name)}')">🔍 Fly To</button>`;
+
+      const ancMod = [
+        p.ancient_name && p.ancient_name !== p.name ? `Anc: ${p.ancient_name}` : null,
+        p.modern_name && p.modern_name !== p.name ? `Mod: ${p.modern_name}` : null,
+        p.modern_country ? `(${p.modern_country})` : null,
+      ].filter(Boolean).join(' ') || (p.modern_country || 'Levant');
+
+      const elevText = p.elevation_m !== undefined && p.elevation_m !== null ? `${p.elevation_m}m` : '-';
+      const tierText = `Tier ${p.tier || 3}`;
+
+      return {
+        '#': i + 1,
+        'Biblical Site': p.name || `Site ${i + 1}`,
+        'Ancient / Modern Name': ancMod,
+        'Coordinates': `${lat.toFixed(4)}° N, ${lng.toFixed(4)}° E`,
+        'Elevation': elevText,
+        'Tier': tierText,
+        'Scripture Occurrences': p.verses_summary || `${p.verse_count || 1} verses`,
+        'Action': flyBtn,
+        _lng: lng,
+        _lat: lat,
+      };
+    });
+
+    currentAttributesAllRows = rows;
+    currentAttributesData = rows;
+
+    if (countBadge) countBadge.textContent = `${rows.length} biblical sites located in ${regName}`;
+    if (tbody) {
+      tbody.innerHTML = rows.length > 0
+        ? rows.map((r) => renderSpreadsheetRow(r, currentAttributesColumns)).join('')
+        : '<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 16px;">No specific sites cataloged inside this regional territory boundary.</td></tr>';
+    }
+  }
+
+  // 3. All 40 Historical Regions Master Layer
+  else if (layer.type === 'base_regions') {
+    currentAttributesMode = 'spreadsheet';
+    if (title) title.textContent = 'Attributes: Master Biblical Historical Regions';
+    if (subtitle) subtitle.textContent = 'Authoritative 40 Historical Territories & Kingdoms compiled from OpenBible GIS Dataset';
+
+    if (filterInput) {
+      filterInput.style.display = 'block';
+      filterInput.value = '';
+    }
+    if (banner) {
+      banner.style.display = 'block';
+      banner.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+          <div><strong>🗺️ Master Biblical Regions Gazetteer</strong> &bull; Complete spatial territory collection spanning Levant, Egypt, Sinai, Arabia, Mesopotamia, and Mediterranean.</div>
+        </div>
+      `;
+    }
+
+    currentAttributesColumns = ['#', 'Region Name', 'Classification', 'Historical Scope & Biblical Context', 'Polygons', 'Sites in Region', 'Action'];
+
+    if (thead) {
+      thead.innerHTML = `
+        <tr>
+          <th style="width: 4%;">#</th>
+          <th style="width: 20%;">Region Name</th>
+          <th style="width: 18%;">Classification</th>
+          <th>Historical Scope & Biblical Context</th>
+          <th style="width: 10%;">Polygons</th>
+          <th style="width: 12%;">Sites in Region</th>
+          <th style="width: 10%; text-align: center;">Action</th>
+        </tr>
+      `;
+    }
+
+    const regKeys = Object.keys(BIBLICAL_REGIONS_META).sort();
+    const rows = regKeys.map((name, i) => {
+      const meta = BIBLICAL_REGIONS_META[name] || {};
+      const feat = regionsGeoJSON?.features?.find((f) => f.properties.name.toLowerCase() === name.toLowerCase());
+      const polyCount = feat ? (feat.geometry.type === 'MultiPolygon' ? feat.geometry.coordinates.length : 1) : 0;
+      const sitesCount = getSitesForRegion(name).length;
+      const focusBtn = `<button class="attr-fly-btn" onclick="flyToAttrRegion('${escapeHtml(name)}')">🔍 Focus</button>`;
+
+      return {
+        '#': i + 1,
+        'Region Name': name,
+        'Classification': meta.category || 'Historical Realm',
+        'Historical Scope & Biblical Context': meta.desc || 'Historical biblical region.',
+        'Polygons': feat ? `${feat.geometry.type} (${polyCount})` : 'Polygon',
+        'Sites in Region': `${sitesCount} sites`,
+        'Action': focusBtn,
+      };
+    });
+
+    currentAttributesAllRows = rows;
+    currentAttributesData = rows;
+
+    if (countBadge) countBadge.textContent = `${rows.length} total historical regions cataloged`;
+    if (tbody) {
+      tbody.innerHTML = rows.map((r) => renderSpreadsheetRow(r, currentAttributesColumns)).join('');
+    }
+  }
+
+  // 4. Master Sites Gazetteer Layer
+  else if (layer.type === 'base_sites') {
+    currentAttributesMode = 'spreadsheet';
+    const totalSites = sitesGeoJSON?.features?.length || 1342;
+    if (title) title.textContent = 'Attributes: Master Biblical Sites Gazetteer';
+    if (subtitle) subtitle.textContent = `All ${totalSites} Geocoded Biblical Sites (OpenBible.info Comprehensive Gazetteer)`;
+
+    if (filterInput) {
+      filterInput.style.display = 'block';
+      filterInput.value = '';
+    }
+    if (banner) {
+      banner.style.display = 'block';
+      banner.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+          <div><strong>🏛️ Master Biblical Sites Gazetteer</strong> &bull; 5-tier zoom culling matrix with elevations and scripture concordances.</div>
+          <div style="font-size: 0.72rem; color: var(--ancient-gold);">Use search filter above to find any of the ${totalSites} places</div>
+        </div>
+      `;
+    }
+
+    currentAttributesColumns = ['#', 'Site Name', 'Biblical Region', 'Country', 'Coordinates', 'Elevation', 'Tier', 'Verse Citations', 'Action'];
+
+    if (thead) {
+      thead.innerHTML = `
+        <tr>
+          <th style="width: 4%;">#</th>
+          <th style="width: 20%;">Site Name</th>
+          <th style="width: 16%;">Biblical Region</th>
+          <th style="width: 12%;">Country</th>
+          <th style="width: 16%;">Coordinates</th>
+          <th style="width: 8%;">Elev.</th>
+          <th style="width: 8%;">Tier</th>
+          <th>Verse Citations</th>
+          <th style="width: 8%; text-align: center;">Action</th>
+        </tr>
+      `;
+    }
+
+    const allFeatures = sitesGeoJSON?.features || [];
+    const rows = allFeatures.map((f, i) => {
+      const p = f.properties || {};
+      const lng = f.geometry?.coordinates?.[0] || 0;
+      const lat = f.geometry?.coordinates?.[1] || 0;
+      const flyBtn = `<button class="attr-fly-btn" onclick="flyToAttrCoordinate(${lng}, ${lat}, '${escapeHtml(p.name)}')">🔍 Fly To</button>`;
+
+      return {
+        '#': i + 1,
+        'Site Name': p.name || `Site ${i + 1}`,
+        'Biblical Region': p.biblical_region || 'Levant',
+        'Country': p.modern_country || '',
+        'Coordinates': `${lat.toFixed(4)}° N, ${lng.toFixed(4)}° E`,
+        'Elevation': p.elevation_m !== undefined && p.elevation_m !== null ? `${p.elevation_m}m` : '-',
+        'Tier': `Tier ${p.tier || 3}`,
+        'Verse Citations': p.verses_summary || `${p.verse_count || 1} verses`,
+        'Action': flyBtn,
+        _lng: lng,
+        _lat: lat,
+      };
+    });
+
+    currentAttributesAllRows = rows;
+    currentAttributesData = rows;
+
+    if (countBadge) countBadge.textContent = `${rows.length} total sites in master gazetteer (showing first 150)`;
+    if (tbody) {
+      tbody.innerHTML = rows.slice(0, 150).map((r) => renderSpreadsheetRow(r, currentAttributesColumns)).join('');
+    }
+  }
+
+  // 5. Individual Site Location Feature (Key-Value Record Inspector)
+  else {
+    currentAttributesMode = 'keyvalue';
+    if (filterInput) filterInput.style.display = 'none';
+    if (banner) banner.style.display = 'none';
+    if (countBadge) countBadge.textContent = 'Individual Site GIS Record';
+
+    if (thead) {
+      thead.innerHTML = `
+        <tr>
+          <th style="width: 28%;">Attribute</th>
+          <th>Value</th>
+        </tr>
+      `;
+    }
+
+    const attrRows = [];
+    const attrDict = {};
+
+    function addAttr(key, val) {
+      if (val === null || val === undefined || val === '') return;
+      attrDict[key] = val;
+      attrRows.push(`
+        <tr>
+          <td class="attr-key-cell">${escapeHtml(key.replace(/[_-]/g, ' '))}</td>
+          <td>${escapeHtml(String(val))}</td>
+        </tr>
+      `);
+    }
+
     const feat = sitesGeoJSON?.features?.find((f) => f.properties.id === layer.refId) || layer.feature;
     if (feat) {
       const p = feat.properties;
@@ -1993,60 +2474,17 @@ window.openAttributesModal = function(layerId, event) {
       addAttr('Photo Credit', p.photo_credit);
       addAttr('Photo License', p.photo_license);
       addAttr('Historical Description', p.description);
+    } else {
+      addAttr('Layer Identifier', layer.id);
+      addAttr('Layer Name', layer.name);
+      addAttr('Layer Type', layer.type);
     }
-  }
-  // 2. Regional Boundary Attributes
-  else if (layer.type === 'region') {
-    const meta = BIBLICAL_REGIONS_META[layer.refId] || {};
-    const feat = regionsGeoJSON?.features?.find((f) => f.properties.name === layer.refId);
-    addAttr('Region Name', layer.refId);
-    addAttr('Classification', meta.category || 'Biblical Realm');
-    addAttr('Historical Scope', meta.desc);
-    if (feat) {
-      addAttr('Geometry Type', feat.geometry?.type || 'Polygon');
-      if (feat.properties?.fill_color) addAttr('Cartographic Fill', feat.properties.fill_color);
-      if (feat.geometry?.coordinates) {
-        const count = feat.geometry.type === 'MultiPolygon' ? feat.geometry.coordinates.length : 1;
-        addAttr('Boundary Polygons', count);
-      }
-    }
-  }
-  // 3. Biblical Book Overlay Attributes
-  else if (layer.type === 'book') {
-    const book = BIBLICAL_BOOKS.find((b) => b.code === layer.refId);
-    const gj = activeBookGeoJSONs[layer.refId];
-    addAttr('Book Name', book?.name || layer.refId);
-    addAttr('Testament', book?.testament || 'Biblical');
-    addAttr('Category', book?.category || 'Scripture');
-    addAttr('Summary', book?.desc);
-    if (gj && gj.features) {
-      addAttr('OpenBible KML Features', gj.features.length);
-      const points = gj.features.filter((f) => f.geometry.type === 'Point').length;
-      const lines = gj.features.filter((f) => f.geometry.type.includes('Line')).length;
-      const polys = gj.features.filter((f) => f.geometry.type.includes('Polygon')).length;
-      addAttr('KML Breakdown', `${points} sites, ${lines} route paths, ${polys} territories`);
-    }
-  }
-  // 4. Base Sites Gazetteer
-  else if (layer.type === 'base_sites') {
-    addAttr('Layer Title', 'Master Biblical Sites Gazetteer');
-    addAttr('Total Ingested Sites', sitesGeoJSON?.features?.length || 1342);
-    addAttr('Authority Source', 'OpenBible.info Comprehensive Geocoding Dataset');
-    addAttr('Zoom Culling Architecture', '5-Tier Priority Matrix (World Hubs to Villages)');
-    addAttr('Coordinate Reference', 'WGS 84 (EPSG:4326)');
-  }
-  // 5. Base Regions Layer
-  else if (layer.type === 'base_regions') {
-    addAttr('Layer Title', 'Master Biblical Historical Regions');
-    addAttr('Total Regions & Kingdoms', 36);
-    addAttr('Coverage', 'Levant, Sinai, Mesopotamia, Anatolia, Greece, Rome');
-    addAttr('Authority Source', 'OpenBible.info Regional Boundaries & Polygons');
-  }
 
-  currentAttributesData = attrDict;
+    currentAttributesData = attrDict;
 
-  if (tbody) {
-    tbody.innerHTML = attrRows.length > 0 ? attrRows.join('') : '<tr><td colspan="2" style="text-align: center; color: var(--text-muted);">No attributes available for this layer.</td></tr>';
+    if (tbody) {
+      tbody.innerHTML = attrRows.length > 0 ? attrRows.join('') : '<tr><td colspan="2" style="text-align: center; color: var(--text-muted); padding: 16px;">No attributes available for this layer.</td></tr>';
+    }
   }
 
   if (modal) modal.classList.add('open');
@@ -2070,12 +2508,28 @@ function copyAttributesJson() {
 // Export layer attributes as CSV spreadsheet
 function exportAttributesCsv() {
   if (!currentAttributesData) return;
-  const rows = [['Attribute', 'Value']];
-  for (const [k, v] of Object.entries(currentAttributesData)) {
-    const cleanKey = `"${String(k).replace(/"/g, '""')}"`;
-    const cleanVal = `"${String(v).replace(/"/g, '""')}"`;
-    rows.push([cleanKey, cleanVal]);
+  let rows = [];
+
+  if (currentAttributesMode === 'spreadsheet' && Array.isArray(currentAttributesData) && currentAttributesColumns.length > 0) {
+    const exportCols = currentAttributesColumns.filter((c) => c !== 'Action' && c !== 'Actions');
+    rows.push(exportCols.map((c) => `"${c.replace(/"/g, '""')}"`));
+
+    currentAttributesData.forEach((rowObj) => {
+      const row = exportCols.map((c) => {
+        const val = rowObj[c] !== undefined && rowObj[c] !== null ? String(rowObj[c]) : '';
+        return `"${val.replace(/"/g, '""')}"`;
+      });
+      rows.push(row);
+    });
+  } else {
+    rows.push(['"Attribute"', '"Value"']);
+    for (const [k, v] of Object.entries(currentAttributesData)) {
+      const cleanKey = `"${String(k).replace(/"/g, '""')}"`;
+      const cleanVal = `"${String(v).replace(/"/g, '""')}"`;
+      rows.push([cleanKey, cleanVal]);
+    }
   }
+
   const csvContent = 'data:text/csv;charset=utf-8,' + rows.map((e) => e.join(',')).join('\n');
   const encodedUri = encodeURI(csvContent);
   const link = document.createElement('a');
@@ -2505,6 +2959,10 @@ function setupUIEventListeners() {
 
   document.getElementById('btn-export-attributes-csv')?.addEventListener('click', () => {
     exportAttributesCsv();
+  });
+
+  document.getElementById('attr-table-filter-input')?.addEventListener('input', (e) => {
+    filterAttributesTable(e.target.value);
   });
 
   // Add Custom Site Form Submit

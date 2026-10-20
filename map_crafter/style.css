@@ -778,6 +778,31 @@ body {
   text-transform: capitalize;
 }
 
+.attr-fly-btn {
+  background: rgba(212, 163, 115, 0.15);
+  border: 1px solid rgba(212, 163, 115, 0.35);
+  color: var(--ancient-gold);
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 0.70rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.18s ease;
+}
+
+.attr-fly-btn:hover {
+  background: var(--ancient-gold);
+  color: #0f141c;
+}
+
+.attr-mono-coord {
+  font-family: monospace;
+  font-size: 0.73rem;
+  color: #38bdf8;
+  white-space: nowrap;
+}
+
 /* Metadata & Scholarly Dossier Modal */
 .metadata-modal-body {
   padding: 14px 18px;

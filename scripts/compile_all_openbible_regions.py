@@ -11,6 +11,7 @@ import urllib.request
 BASE_URL = "https://raw.githubusercontent.com/openbibleinfo/Bible-Geocoding-Data/main"
 
 FAMOUS_REGIONS = [
+    "Galilee 1", "Judea 1", "Samaria 2", "Egypt",
     "Ammon", "Moab 1", "Edom", "Philistia", "Phoenicia", "Aram", "Gilead 1", "Bashan",
     "Assyria", "Babylonia", "Persia", "Media", "Achaia", "Macedonia", "Cyprus", "Crete",
     "Arabah", "Decapolis", "Amalek", "Midian", "Canaan", "Abilene", "Galatia", "Bithynia",
