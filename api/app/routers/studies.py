@@ -257,12 +257,10 @@ def list_studies(user: Optional[User] = Depends(get_current_user_optional),
                 session: Session = Depends(get_session)) -> list[StudyOut]:
     if user is not None:
         rows = session.exec(
-            select(Study).where((Study.user_id == user.id) | (Study.user_id == None)).order_by(Study.id.desc())
+            select(Study).where(Study.user_id == user.id).order_by(Study.id.desc())
         ).all()
     else:
-        rows = session.exec(
-            select(Study).where(Study.user_id == None).order_by(Study.id.desc())
-        ).all()
+        rows = []
     return [_to_out(s, session) for s in rows]
 
 

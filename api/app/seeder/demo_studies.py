@@ -106,17 +106,12 @@ def clear_demo_studies(session: Session, demo_user_id: int | None = None, target
     
     count = len(studies)
     for study in studies:
-        day_ids = [d.id for d in study.days if d.id is not None]
-        if day_ids:
-            placeholders = ",".join(str(i) for i in day_ids)
-            session.exec(text(f"DELETE FROM day_passage WHERE study_day_id IN ({placeholders})"))
-            session.exec(text(f"DELETE FROM asset WHERE study_day_id IN ({placeholders})"))
-        for d in study.days:
-            session.delete(d)
         session.delete(study)
     
     if demo_user_id is not None:
-        session.exec(text(f"DELETE FROM asset WHERE user_id = {demo_user_id}"))
+        user_assets = session.exec(select(Asset).where(Asset.user_id == demo_user_id)).all()
+        for a in user_assets:
+            session.delete(a)
     session.commit()
     return count
 

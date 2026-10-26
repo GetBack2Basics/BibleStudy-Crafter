@@ -80,12 +80,11 @@ def test_user_cannot_see_others_studies(anon_client):
     ra = _register(anon_client, email="b@example.com").json()
     tb = ra["access_token"]
 
-    # A creates a study (stub LLM not needed for 202; background task may fail
-    # but the row is created). We just confirm the create returns 202 and the
-    # study is owned by A.
-    study = anon_client.post("/api/studies",
-                             json={"topic": "Peace", "minutes_per_day": 15, "total_days": 3},
-                             headers={"Authorization": f"Bearer {ta}"})
+    from unittest.mock import patch
+    with patch("app.routers.studies._build_outline_and_day1"):
+        study = anon_client.post("/api/studies",
+                                 json={"topic": "Peace", "minutes_per_day": 15, "total_days": 3},
+                                 headers={"Authorization": f"Bearer {ta}"})
     assert study.status_code == 202
     sid = study.json()["study_id"]
 
@@ -131,7 +130,7 @@ def test_demo_account_login_and_normalization(anon_client):
     assert data2["user"]["email"] == "demo@biblestudy.local"
 
 
-def test_demo_account_copies_coreagc_study(anon_client):
+def test_demo_account_isolated_and_blank_by_default(anon_client):
     from app.db import get_engine, ensure_demo_account
     from sqlmodel import Session, select
     from app.models import User, Study, StudyDay, DayPassage, Asset
@@ -203,22 +202,28 @@ def test_demo_account_copies_coreagc_study(anon_client):
         session.add(asset)
         session.commit()
 
-    # Now ensure demo account runs
+    # Now ensure demo account runs (does not auto-copy other users' studies)
     ensure_demo_account()
 
-    # Demo logs in and gets their studies
+    # Demo logs in and gets their studies: should be isolated and blank
     r = anon_client.post("/api/auth/login", json={"email": "demo", "password": "demo123"})
     assert r.status_code == 200
     token = r.json()["access_token"]
-    demo_id = r.json()["user"]["id"]
 
     studies_res = anon_client.get("/api/studies", headers={"Authorization": f"Bearer {token}"})
     assert studies_res.status_code == 200
     studies = studies_res.json()
-    assert len(studies) >= 1
-    demo_study = next((s for s in studies if s["topic"] == "Faith and Hope"), None)
-    assert demo_study is not None
-    assert demo_study["title"] == "Faith and Hope Study"
-    assert demo_study["id"] != orig_study_id
+    assert len(studies) == 0
+
+    # Core user logs in and their private study is intact
+    r_core = anon_client.post("/api/auth/login", json={"email": "coreagc@gmail.com", "password": "corea123"})
+    assert r_core.status_code == 200
+    core_token = r_core.json()["access_token"]
+
+    core_studies_res = anon_client.get("/api/studies", headers={"Authorization": f"Bearer {core_token}"})
+    assert core_studies_res.status_code == 200
+    core_studies = core_studies_res.json()
+    assert len(core_studies) == 1
+    assert core_studies[0]["id"] == orig_study_id
 
 

@@ -34,13 +34,7 @@ def create_all() -> None:
 
 
 def ensure_schema() -> None:
-    """Idempotent column migrations for an already-running DB.
-
-    create_all() only creates missing TABLES, it does not ALTER existing ones,
-    so new columns added to existing models must be added here. SQLite tests get
-    the columns from create_all (models are registered), so we only run the ALTER
-    path on Postgres. Every statement uses IF NOT EXISTS / guard clauses.
-    """
+    """Idempotent column migrations for an already-running Postgres DB."""
     engine = get_engine()
     if engine.dialect.name != "postgresql":
         return
@@ -48,8 +42,10 @@ def ensure_schema() -> None:
     stmts = [
         "ALTER TABLE study ADD COLUMN IF NOT EXISTS history_json jsonb",
         "ALTER TABLE study ADD COLUMN IF NOT EXISTS verse_pool jsonb",
+        "ALTER TABLE study ADD COLUMN IF NOT EXISTS updated_at timestamp with time zone DEFAULT NOW()",
         "ALTER TABLE study_day ADD COLUMN IF NOT EXISTS notes jsonb",
         "ALTER TABLE study_day ADD COLUMN IF NOT EXISTS discussions_json jsonb",
+        "ALTER TABLE study_day ADD COLUMN IF NOT EXISTS updated_at timestamp with time zone DEFAULT NOW()",
         "ALTER TABLE day_passage ADD COLUMN IF NOT EXISTS source_reflections jsonb",
         "ALTER TABLE day_passage ADD COLUMN IF NOT EXISTS verse_notes jsonb",
         "ALTER TABLE user_account ADD COLUMN IF NOT EXISTS role varchar(20) DEFAULT 'MEMBER'",
@@ -62,6 +58,7 @@ def ensure_schema() -> None:
         "ALTER TABLE asset ADD COLUMN IF NOT EXISTS style_preset varchar(60) DEFAULT ''",
         "ALTER TABLE asset ADD COLUMN IF NOT EXISTS is_active boolean DEFAULT true",
         "ALTER TABLE asset ADD COLUMN IF NOT EXISTS meta_json jsonb",
+        "ALTER TABLE event ADD COLUMN IF NOT EXISTS user_id integer",
     ]
     with engine.connect() as conn:
         for sql in stmts:
@@ -79,8 +76,33 @@ def ensure_schema() -> None:
         pass
 
 
-def ensure_demo_account() -> None:
-    """Ensure demo user (demo / demo123) exists and has a copy of a study."""
+def rebuild_database(seed_demo: bool = False) -> None:
+    """Clear out and rebuild the entire database from scratch with clean schema & seed data."""
+    import app.models  # noqa: F401
+    engine = get_engine()
+
+    # 1. Drop all tables
+    SQLModel.metadata.drop_all(engine)
+
+    # 2. Create clean tables from registered SQLModel metadata
+    SQLModel.metadata.create_all(engine)
+
+    # 3. Ensure schema (for postgres dialect if any specific extensions)
+    ensure_schema()
+
+    # 4. Seed canon books & base translations
+    from app.seeder.seed_bible import ensure_books
+    from app.services.bible_service import ensure_translations
+    with Session(engine) as session:
+        ensure_books(session)
+        ensure_translations(session)
+
+    # 5. Ensure demo account exists (WITHOUT auto-seeding studies unless requested)
+    ensure_demo_account(seed_study=seed_demo)
+
+
+def ensure_demo_account(seed_study: bool = False) -> None:
+    """Ensure demo user (demo / demo123) exists and is active."""
     from sqlalchemy import func
     from sqlmodel import select
     from app.models import User, Study, StudyDay, DayPassage, Asset
@@ -113,115 +135,13 @@ def ensure_demo_account() -> None:
                 session.commit()
                 session.refresh(demo_user)
 
-            # 2. Check if demo user already has any studies
-            existing_study = session.exec(
-                select(Study).where(Study.user_id == demo_user.id)
-            ).first()
-
-            if existing_study is None:
-                source_study = None
-                core_user = session.exec(
-                    select(User).where(func.lower(User.email) == "coreagc@gmail.com")
+            # 2. Only seed/copy studies if explicitly requested
+            if seed_study:
+                existing_study = session.exec(
+                    select(Study).where(Study.user_id == demo_user.id)
                 ).first()
-                if core_user:
-                    source_study = session.exec(
-                        select(Study).where(Study.user_id == core_user.id).order_by(Study.created_at.desc())
-                    ).first()
 
-                if source_study is None:
-                    source_study = session.exec(
-                        select(Study).where(Study.user_id != demo_user.id).order_by(Study.created_at.desc())
-                    ).first()
-
-                if source_study is None:
-                    source_study = session.exec(
-                        select(Study).order_by(Study.created_at.desc())
-                    ).first()
-
-                if source_study is not None:
-                    new_study = Study(
-                        user_id=demo_user.id,
-                        topic=source_study.topic,
-                        title=source_study.title or source_study.topic,
-                        minutes_per_day=source_study.minutes_per_day,
-                        total_days=source_study.total_days,
-                        tradition=source_study.tradition,
-                        imagery_policy=source_study.imagery_policy,
-                        primary_translation=source_study.primary_translation,
-                        status=source_study.status,
-                        outline_json=source_study.outline_json,
-                        history_json=source_study.history_json,
-                        verse_pool=source_study.verse_pool,
-                        error=source_study.error,
-                    )
-                    session.add(new_study)
-                    session.commit()
-                    session.refresh(new_study)
-
-                    old_days = session.exec(
-                        select(StudyDay).where(StudyDay.study_id == source_study.id).order_by(StudyDay.day_number)
-                    ).all()
-
-                    for old_day in old_days:
-                        new_day = StudyDay(
-                            study_id=new_study.id,
-                            day_number=old_day.day_number,
-                            title=old_day.title,
-                            theme=old_day.theme,
-                            est_minutes=old_day.est_minutes,
-                            status=old_day.status,
-                            blocks_json=old_day.blocks_json,
-                            context_summary=old_day.context_summary,
-                            notes=old_day.notes,
-                            discussions_json=old_day.discussions_json,
-                        )
-                        session.add(new_day)
-                        session.commit()
-                        session.refresh(new_day)
-
-                        passages = session.exec(
-                            select(DayPassage).where(DayPassage.study_day_id == old_day.id).order_by(DayPassage.order)
-                        ).all()
-                        for p in passages:
-                            new_p = DayPassage(
-                                study_day_id=new_day.id,
-                                ref=p.ref,
-                                translation=p.translation,
-                                text=p.text,
-                                order=p.order,
-                                rationale=p.rationale,
-                                highlights=p.highlights,
-                                source_reflections=p.source_reflections,
-                                verse_notes=p.verse_notes,
-                                is_primary=p.is_primary,
-                            )
-                            session.add(new_p)
-
-                        assets = session.exec(
-                            select(Asset).where(Asset.study_day_id == old_day.id)
-                        ).all()
-                        for a in assets:
-                            new_a = Asset(
-                                user_id=demo_user.id,
-                                study_day_id=new_day.id,
-                                kind=a.kind,
-                                provider=a.provider,
-                                model=a.model,
-                                prompt=a.prompt,
-                                file_path=a.file_path,
-                                media_type=a.media_type,
-                                content=a.content,
-                                cost_usd=a.cost_usd,
-                                status=a.status,
-                                style_preset=a.style_preset,
-                                is_active=a.is_active,
-                                meta_json=a.meta_json,
-                                error=a.error,
-                            )
-                            session.add(new_a)
-
-                        session.commit()
-                else:
+                if existing_study is None:
                     from app.seeder.demo_studies import seed_demo_studies
                     seed_demo_studies(session, demo_user.id)
     except Exception as exc:  # noqa: BLE001
