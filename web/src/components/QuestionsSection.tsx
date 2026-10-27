@@ -133,9 +133,10 @@ export default function QuestionsSection({
               disabled={isAIRefining}
               onClick={() => onAIRefineQuestions("Generate 3-4 deep reflection and discussion questions grounded in today's scripture.")}
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-secondary text-on-secondary text-xs font-semibold shadow-sm hover:brightness-110 active:scale-95 disabled:opacity-50 transition-all cursor-pointer"
+              title="Generate reflection questions with AI"
             >
               <span className="material-symbols-outlined text-[16px] animate-pulse">sparkles</span>
-              <span>{isAIRefining ? 'Generating Questions…' : 'Generate Reflection Questions with AI'}</span>
+              <span>{isAIRefining ? 'Generating…' : 'Generate Questions'}</span>
             </button>
           )}
           {onQuestionsChange && (
@@ -319,9 +320,11 @@ export default function QuestionsSection({
             disabled={isAIRefining}
             onClick={() => onAIRefineQuestions("Generate 3-4 fresh, practical reflection and discussion questions grounded in today's scripture and commentary.")}
             className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface hover:text-primary border border-outline-variant/30 text-xs font-medium cursor-pointer transition-colors disabled:opacity-50"
+            title="Refine reflection questions with AI"
           >
             <span className="material-symbols-outlined text-[14px]">sparkles</span>
-            <span>{isAIRefining ? 'Regenerating…' : 'Refine Questions with AI'}</span>
+            <span className="hidden sm:inline">{isAIRefining ? 'Regenerating…' : 'Refine Questions with AI'}</span>
+            <span className="sm:hidden">{isAIRefining ? 'Regenerating…' : 'Refine'}</span>
           </button>
         </div>
       )}

@@ -364,8 +364,8 @@ export default function App() {
 
           {/* Right: Action toolbar (Audio, Typography, Bookmark, Theme, Avatar) */}
           <div className="flex items-center justify-end gap-1 min-w-[80px]">
-            {/* Typography settings */}
-            <div className="relative">
+            {/* Typography settings (hidden on mobile, visible on sm+) */}
+            <div className="relative hidden sm:block">
               <button
                 type="button"
                 onClick={() => setShowTypographyMenu(!showTypographyMenu)}
@@ -415,13 +415,13 @@ export default function App() {
               </span>
             </button>
 
-            {/* Help / Guide button */}
+            {/* Help / Guide button (desktop only; mobile has help in bottom nav) */}
             <button
               type="button"
               onClick={() => setIsHelpOpen(true)}
               title="How to Use BibleStudy-Crafter (Visual Guide)"
               aria-label="How to Use Guide"
-              className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-full text-on-surface-variant hover:text-on-surface active:bg-surface-container transition-colors cursor-pointer"
+              className="hidden sm:flex min-h-[40px] min-w-[40px] items-center justify-center rounded-full text-on-surface-variant hover:text-on-surface active:bg-surface-container transition-colors cursor-pointer"
             >
               <span className="material-symbols-outlined text-[20px]">help_outline</span>
             </button>
@@ -471,9 +471,10 @@ export default function App() {
             to={studyTitle?.dayNum ? `/study/${window.location.pathname.split('/')[2]}/day/${studyTitle.dayNum}` : '/'}
             className="min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-0.5 transition-colors text-primary font-semibold"
             aria-label="Scripture Reading"
+            title="Scripture Reading"
           >
             <span className="material-symbols-outlined text-[22px]">menu_book</span>
-            <span className="font-caption-caps text-caption-caps capitalize">Read</span>
+            <span className="hidden sm:inline font-caption-caps text-caption-caps capitalize">Read</span>
           </Link>
           <button
             type="button"
@@ -482,10 +483,11 @@ export default function App() {
               if (el) el.scrollIntoView({ behavior: 'smooth' })
             }}
             className="min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-0.5 text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer"
-            aria-label="Reflection"
+            aria-label="Personal Reflections & Notes"
+            title="Reflect"
           >
             <span className="material-symbols-outlined text-[22px]">edit_note</span>
-            <span className="font-caption-caps text-caption-caps capitalize">Reflect</span>
+            <span className="hidden sm:inline font-caption-caps text-caption-caps capitalize">Reflect</span>
           </button>
           <button
             type="button"
@@ -495,9 +497,10 @@ export default function App() {
             }}
             className="min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-0.5 text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer"
             aria-label="Voices Discussion"
+            title="Discuss"
           >
             <span className="material-symbols-outlined text-[22px]">forum</span>
-            <span className="font-caption-caps text-caption-caps capitalize">Discuss</span>
+            <span className="hidden sm:inline font-caption-caps text-caption-caps capitalize">Discuss</span>
           </button>
 
           {/* Voice Synthesizer / Audio Reader Icon in Footer */}
@@ -549,7 +552,7 @@ export default function App() {
                 </span>
               )}
             </div>
-            <span className="font-caption-caps text-caption-caps capitalize">
+            <span className="hidden sm:inline font-caption-caps text-caption-caps capitalize">
               {audioState.isRendering ? 'Loading' : audioState.isPlaying ? 'Pause' : 'Listen'}
             </span>
           </button>
@@ -558,18 +561,20 @@ export default function App() {
             to="/"
             className="min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-0.5 text-on-surface-variant hover:text-on-surface transition-colors"
             aria-label="Library"
+            title="My Studies Library"
           >
             <span className="material-symbols-outlined text-[22px]">local_library</span>
-            <span className="font-caption-caps text-caption-caps capitalize">Library</span>
+            <span className="hidden sm:inline font-caption-caps text-caption-caps capitalize">Library</span>
           </Link>
           <button
             type="button"
             onClick={() => setIsHelpOpen(true)}
             className="min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-0.5 text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer"
             aria-label="How to Use & Help"
+            title="Visual Guide & Help"
           >
             <span className="material-symbols-outlined text-[22px]">help_outline</span>
-            <span className="font-caption-caps text-caption-caps capitalize">Help</span>
+            <span className="hidden sm:inline font-caption-caps text-caption-caps capitalize">Help</span>
           </button>
         </div>
       </nav>
@@ -1065,24 +1070,24 @@ function StudyDetail() {
         </div>
 
         {/* Global Expand All / Collapse All controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={expandAllDays}
-            className="h-[30px] px-3 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center gap-1.5 text-xs font-medium transition-all active:scale-95 cursor-pointer shadow-2xs border border-outline-variant/20"
+            className="h-8 w-8 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center justify-center transition-all active:scale-95 cursor-pointer shadow-2xs border border-outline-variant/20"
             title="Expand all days in this study"
+            aria-label="Expand all days"
           >
-            <span className="material-symbols-outlined text-[16px] text-primary">unfold_more</span>
-            <span>Expand All</span>
+            <span className="material-symbols-outlined text-[18px] text-primary">unfold_more</span>
           </button>
           <button
             type="button"
             onClick={collapseAllDays}
-            className="h-[30px] px-3 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center gap-1.5 text-xs font-medium transition-all active:scale-95 cursor-pointer shadow-2xs border border-outline-variant/20"
+            className="h-8 w-8 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center justify-center transition-all active:scale-95 cursor-pointer shadow-2xs border border-outline-variant/20"
             title="Collapse all days including the current day"
+            aria-label="Collapse all days"
           >
-            <span className="material-symbols-outlined text-[16px] text-primary">unfold_less</span>
-            <span>Collapse All</span>
+            <span className="material-symbols-outlined text-[18px] text-primary">unfold_less</span>
           </button>
         </div>
       </div>
@@ -1653,11 +1658,11 @@ function DayCard({
                 <button
                   type="button"
                   onClick={() => handleSetOpen(false)}
-                  className="h-[28px] px-3 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center gap-1 font-label-nav text-label-nav transition-colors active:scale-95 cursor-pointer shadow-xs border border-outline-variant/20"
+                  className="h-7 w-7 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center justify-center transition-colors active:scale-95 cursor-pointer shadow-xs border border-outline-variant/20"
                   title={`Collapse Day ${day.day_number}`}
+                  aria-label={`Collapse Day ${day.day_number}`}
                 >
-                  <span className="material-symbols-outlined text-[15px]">expand_less</span>
-                  <span>Collapse Day</span>
+                  <span className="material-symbols-outlined text-[16px]">expand_less</span>
                 </button>
                 <button
                   type="button"
@@ -2012,47 +2017,43 @@ function DraftEditor({
         >
           {memoryVerseText.startsWith('“') ? memoryVerseText : `“${memoryVerseText}”`}
         </blockquote>
-        {/* Micro Action Toolbar (28px height buttons) */}
+        {/* Micro Action Toolbar (Icon-only buttons with hover tooltips) */}
         <div className="flex items-center gap-1.5 pt-1 flex-wrap">
           {onPlaySection && (
             <button
               type="button"
               id="read-aloud-memory-verse-btn"
               onClick={() => onPlaySection('scripture')}
-              className={`h-7 px-2.5 rounded-full flex items-center gap-1 active:scale-95 transition-all cursor-pointer ${
+              className={`h-7 w-7 rounded-full flex items-center justify-center active:scale-95 transition-all cursor-pointer ${
                 isPlayingAudio && playingSection === 'scripture'
                   ? 'bg-primary text-on-primary shadow-xs animate-pulse'
                   : 'bg-surface-container hover:bg-surface-container-high text-on-surface'
               }`}
               title={isPlayingAudio && playingSection === 'scripture' ? 'Pause scripture narration' : 'Listen to scripture reading'}
+              aria-label={isPlayingAudio && playingSection === 'scripture' ? 'Pause scripture narration' : 'Listen to scripture reading'}
             >
-              <span className="material-symbols-outlined text-[14px]">
+              <span className="material-symbols-outlined text-[15px]">
                 {isPlayingAudio && playingSection === 'scripture' ? 'graphic_eq' : 'volume_up'}
-              </span>
-              <span className="font-label-nav text-label-nav font-medium">
-                {isPlayingAudio && playingSection === 'scripture' ? 'Playing' : 'Listen'}
               </span>
             </button>
           )}
           <button
             type="button"
             onClick={toggleMemoryVerseHighlight}
-            className={`h-7 px-2.5 rounded-full flex items-center gap-1 active:scale-95 transition-all cursor-pointer ${
+            className={`h-7 w-7 rounded-full flex items-center justify-center active:scale-95 transition-all cursor-pointer ${
               memoryVerseHighlighted
                 ? 'bg-primary text-on-primary shadow-xs'
                 : 'bg-surface-container hover:bg-surface-container-high text-on-surface'
             }`}
             title={memoryVerseHighlighted ? 'Remove highlight' : 'Highlight memory verse'}
+            aria-label={memoryVerseHighlighted ? 'Remove highlight' : 'Highlight memory verse'}
           >
             <span
-              className={`material-symbols-outlined text-[14px] ${
+              className={`material-symbols-outlined text-[15px] ${
                 memoryVerseHighlighted ? 'text-on-primary' : 'text-primary'
               }`}
             >
               brush
-            </span>
-            <span className="font-label-nav text-label-nav font-medium">
-              {memoryVerseHighlighted ? 'Highlighted' : 'Highlight'}
             </span>
           </button>
           <button
@@ -2061,25 +2062,28 @@ function DraftEditor({
               const el = document.getElementById('selah-reflection-card')
               if (el) el.scrollIntoView({ behavior: 'smooth' })
             }}
-            className="h-7 px-2.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center gap-1 active:scale-95 transition-transform cursor-pointer"
+            className="h-7 w-7 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center justify-center active:scale-95 transition-transform cursor-pointer"
+            title="Add or view reflection note"
+            aria-label="Add reflection note"
           >
-            <span className="material-symbols-outlined text-[14px]">edit_note</span>
-            <span className="font-label-nav text-label-nav font-medium">Note</span>
+            <span className="material-symbols-outlined text-[15px]">edit_note</span>
           </button>
           <button
             type="button"
             onClick={handleCopyMemoryVerse}
-            className="h-7 px-2.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center gap-1 active:scale-95 transition-transform cursor-pointer"
+            className="h-7 w-7 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center justify-center active:scale-95 transition-transform cursor-pointer"
+            title={copiedMemoryVerse ? 'Copied!' : 'Copy memory verse'}
+            aria-label={copiedMemoryVerse ? 'Copied!' : 'Copy memory verse'}
           >
-            <span className="material-symbols-outlined text-[14px]">content_copy</span>
-            <span className="font-label-nav text-label-nav font-medium">
-              {copiedMemoryVerse ? 'Copied!' : 'Copy'}
+            <span className="material-symbols-outlined text-[15px]">
+              {copiedMemoryVerse ? 'check' : 'content_copy'}
             </span>
           </button>
           <button
             type="button"
             onClick={handleCopyMemoryVerse}
             aria-label="Share Verse"
+            title="Share verse"
             className="h-7 w-7 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center justify-center active:scale-95 transition-transform ml-auto cursor-pointer"
           >
             <span className="material-symbols-outlined text-[15px]">ios_share</span>
@@ -2514,24 +2518,24 @@ function DayDetail() {
         </div>
 
         {/* Global Expand All / Collapse All controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={expandAllDays}
-            className="h-[30px] px-3 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center gap-1.5 text-xs font-medium transition-all active:scale-95 cursor-pointer shadow-2xs border border-outline-variant/20"
+            className="h-8 w-8 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center justify-center transition-all active:scale-95 cursor-pointer shadow-2xs border border-outline-variant/20"
             title="Expand all days in this study"
+            aria-label="Expand all days"
           >
-            <span className="material-symbols-outlined text-[16px] text-primary">unfold_more</span>
-            <span>Expand All</span>
+            <span className="material-symbols-outlined text-[18px] text-primary">unfold_more</span>
           </button>
           <button
             type="button"
             onClick={collapseAllDays}
-            className="h-[30px] px-3 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center gap-1.5 text-xs font-medium transition-all active:scale-95 cursor-pointer shadow-2xs border border-outline-variant/20"
+            className="h-8 w-8 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center justify-center transition-all active:scale-95 cursor-pointer shadow-2xs border border-outline-variant/20"
             title="Collapse all days including the current day"
+            aria-label="Collapse all days"
           >
-            <span className="material-symbols-outlined text-[16px] text-primary">unfold_less</span>
-            <span>Collapse All</span>
+            <span className="material-symbols-outlined text-[18px] text-primary">unfold_less</span>
           </button>
         </div>
       </div>
@@ -3763,17 +3767,17 @@ function PassageEditor({
               type="button"
               id="read-aloud-scripture"
               onClick={onReadAloud}
-              className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-ui-label-xs font-semibold transition-all cursor-pointer shadow-xs ${
+              className={`h-7 w-7 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-xs ${
                 isReading
                   ? 'bg-primary text-on-primary animate-pulse'
                   : 'bg-surface-container hover:bg-surface-container-high text-on-surface hover:text-primary border border-outline-variant/30'
               }`}
               title={isReading ? 'Pause scripture narration' : 'Listen to scripture reading'}
+              aria-label={isReading ? 'Pause scripture narration' : 'Listen to scripture reading'}
             >
               <span className="material-symbols-outlined text-[15px]">
                 {isReading ? 'graphic_eq' : 'volume_up'}
               </span>
-              <span>{isReading ? 'Playing' : 'Listen'}</span>
             </button>
           )}
           {list.length === 0 && hasFallback && !busy && (
@@ -3815,31 +3819,33 @@ function PassageEditor({
             <div className="flex items-center justify-between pb-1 border-b border-outline-variant/10">
               <div className="flex items-center gap-2">
                 <VerseExpander refText={p.ref} />
-                <span className="text-caption-caps font-caption-caps px-2 py-0.5 rounded bg-secondary-container text-on-secondary-container font-mono">
-                  {p.translation || primaryTranslation}
-                </span>
+                {/* Unified version switcher dropdown with chevron (no redundant static badge) */}
+                <div className="relative inline-flex items-center">
+                  <select
+                    className="text-[11px] font-mono font-medium py-0.5 pl-2 pr-5 rounded-md border border-outline-variant/30 bg-secondary-container text-on-secondary-container focus:outline-none focus:ring-1 focus:ring-primary shadow-xs transition-colors cursor-pointer appearance-none"
+                    value={p.translation || primaryTranslation}
+                    onChange={(e) => switchVersion(p.id, e.target.value)}
+                    title="Choose Bible Version"
+                    aria-label="Choose Bible Version"
+                  >
+                    {all.map((t) => (
+                      <option key={t.code} value={t.code}>
+                        {t.code}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="material-symbols-outlined text-[13px] text-on-secondary-container/70 absolute right-1 pointer-events-none">
+                    expand_more
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center gap-1">
-                {/* Version switcher */}
-                <select
-                  className="text-[11px] font-mono font-medium py-1 px-2 rounded-md border border-outline-variant/30 bg-surface-container text-on-surface focus:outline-none focus:ring-1 focus:ring-primary shadow-xs transition-colors cursor-pointer"
-                  value={p.translation || primaryTranslation}
-                  onChange={(e) => switchVersion(p.id, e.target.value)}
-                  title="Choose Bible Version"
-                >
-                  {all.map((t) => (
-                    <option key={t.code} value={t.code}>
-                      {t.code}
-                    </option>
-                  ))}
-                </select>
-
+              <div className="flex items-center gap-0.5">
                 <button onClick={() => reorder(p.id, -1)} disabled={i === 0}
-                  className="btn-ghost px-1.5 disabled:opacity-30" title="Move Up"><I name="arrow_upward" cls="text-[16px]" /></button>
+                  className="btn-ghost px-1.5 disabled:opacity-30" title="Move Up" aria-label="Move Up"><I name="arrow_upward" cls="text-[16px]" /></button>
                 <button onClick={() => reorder(p.id, 1)} disabled={i === list.length - 1}
-                  className="btn-ghost px-1.5 disabled:opacity-30" title="Move Down"><I name="arrow_downward" cls="text-[16px]" /></button>
+                  className="btn-ghost px-1.5 disabled:opacity-30" title="Move Down" aria-label="Move Down"><I name="arrow_downward" cls="text-[16px]" /></button>
                 <button onClick={() => remove(p.id)}
-                  className="btn-ghost px-1.5 text-error" title="Remove Passage"><I name="close" cls="text-[16px]" /></button>
+                  className="btn-ghost px-1.5 text-error" title="Remove Passage" aria-label="Remove Passage"><I name="close" cls="text-[16px]" /></button>
               </div>
             </div>
 
@@ -3871,25 +3877,24 @@ function PassageEditor({
               <button
                 type="button"
                 onClick={() => handleHighlightPassage(p)}
-                className={`h-7 px-2.5 rounded-full flex items-center gap-1 active:scale-95 transition-all cursor-pointer ${
+                className={`h-7 w-7 rounded-full flex items-center justify-center active:scale-95 transition-all cursor-pointer ${
                   p.highlights && p.highlights.length > 0
-                    ? 'bg-primary/10 text-primary hover:bg-primary/20'
+                    ? 'bg-primary text-on-primary shadow-xs'
                     : 'bg-surface-container hover:bg-surface-container-high text-on-surface'
                 }`}
                 title="Highlight selected phrase or full passage"
+                aria-label="Highlight selected phrase or full passage"
               >
-                <span className="material-symbols-outlined text-[14px] text-primary">brush</span>
-                <span className="font-label-nav text-label-nav font-medium">Highlight</span>
+                <span className={`material-symbols-outlined text-[14px] ${p.highlights && p.highlights.length > 0 ? 'text-on-primary' : 'text-primary'}`}>brush</span>
               </button>
               <button
                 type="button"
                 onClick={() => handleCopyPassage(p)}
-                className="h-7 px-2.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center gap-1 active:scale-95 transition-transform cursor-pointer"
+                className="h-7 w-7 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center justify-center active:scale-95 transition-transform cursor-pointer"
+                title={copiedPid === p.id ? 'Copied!' : 'Copy passage'}
+                aria-label={copiedPid === p.id ? 'Copied!' : 'Copy passage'}
               >
-                <span className="material-symbols-outlined text-[14px]">content_copy</span>
-                <span className="font-label-nav text-label-nav font-medium">
-                  {copiedPid === p.id ? 'Copied!' : 'Copy'}
-                </span>
+                <span className="material-symbols-outlined text-[14px]">{copiedPid === p.id ? 'check' : 'content_copy'}</span>
               </button>
             </div>
 

@@ -81,7 +81,7 @@ export default function StatusDock() {
   }
 
   return (
-    <div className="fixed bottom-3 right-3 z-50 font-mono text-[11px] shadow-2xl flex flex-col items-end">
+    <div className="fixed bottom-[70px] sm:bottom-3 right-3 z-40 font-mono text-[11px] shadow-2xl flex flex-col items-end">
       {open && (
         <div className="mb-2 w-[340px] sm:w-[440px] max-h-80 overflow-y-auto rounded-2xl border border-slate-700 bg-slate-900/95 p-3 backdrop-blur shadow-2xl animate-fade-in">
           <div className="mb-2 flex items-center justify-between border-b border-slate-800 pb-2 text-slate-400">

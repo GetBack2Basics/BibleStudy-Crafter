@@ -160,38 +160,38 @@ export default function PrayerSection({
                   type="button"
                   id={`read-aloud-${title.toLowerCase().replace(/\s+/g, '-')}`}
                   onClick={onReadAloud}
-                  className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-ui-label-xs font-semibold transition-all cursor-pointer shadow-xs ${
+                  className={`h-7 w-7 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-xs ${
                     isReading
                       ? 'bg-primary text-on-primary animate-pulse'
                       : 'bg-surface-container hover:bg-surface-container-high text-on-surface hover:text-primary border border-outline-variant/30'
                   }`}
                   title={isReading ? 'Pause narration' : `Listen to ${title.toLowerCase()}`}
+                  aria-label={isReading ? 'Pause narration' : `Listen to ${title.toLowerCase()}`}
                 >
                   <span className="material-symbols-outlined text-[15px]">
                     {isReading ? 'graphic_eq' : 'volume_up'}
                   </span>
-                  <span>{isReading ? 'Playing' : 'Listen'}</span>
                 </button>
               )}
               <button
                 type="button"
                 onClick={handleStartEdit}
-                className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-ui-label-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 transition-all cursor-pointer shadow-xs"
+                className="h-7 w-7 rounded-full flex items-center justify-center text-primary bg-primary/10 hover:bg-primary/20 transition-all cursor-pointer shadow-xs"
                 title={`Edit ${title.toLowerCase()}`}
+                aria-label={`Edit ${title.toLowerCase()}`}
               >
                 <span className="material-symbols-outlined text-[15px]">edit</span>
-                <span>Edit</span>
               </button>
               <button
                 type="button"
                 onClick={handleCopy}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-ui-label-xs text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors cursor-pointer"
-                title={`Copy ${title.toLowerCase()}`}
+                className="h-7 w-7 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors cursor-pointer"
+                title={copied ? 'Copied!' : `Copy ${title.toLowerCase()}`}
+                aria-label={copied ? 'Copied!' : `Copy ${title.toLowerCase()}`}
               >
                 <span className="material-symbols-outlined text-[15px]">
                   {copied ? 'check' : 'content_copy'}
                 </span>
-                <span>{copied ? 'Copied!' : 'Copy'}</span>
               </button>
             </>
           ) : (
@@ -355,7 +355,8 @@ export default function PrayerSection({
                 ) : (
                   <>
                     <span className="material-symbols-outlined text-[16px]">sparkles</span>
-                    <span>Refine with AI</span>
+                    <span className="hidden sm:inline">Refine with AI</span>
+                    <span className="sm:hidden">Refine</span>
                   </>
                 )}
               </button>
