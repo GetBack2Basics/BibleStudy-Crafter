@@ -1294,7 +1294,7 @@ function DayCard({
     }
   }
 
-  const [refiningSection, setRefiningSection] = useState<'opening_prayer' | 'commentary' | 'closing_prayer' | null>(null)
+  const [refiningSection, setRefiningSection] = useState<'opening_prayer' | 'commentary' | 'closing_prayer' | 'questions' | null>(null)
 
   const handleSaveSection = async (section: 'opening_prayer' | 'commentary' | 'closing_prayer', newText: string) => {
     const current = draftRef.current
@@ -1309,7 +1309,7 @@ function DayCard({
     }
   }
 
-  const handleAIRefineSection = async (section: 'opening_prayer' | 'commentary' | 'closing_prayer', inst: string, sel?: string | null) => {
+  const handleAIRefineSection = async (section: 'opening_prayer' | 'commentary' | 'closing_prayer' | 'questions', inst: string, sel?: string | null) => {
     setRefiningSection(section)
     setErr(null)
     try {
@@ -1919,8 +1919,8 @@ function DraftEditor({
   onOpenPromptCrafter?: (initialTab?: 'presets' | 'assistant' | 'playground' | 'gallery') => void
   onRefreshAssets?: () => void
   onSaveSection?: (section: 'opening_prayer' | 'commentary' | 'closing_prayer', newText: string) => Promise<void> | void
-  onAIRefineSection?: (section: 'opening_prayer' | 'commentary' | 'closing_prayer', instruction: string, selection?: string | null) => Promise<void> | void
-  refiningSection?: 'opening_prayer' | 'commentary' | 'closing_prayer' | null
+  onAIRefineSection?: (section: 'opening_prayer' | 'commentary' | 'closing_prayer' | 'questions', instruction: string, selection?: string | null) => Promise<void> | void
+  refiningSection?: 'opening_prayer' | 'commentary' | 'closing_prayer' | 'questions' | null
   primaryTranslation?: string
   onPlaySection?: (section: string) => void
   playingSection?: string | null
@@ -2243,7 +2243,8 @@ function DraftEditor({
             editing={editing}
             onQuestionsChange={(q) => setField({ questions: q })}
             onReadAloud={() => onPlaySection?.('questions')}
-            isReading={Boolean(isPlayingAudio && playingSection === 'questions')}
+            onAIRefineQuestions={onAIRefineSection ? ((inst) => onAIRefineSection('questions', inst || "Generate thoughtful reflection questions.")) : undefined}
+            isAIRefining={refiningSection === 'questions'}
           />
         </CollapsibleSection>
       </div>

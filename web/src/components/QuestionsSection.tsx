@@ -8,6 +8,8 @@ interface QuestionsSectionProps {
   onQuestionsChange?: (updatedQuestions: string[]) => void
   onReadAloud?: () => void
   isReading?: boolean
+  onAIRefineQuestions?: (instruction?: string) => Promise<void> | void
+  isAIRefining?: boolean
 }
 
 export default function QuestionsSection({
@@ -18,6 +20,8 @@ export default function QuestionsSection({
   onQuestionsChange,
   onReadAloud,
   isReading = false,
+  onAIRefineQuestions,
+  isAIRefining = false,
 }: QuestionsSectionProps) {
   const safeQuestions = Array.isArray(questions) ? questions : []
 
@@ -112,9 +116,40 @@ export default function QuestionsSection({
 
   if (!questions || questions.length === 0) {
     return (
-      <p className="text-ui-label-sm text-on-surface-variant">
-        No reflection questions for this day.
-      </p>
+      <div className="py-6 px-4 rounded-xl border border-dashed border-outline-variant/40 bg-surface-container-high/30 flex flex-col items-center justify-center text-center gap-3">
+        <span className="material-symbols-outlined text-[32px] text-tertiary/70">help</span>
+        <div className="max-w-md">
+          <p className="font-ui-label-md text-on-surface font-semibold mb-1">
+            No reflection questions for this day
+          </p>
+          <p className="text-on-surface-variant/80 text-xs">
+            Generate thought-provoking reflection questions grounded in today's scripture and commentary to guide personal application.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+          {onAIRefineQuestions && (
+            <button
+              type="button"
+              disabled={isAIRefining}
+              onClick={() => onAIRefineQuestions("Generate 3-4 deep reflection and discussion questions grounded in today's scripture.")}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-secondary text-on-secondary text-xs font-semibold shadow-sm hover:brightness-110 active:scale-95 disabled:opacity-50 transition-all cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[16px] animate-pulse">sparkles</span>
+              <span>{isAIRefining ? 'Generating Questions…' : 'Generate Reflection Questions with AI'}</span>
+            </button>
+          )}
+          {onQuestionsChange && (
+            <button
+              type="button"
+              onClick={() => onQuestionsChange([""])}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-outline-variant/50 bg-surface-container-high text-on-surface text-xs font-medium hover:bg-surface-container-highest transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[16px]">add</span>
+              <span>Add Question Manually</span>
+            </button>
+          )}
+        </div>
+      </div>
     )
   }
 
@@ -275,6 +310,21 @@ export default function QuestionsSection({
           )
         })}
       </div>
+
+      {onAIRefineQuestions && (
+        <div className="pt-2 flex items-center justify-between text-xs text-on-surface-variant/80 border-t border-outline-variant/15 mt-3">
+          <span>Need deeper or alternative questions?</span>
+          <button
+            type="button"
+            disabled={isAIRefining}
+            onClick={() => onAIRefineQuestions("Generate 3-4 fresh, practical reflection and discussion questions grounded in today's scripture and commentary.")}
+            className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface hover:text-primary border border-outline-variant/30 text-xs font-medium cursor-pointer transition-colors disabled:opacity-50"
+          >
+            <span className="material-symbols-outlined text-[14px]">sparkles</span>
+            <span>{isAIRefining ? 'Regenerating…' : 'Refine Questions with AI'}</span>
+          </button>
+        </div>
+      )}
     </div>
   )
 }

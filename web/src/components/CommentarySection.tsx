@@ -372,9 +372,38 @@ export default function CommentarySection({
               {commentary ? (
                 <CommentaryContent text={commentary} />
               ) : (
-                <p className="text-on-surface-variant/70 italic text-sm">
-                  No commentary entered yet. Use the AI Update box below or click Edit to write commentary.
-                </p>
+                <div className="py-6 px-4 rounded-xl border border-dashed border-outline-variant/40 bg-surface-container-high/30 flex flex-col items-center justify-center text-center gap-3">
+                  <span className="material-symbols-outlined text-[32px] text-primary/60">menu_book</span>
+                  <div className="max-w-md">
+                    <p className="font-ui-label-md text-on-surface font-semibold mb-1">
+                      No commentary entered yet
+                    </p>
+                    <p className="text-on-surface-variant/80 text-xs">
+                      Generate thoughtful, scripture-grounded theological commentary with AI or click Edit to write your own exposition.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                    {onAIRefine && (
+                      <button
+                        type="button"
+                        disabled={isAIRefining}
+                        onClick={() => onAIRefine("Write comprehensive, inspiring theological commentary grounded in today's scripture passages.")}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-on-primary text-xs font-semibold shadow-sm hover:brightness-110 active:scale-95 disabled:opacity-50 transition-all cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-[16px] animate-pulse">sparkles</span>
+                        <span>{isAIRefining ? 'Generating Commentary…' : 'Generate Commentary with AI'}</span>
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleStartEdit}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-outline-variant/50 bg-surface-container-high text-on-surface text-xs font-medium hover:bg-surface-container-highest transition-colors cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">edit</span>
+                      <span>Write Commentary</span>
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           )}

@@ -135,7 +135,7 @@ def ensure_demo_account(seed_study: bool = False) -> None:
                 session.commit()
                 session.refresh(demo_user)
 
-            # 2. Only seed/copy studies if explicitly requested
+            # 2. Seed demo studies if requested and no studies exist for demo user
             if seed_study:
                 existing_study = session.exec(
                     select(Study).where(Study.user_id == demo_user.id)
@@ -264,6 +264,41 @@ def upgrade_existing_studies() -> None:
 
             session.commit()
             print(f"[DB] Upgraded {updated_count} study days to the new discussions & sentiment format")
+
+            # Ensure every study day has non-empty commentary and reflection questions
+            fixed_blocks_count = 0
+            for day in days:
+                bj = dict(day.blocks_json or {})
+                changed_blocks = False
+
+                comm = bj.get("commentary")
+                if not comm or not str(comm).strip():
+                    theme = day.theme or day.title or "Today's Scripture"
+                    bj["commentary"] = (
+                        f"In today's study on **{theme}**, God calls us to observe how His truth speaks directly to our present circumstances. "
+                        "As we reflect on these verses, notice how divine faithfulness meets human need in times of testing and renewal.\n\n"
+                        "Take a moment to ponder what the Spirit is highlighting in your heart today, and how this passage guides your next faithful step."
+                    )
+                    changed_blocks = True
+
+                qs = bj.get("questions")
+                if not qs or not isinstance(qs, list) or len(qs) == 0:
+                    theme = day.theme or day.title or "this passage"
+                    bj["questions"] = [
+                        f"What stands out most to you about God's character and promises in {theme}?",
+                        f"How does the truth in this day's scriptures challenge your current attitude or perspective?",
+                        "What is one practical, tangible action step you can take today in response to what God is showing you?"
+                    ]
+                    changed_blocks = True
+
+                if changed_blocks:
+                    day.blocks_json = bj
+                    session.add(day)
+                    fixed_blocks_count += 1
+
+            if fixed_blocks_count > 0:
+                session.commit()
+                print(f"[DB] Backfilled commentary and questions for {fixed_blocks_count} study days")
     except Exception as exc:  # noqa: BLE001
         print(f"[DB] upgrade_existing_studies notice: {exc}")
 

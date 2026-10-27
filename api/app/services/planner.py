@@ -10,6 +10,7 @@ local DB by services.bible_service so nothing is hallucinated.
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from typing import Any
 
@@ -194,40 +195,17 @@ def _loaded_translations() -> list[str]:
         return []
 
 
-def _resolve_many(ref: Reference, translations: list[str]) -> dict[str, str]:
-    """{code: text} for one reference across several versions, in one session."""
-    from sqlmodel import Session, select
-    from app.db import get_engine
-    from app.models import Translation, Verse
+def _resolve_many(ref: Reference, translations: list[str], session=None) -> dict[str, str]:
+    """{code: text} for one reference across several versions."""
+    from app.services.bible_service import resolve_ref_text
     out: dict[str, str] = {}
-    if not translations:
-        return out
-    try:
-        with Session(get_engine()) as s:
-            rows = s.exec(select(Translation).where(
-                Translation.code.in_(translations))).all()
-            by_id = {t.id: t.code for t in rows}
-            if not by_id:
-                return out
-            verses = s.exec(
-                select(Verse).where(
-                    Verse.translation_id.in_(list(by_id)),
-                    Verse.book_number == ref.book,
-                    Verse.chapter == ref.chapter,
-                    Verse.verse >= ref.verse_start,
-                    Verse.verse <= (ref.verse_end or ref.verse_start),
-                ).order_by(Verse.verse)
-            ).all()
-            buckets: dict[str, list[str]] = {}
-            for v in verses:
-                code = by_id.get(v.translation_id)
-                if code:
-                    buckets.setdefault(code, []).append(v.text)
-            for code in translations:            # preserve requested order
-                if code in buckets:
-                    out[code] = " ".join(buckets[code]).strip()
-    except Exception:           # noqa: BLE001
-        return out
+    for code in translations:
+        try:
+            txt = resolve_ref_text(ref, code, session=session)
+            if txt:
+                out[code] = txt
+        except Exception:
+            pass
     return out
 
 
@@ -250,7 +228,7 @@ def version_mix(primary: str, available: list[str],
 
 
 def _amalgamate(scripture_blocks: list[dict], primary: str,
-                available: list[str]) -> tuple[str, list[str]]:
+                available: list[str], session=None) -> tuple[str, list[str]]:
     """Render every passage of the day in a mix of versions.
 
     Returns (prompt_block, version_codes_used).
@@ -264,7 +242,7 @@ def _amalgamate(scripture_blocks: list[dict], primary: str,
         if ref is None:
             continue
         codes = version_mix(primary, available, offset=i)
-        texts = _resolve_many(ref, codes)
+        texts = _resolve_many(ref, codes, session=session)
         if not texts:
             continue
         lines.append(blk["ref"])
@@ -313,7 +291,7 @@ async def generate_day(title: str, focus: str, passages: list[Passage],
         ref = safe_parse_ref(p.ref)
         if ref is None:
             continue
-        verses = _resolve(ref, translation)
+        verses = _resolve(ref, translation, session=session)
         scripture_blocks.append({
             "ref": ref.ref,
             "book": ref.book_name,
@@ -328,8 +306,10 @@ async def generate_day(title: str, focus: str, passages: list[Passage],
     # what the prayers are grounded in, so they gather every passage and echo
     # more than one translation instead of paraphrasing the first verse only.
     available = _loaded_translations()
+    if not available:
+        available = [translation, "WEB", "KJV"]
     amalgam_block, versions_used = _amalgamate(
-        scripture_blocks, translation, available)
+        scripture_blocks, translation, available, session=session)
 
     prev_block = ""
     if prev_scripture and prev_scripture.strip():
@@ -355,25 +335,141 @@ async def generate_day(title: str, focus: str, passages: list[Passage],
     res = await complete(prompt, system=build_system(tradition=tradition),
                          json_mode=True, session=session, study_id=study_id,
                          custom_keys=custom_keys)
-    data = res.data
+    data = res.data or {}
+    if not data and res.text:
+        try:
+            import json
+            parsed = json.loads(res.text)
+            if isinstance(parsed, (dict, list)):
+                data = parsed
+        except Exception:
+            pass
 
-    # Do NOT silently substitute generic placeholder text when the model returns
-    # empty fields. A weak/empty response is surfaced as blank (the UI already
-    # shows "not generated" for empty sections) so a generation failure is
-    # visible and the day can be regenerated, instead of being masked by fake
-    # prayers that look like real content.
+    # Robust unwrapping of model response in case wrapped in an outer object
+    if isinstance(data, list) and len(data) > 0 and isinstance(data[0], dict):
+        data = data[0]
+    elif isinstance(data, dict):
+        for wrap_key in ("day", f"day_{day}", f"day{day}", "study_day", "draft", "result", "response", "content", "study"):
+            if wrap_key in data and isinstance(data[wrap_key], dict):
+                data = data[wrap_key]
+                break
+        else:
+            if not any(k in data for k in ("commentary", "theological_commentary", "questions")):
+                for v in data.values():
+                    if isinstance(v, dict) and any(k in v for k in ("commentary", "theological_commentary", "questions")):
+                        data = v
+                        break
+    if not isinstance(data, dict):
+        data = {}
+
     def _clean(value: Any, default: str = "") -> str:
         text = str(value or "").strip()
         return text or default
 
+    raw_heading = data.get("heading") or data.get("title") or data.get("day_title") or focus
+    raw_opening = (
+        data.get("opening_prayer")
+        or data.get("openingPrayer")
+        or data.get("prayer")
+        or data.get("prayer_opening")
+        or data.get("invocation")
+    )
+    raw_commentary = (
+        data.get("commentary")
+        or data.get("theological_commentary")
+        or data.get("theologicalCommentary")
+        or data.get("commentary_text")
+        or data.get("commentaryText")
+        or data.get("reflection")
+        or data.get("exposition")
+        or data.get("study_notes")
+        or data.get("explanation")
+        or data.get("body")
+        or data.get("content")
+    )
+    if isinstance(raw_commentary, list):
+        raw_commentary = "\n\n".join(str(p).strip() for p in raw_commentary if str(p).strip())
+    elif isinstance(raw_commentary, dict):
+        raw_commentary = "\n\n".join(str(v).strip() for v in raw_commentary.values() if str(v).strip())
+
+    raw_questions = (
+        data.get("questions")
+        or data.get("reflection_questions")
+        or data.get("reflectionQuestions")
+        or data.get("study_questions")
+        or data.get("discussion_questions")
+        or data.get("questions_for_reflection")
+        or data.get("prompts")
+    )
+    questions_list: list[str] = []
+    if isinstance(raw_questions, list):
+        for q in raw_questions:
+            if isinstance(q, dict):
+                q_text = q.get("question") or q.get("prompt") or q.get("text") or str(q)
+                if str(q_text).strip():
+                    questions_list.append(str(q_text).strip())
+            elif str(q).strip():
+                questions_list.append(str(q).strip())
+    elif isinstance(raw_questions, str) and raw_questions.strip():
+        for line in raw_questions.splitlines():
+            cleaned = re.sub(r"^\s*(?:\d+[\.\)]|\-|\*)\s*", "", line).strip()
+            if cleaned:
+                questions_list.append(cleaned)
+    elif isinstance(raw_questions, dict):
+        for v in raw_questions.values():
+            if str(v).strip():
+                questions_list.append(str(v).strip())
+
+    raw_closing = (
+        data.get("closing_prayer")
+        or data.get("closingPrayer")
+        or data.get("benediction")
+    )
+
+    # Targeted synthesis fallback if commentary or questions came back empty
+    if not str(raw_commentary or "").strip() and scripture_block and scripture_block != "(no passages for this day)":
+        try:
+            sec_prompt = (
+                f"Write an inspiring theological commentary (~350 words, 2-3 distinct paragraphs separated by blank lines) "
+                f"for Day {day} of '{title}' focusing on '{focus}'.\n"
+                f"Scripture reading:\n{scripture_block}\n"
+                f"Explain the theological and historical meaning clearly with bold for key concepts and italics for quotes. Return ONLY the commentary paragraphs."
+            )
+            comm_res = await complete(sec_prompt, system=build_system(tradition=tradition),
+                                      session=session, study_id=study_id, custom_keys=custom_keys)
+            if comm_res and comm_res.text.strip():
+                raw_commentary = comm_res.text.strip()
+        except Exception:
+            pass
+
+    if not questions_list and scripture_block and scripture_block != "(no passages for this day)":
+        try:
+            q_prompt = (
+                f"Write 3 deep, personal reflection questions for Day {day} of '{title}' focusing on '{focus}'.\n"
+                f"Scripture reading:\n{scripture_block}\n"
+                f"Return as a JSON array of 3 string questions: [\"question 1\", \"question 2\", \"question 3\"]"
+            )
+            q_res = await complete(q_prompt, system=build_system(tradition=tradition),
+                                   json_mode=True, session=session, study_id=study_id, custom_keys=custom_keys)
+            q_data = q_res.data
+            if isinstance(q_data, list):
+                questions_list = [str(x).strip() for x in q_data if str(x).strip()]
+            elif isinstance(q_data, dict):
+                for val in q_data.values():
+                    if isinstance(val, list):
+                        questions_list = [str(x).strip() for x in val if str(x).strip()]
+                        break
+        except Exception:
+            pass
+
     # The Scriptures section must include all verses mentioned in other sections
     # such as commentary, opening prayer, closing prayer, questions, and heading.
     text_sources = [
-        _clean(data.get("opening_prayer")),
-        _clean(data.get("commentary")),
-        _clean(data.get("closing_prayer")),
-        _clean(data.get("heading")),
-        *[str(q) for q in data.get("questions", []) if str(q).strip()],
+        _clean(raw_opening),
+        _clean(raw_commentary),
+        _clean(raw_closing),
+        _clean(raw_heading),
+        *questions_list,
     ]
     from app.services.bible_service import ensure_scriptures_include_mentioned
     scripture_blocks = ensure_scriptures_include_mentioned(
@@ -381,40 +477,23 @@ async def generate_day(title: str, focus: str, passages: list[Passage],
     )
 
     return {
-        "heading": _clean(data.get("heading"), focus),
-        "opening_prayer": _clean(data.get("opening_prayer")),
+        "heading": _clean(raw_heading, focus),
+        "opening_prayer": _clean(raw_opening),
         "scripture": scripture_blocks,
-        "commentary": _clean(data.get("commentary")),
-        "questions": [str(q) for q in data.get("questions", []) if str(q).strip()]
-                      or [],
-        "closing_prayer": _clean(data.get("closing_prayer")),
+        "commentary": _clean(raw_commentary),
+        "questions": questions_list,
+        "closing_prayer": _clean(raw_closing),
         # Provenance: which versions the day's prayers were amalgamated from.
         "prayer_versions": versions_used,
     }
 
 
-def _resolve(ref: Reference, translation: str = "KJV") -> str:
-    """Pull verse text from the local DB. Returns '' on any miss."""
-    from sqlmodel import Session, select
-    from app.db import get_engine
-    from app.models import Translation, Verse
+def _resolve(ref: Reference, translation: str = "KJV", session=None) -> str:
+    """Pull verse text using bible_service with on-demand fallback. Returns '' on any miss."""
+    from app.services.bible_service import resolve_ref_text
     try:
-        with Session(get_engine()) as s:
-            tr = s.exec(select(Translation).where(
-                Translation.code == translation)).first()
-            if not tr:
-                return ""
-            rows = s.exec(
-                select(Verse).where(
-                    Verse.translation_id == tr.id,
-                    Verse.book_number == ref.book,
-                    Verse.chapter == ref.chapter,
-                    Verse.verse >= ref.verse_start,
-                    Verse.verse <= (ref.verse_end or ref.verse_start),
-                ).order_by(Verse.verse)
-            ).all()
-            return " ".join(v.text for v in rows)
-    except Exception:           # noqa: BLE001 - missing DB must not crash a draft
+        return resolve_ref_text(ref, translation, session=session)
+    except Exception:
         return ""
 
 

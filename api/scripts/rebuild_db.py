@@ -27,8 +27,8 @@ def main() -> None:
     print(f"Target Database: {db_url}")
     print(f"==================================================")
 
-    print("\n[1/3] Purging and rebuilding schema tables...")
-    rebuild_database()
+    print("\n[1/3] Purging and rebuilding schema tables (seeding demo study)...")
+    rebuild_database(seed_demo=True)
     print("Schema created successfully with cascade foreign keys and updated indexes.")
 
     print("\n[2/3] Verifying seeded records...")

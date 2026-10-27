@@ -109,9 +109,22 @@ export default function AuthScreen({ onAuthed }: { onAuthed: () => void }) {
     }
   }
 
+  const handleDemoLogin = async () => {
+    setError(null)
+    setBusy(true)
+    try {
+      await auth.login('demo', 'demo123')
+      onAuthed()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Demo sign-in failed')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background text-on-background px-4 py-8">
-      <div className="w-full max-w-md bg-surface-container-lowest rounded-3xl border border-outline-variant/30 p-8 shadow-2xl space-y-6">
+    <div className="min-h-screen flex items-center justify-center bg-background text-on-background px-4 py-6 sm:py-8">
+      <div className="w-full max-w-md bg-surface-container-lowest rounded-2xl sm:rounded-3xl border border-outline-variant/30 p-6 sm:p-8 shadow-2xl space-y-5 sm:space-y-6">
         <div className="text-center space-y-2">
           <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-1">
             <span className="material-symbols-outlined text-[28px]">menu_book</span>
@@ -120,6 +133,29 @@ export default function AuthScreen({ onAuthed }: { onAuthed: () => void }) {
           <p className="text-xs text-on-surface-variant max-w-xs mx-auto">
             {mode === 'login' ? 'Welcome back. Sign in to your devotionals & study plans.' : 'Create your free account to start crafting theological studies.'}
           </p>
+        </div>
+
+        {/* 1-Click Instant Demo Access (Prominent for mobile & desktop) */}
+        <div className="rounded-2xl border border-primary/25 bg-primary/5 p-3.5 space-y-2 text-center shadow-xs">
+          <div className="flex items-center justify-between gap-2 px-0.5">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary">
+              <span className="material-symbols-outlined text-[18px]">bolt</span>
+              Instant Demo Access
+            </span>
+            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-primary/15 text-primary">
+              No signup
+            </span>
+          </div>
+          <button
+            type="button"
+            id="demo-login-btn"
+            disabled={busy || googleBusy}
+            onClick={handleDemoLogin}
+            className="w-full rounded-xl bg-primary/15 hover:bg-primary/25 active:bg-primary/30 text-primary py-2.5 px-3 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer min-h-[42px] active:scale-[0.99]"
+          >
+            <span className="material-symbols-outlined text-[18px]">play_circle</span>
+            <span>{busy ? 'Entering Demo Study…' : 'Explore with Demo Account (1-Click)'}</span>
+          </button>
         </div>
 
         {googleEnabled && (
@@ -149,15 +185,21 @@ export default function AuthScreen({ onAuthed }: { onAuthed: () => void }) {
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="block text-xs font-medium text-on-surface-variant">Email Address</label>
-              {mode === 'login' && (
-                <button
-                  type="button"
-                  onClick={() => { setEmail('demo'); setPassword('demo123'); setError(null); }}
-                  className="text-[11px] text-primary hover:underline font-medium cursor-pointer"
-                >
-                  Use Demo Account
-                </button>
-              )}
+              <button
+                type="button"
+                id="use-demo-account-link"
+                onClick={() => {
+                  setMode('login')
+                  setEmail('demo')
+                  setPassword('demo123')
+                  setError(null)
+                }}
+                className="inline-flex items-center gap-1 text-[11px] sm:text-xs text-primary hover:underline font-medium cursor-pointer py-0.5 px-1.5 rounded hover:bg-primary/10 transition-colors"
+                title="Fill credentials with demo account"
+              >
+                <span className="material-symbols-outlined text-[14px]">account_circle</span>
+                <span>Use Demo Account</span>
+              </button>
             </div>
             <input
               type="text"
@@ -194,7 +236,7 @@ export default function AuthScreen({ onAuthed }: { onAuthed: () => void }) {
           <button
             type="submit"
             disabled={busy || googleBusy}
-            className="w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary hover:bg-primary/90 transition-all shadow-md disabled:opacity-50 cursor-pointer"
+            className="w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary hover:bg-primary/90 transition-all shadow-md disabled:opacity-50 cursor-pointer min-h-[44px]"
           >
             {busy || googleBusy ? 'Authenticating…' : mode === 'login' ? 'Sign In' : 'Create Account'}
           </button>
@@ -202,7 +244,7 @@ export default function AuthScreen({ onAuthed }: { onAuthed: () => void }) {
           <div className="text-center pt-2">
             <button
               type="button"
-              className="text-xs text-on-surface-variant hover:text-primary transition-colors"
+              className="text-xs text-on-surface-variant hover:text-primary transition-colors py-1 cursor-pointer"
               onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(null) }}
             >
               {mode === 'login' ? "Don't have an account? Create one" : 'Already have an account? Sign in'}

@@ -523,11 +523,12 @@ async def revise_day_endpoint(study_id: int, day_number: int, body: DayRevise,
     custom_keys = user_keys if user_keys.get("use_custom_keys") else None
 
     field_key = body.target_field or "commentary"
-    if field_key not in ("commentary", "opening_prayer", "closing_prayer"):
+    if field_key not in ("commentary", "opening_prayer", "closing_prayer", "questions"):
         field_key = "commentary"
 
-    current_text = (target.blocks_json or {}).get(field_key, "") if target.blocks_json else ""
-    if not current_text and not body.instruction and field_key != "closing_prayer":
+    current_val = (target.blocks_json or {}).get(field_key, "") if target.blocks_json else ""
+    current_text = "\n".join(f"{i+1}. {q}" for i, q in enumerate(current_val)) if isinstance(current_val, list) else str(current_val or "")
+    if not current_text and not body.instruction and field_key not in ("closing_prayer", "questions"):
         raise HTTPException(400, f"day has no {field_key} to revise yet")
 
     # Ground the revision on the day's chosen scripture passages.
@@ -591,7 +592,8 @@ async def revise_day_endpoint(study_id: int, day_number: int, body: DayRevise,
     section_titles = {
         "commentary": "Commentary",
         "opening_prayer": "Opening Prayer",
-        "closing_prayer": "Closing Prayer"
+        "closing_prayer": "Closing Prayer",
+        "questions": "Reflection Questions",
     }
     sec_title = section_titles.get(field_key, "Commentary")
 
@@ -606,6 +608,12 @@ async def revise_day_endpoint(study_id: int, day_number: int, body: DayRevise,
                 f"Revise and update that excerpt based on the user's instruction, reflection notes, and the scriptures.\n"
                 f"2. Write in a reverent, thoughtful tone grounded in the scriptures and user reflections.\n"
                 f"3. Return the revised excerpt that replaces the highlighted portion (or the complete updated prayer with the revision incorporated seamlessly)."
+            )
+        elif field_key == "questions":
+            specific_rules = (
+                f"1. The user has highlighted the specific excerpt above from the {sec_title}. "
+                f"Revise that question according to the user's instruction and the scriptures.\n"
+                f"2. Return the revised question."
             )
         else:
             specific_rules = (
@@ -627,6 +635,12 @@ async def revise_day_endpoint(study_id: int, day_number: int, body: DayRevise,
                 f"1. Rewrite and improve the entire {sec_title} according to the user's instruction and the scriptures above.\n"
                 f"2. Write in a reverent, thoughtful tone grounded in the scriptures.\n"
                 f"3. Return the complete updated {sec_title}."
+            )
+        elif field_key == "questions":
+            specific_rules = (
+                f"1. Craft or revise 3-4 thoughtful, open-ended {sec_title} grounded in today's scripture passages and commentary.\n"
+                f"2. Each question should encourage spiritual reflection, self-examination, and practical application.\n"
+                f"3. Return the questions as a numbered list (1., 2., 3., etc.)."
             )
         else:
             specific_rules = (
@@ -676,19 +690,59 @@ async def revise_day_endpoint(study_id: int, day_number: int, body: DayRevise,
         if len(lines) >= 2:
             revised_piece = "\n".join(lines[1:-1]).strip()
 
-    if body.selection and current_text:
-        if body.selection in revised_piece:
-            # Model returned full text containing the revision
-            final_text = revised_piece
-        elif len(revised_piece) < len(current_text) * 0.75 and body.selection in current_text:
-            # Model returned only the updated replacement for the selected excerpt
-            final_text = current_text.replace(body.selection, revised_piece, 1)
+    if field_key == "questions":
+        parsed_questions = []
+        cleaned = revised_piece.strip()
+        if cleaned.startswith("[") and cleaned.endswith("]"):
+            try:
+                import json
+                raw_list = json.loads(cleaned)
+                if isinstance(raw_list, list):
+                    parsed_questions = [str(item).strip() for item in raw_list if str(item).strip()]
+            except Exception:
+                pass
+        if not parsed_questions:
+            import re
+            lines = [l.strip() for l in cleaned.splitlines() if l.strip()]
+            for l in lines:
+                m = re.match(r"^(\d+[\.\)]|\-|\*)\s*(.+)$", l)
+                if m:
+                    parsed_questions.append(m.group(2).strip())
+                elif len(l) > 10:
+                    parsed_questions.append(l)
+        if not parsed_questions and cleaned:
+            parsed_questions = [cleaned]
+
+        if body.selection and current_val and isinstance(current_val, list):
+            new_list = list(current_val)
+            replaced = False
+            for idx, q in enumerate(new_list):
+                if body.selection in q or q in body.selection:
+                    new_list[idx] = parsed_questions[0] if parsed_questions else revised_piece
+                    replaced = True
+                    break
+            if not replaced and parsed_questions:
+                new_list = parsed_questions
+            final_saved = new_list
+        else:
+            final_saved = parsed_questions
+
+        target.blocks_json = {**(target.blocks_json or {}), field_key: final_saved}
+        final_text = "\n".join(f"{i+1}. {q}" for i, q in enumerate(final_saved))
+    else:
+        if body.selection and current_text:
+            if body.selection in revised_piece:
+                # Model returned full text containing the revision
+                final_text = revised_piece
+            elif len(revised_piece) < len(current_text) * 0.75 and body.selection in current_text:
+                # Model returned only the updated replacement for the selected excerpt
+                final_text = current_text.replace(body.selection, revised_piece, 1)
+            else:
+                final_text = revised_piece
         else:
             final_text = revised_piece
-    else:
-        final_text = revised_piece
 
-    target.blocks_json = {**(target.blocks_json or {}), field_key: final_text}
+        target.blocks_json = {**(target.blocks_json or {}), field_key: final_text}
     
     # Ensure scriptures section includes all verses mentioned in other sections
     text_sources = [
