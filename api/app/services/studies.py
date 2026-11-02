@@ -33,6 +33,10 @@ async def generate_day(study: Study, day_number: int, *, session: Session,
     if target is None:
         raise ValueError(f"study has no day {day_number}")
 
+    if _is_summary_day(study, day_number):
+        return await _generate_summary_day(study, target, days, session=session,
+                                           tradition=tradition, custom_keys=custom_keys)
+
     # Day N reads ALL prior days via the compressed rolling history (plan decision).
     prior_summary = get_compressed_history(getattr(study, "history_json", None)) or None
 
@@ -87,6 +91,9 @@ async def generate_day(study: Study, day_number: int, *, session: Session,
         day=day_number,
         prior_summary=prior_summary,
         prev_scripture=prev_scripture,
+        covered=_covered_on_other_days(days, day_number),
+        covered_texts=[(d.blocks_json or {}).get("commentary", "")
+                       for d in days if d.day_number != day_number and d.blocks_json],
         tradition=tradition,
         session=session,
         study_id=study.id,
@@ -112,6 +119,62 @@ async def generate_day(study: Study, day_number: int, *, session: Session,
     if hasattr(study, "history_json"):
         study.history_json = update_history(study.history_json, day_number,
                                             target.context_summary)
+    session.add(target)
+    session.commit()
+    session.refresh(target)
+    return draft
+
+
+def _is_summary_day(study: Study, day_number: int) -> bool:
+    for d in (study.outline_json or {}).get("days", []):
+        if d.get("day_number") == day_number:
+            return bool(d.get("is_summary"))
+    return False
+
+
+def _covered_on_other_days(days: list, day_number: int) -> list[str]:
+    out: list[str] = []
+    for d in days:
+        if d.day_number == day_number or not d.blocks_json:
+            continue
+        head = d.blocks_json.get("heading") or d.title or f"Day {d.day_number}"
+        out.append(f"Day {d.day_number} ({head}): {d.context_summary or ''}"[:300])
+    return out
+
+
+async def _generate_summary_day(study: Study, target: StudyDay, days: list, *,
+                                session: Session, tradition: str | None,
+                                custom_keys: dict[str, str] | None) -> dict[str, Any]:
+    """Final day: summarise all other days using the reader's notes/answers."""
+    from app.models import DayPassage
+    from app.services.planner import generate_summary_day
+    items = []
+    for d in days:
+        if d.day_number == target.day_number or not d.blocks_json:
+            continue
+        verse_notes: list[str] = []
+        if getattr(d, "id", None) is not None and hasattr(session, "exec"):
+            for dp in session.exec(select(DayPassage)
+                                   .where(DayPassage.study_day_id == d.id)).all():
+                for vn in (dp.verse_notes or []):
+                    if isinstance(vn, dict) and str(vn.get("content", "")).strip():
+                        verse_notes.append(f"{dp.ref}:{vn.get('verse')} - {vn['content']}")
+        items.append({
+            "day_number": d.day_number,
+            "heading": d.blocks_json.get("heading") or d.title,
+            "summary": d.context_summary or make_summary(d.blocks_json),
+            "notes": d.notes,
+            "questions": d.blocks_json.get("questions") or [],
+            "verse_notes": verse_notes,
+            "scripture": d.blocks_json.get("scripture") or [],
+        })
+    draft = await generate_summary_day(
+        study.title or study.topic, study.topic, items, study.minutes_per_day,
+        target.day_number, tradition=tradition, session=session,
+        study_id=study.id, custom_keys=custom_keys)
+    target.blocks_json = draft
+    target.status = "ready"
+    target.context_summary = make_summary(draft)
     session.add(target)
     session.commit()
     session.refresh(target)

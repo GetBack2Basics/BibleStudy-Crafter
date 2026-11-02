@@ -131,7 +131,8 @@ async def create_study(body: StudyCreate,
     settings = get_settings()
     s = Study(
         topic=body.topic, minutes_per_day=body.minutes_per_day,
-        total_days=body.total_days,
+        # N content days + 1 final summary day.
+        total_days=body.total_days + 1,
         tradition=body.tradition or settings.default_tradition,
         imagery_policy=body.imagery_policy or settings.default_imagery_policy,
         primary_translation=body.primary_translation,
@@ -141,7 +142,7 @@ async def create_study(body: StudyCreate,
     )
     session.add(s)
     s.days = [StudyDay(day_number=n, status="pending")
-              for n in range(1, body.total_days + 1)]
+              for n in range(1, body.total_days + 2)]
     session.commit()
     session.refresh(s)
     study_id = s.id
@@ -180,7 +181,7 @@ async def _build_outline_and_day1(study_id: int, body: StudyCreate, user_id: int
                     ref = safe_parse_ref(r)
                     return (ref.book if ref else 999, ref.chapter if ref else 999, ref.verse_start if ref else 999, r)
                 pool.sort(key=_sort_key)
-                total = study.total_days
+                total = body.total_days   # content days only (summary day gets no pool verses)
                 # round-robin buckets: day 1 first, then 2, ... wrapping
                 buckets: dict[int, list[str]] = {n: [] for n in range(1, total + 1)}
                 for i, ref in enumerate(pool):
@@ -198,15 +199,22 @@ async def _build_outline_and_day1(study_id: int, body: StudyCreate, user_id: int
                             {"ref": r, "rationale": "chosen by you from the corpus search"}
                             for r in buckets[day_dict["day_number"]]]
                 outline_days.append(day_dict)
+            summary_day = {"day_number": study.total_days, "title": "Summary of the Whole Study",
+                           "focus": "A review of every day of this study, weaving in your own notes and reflections",
+                           "est_minutes": body.minutes_per_day, "suggested_passages": [],
+                           "is_summary": True}
             study.outline_json = {
                 "title": outline.title,
                 "summary": outline.summary,
-                "days": outline_days,
+                "days": [d for d in outline_days if d["day_number"] != study.total_days] + [summary_day],
             }
             by_num = {d.day_number: d for d in study.days}
+            if study.total_days in by_num:
+                by_num[study.total_days].title = summary_day["title"]
+                by_num[study.total_days].theme = summary_day["focus"]
             for od in outline.days:
                 stub = by_num.get(od.day_number)
-                if stub:
+                if stub and od.day_number != study.total_days:
                     stub.title = od.title
                     stub.theme = od.focus
             session.commit()

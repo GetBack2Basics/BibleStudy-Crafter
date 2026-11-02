@@ -85,6 +85,11 @@ For each day return:
   * Two different verses must never receive the same rationale.
   Prefer a coherent reading arc across the days.
 
+DISTINCTNESS RULE (critical): every day must be genuinely different. Each day
+needs its own unique title, its own distinct focus (a new angle, theme or step in
+the arc, never a rewording of another day), and passages that are NOT used on any
+other day. Never reuse a reference, even partially overlapping, across days.
+
 Return ONLY JSON matching this schema, no commentary:
 {{
   "title": str,
@@ -122,6 +127,17 @@ async def generate_outline(topic: str, minutes_per_day: int, total_days: int,
         )
         for d in data.get("days", [])
     ]
+    # Enforce distinct days: drop any passage already used on an earlier day.
+    seen_refs: set[str] = set()
+    for dp in sorted(days, key=lambda x: x.day_number):
+        kept = []
+        for p in dp.suggested_passages:
+            key = p.ref.strip().lower()
+            if key in seen_refs:
+                continue
+            seen_refs.add(key)
+            kept.append(p)
+        dp.suggested_passages = kept
     return Outline(title=str(data.get("title", topic)),
                    summary=str(data.get("summary", "")), days=days)
 
@@ -261,6 +277,8 @@ async def generate_day(title: str, focus: str, passages: list[Passage],
                        minutes: int, day: int,
                        *, prior_summary: str | None = None,
                        prev_scripture: str | None = None,
+                       covered: list[str] | None = None,
+                       covered_texts: list[str] | None = None,
                        tradition: str = None, session=None,
                        study_id: int | None = None,
                        translation: str = "KJV",
@@ -319,8 +337,14 @@ async def generate_day(title: str, focus: str, passages: list[Passage],
     snippet = (f"CONTEXT FROM PRIOR DAY (use only as continuity, do not repeat "
                f"its content):\n{prior_summary}") if prior_summary else ""
 
-    prompt = DAY_PROMPT.format(
-        day=day, title=title, focus=focus, passages=passage_block,
+    if covered:
+        snippet = (snippet + "\n\n" if snippet else "") + (
+            "ALREADY COVERED ON OTHER DAYS (this day MUST be different: do not "
+            "repeat these headings, points, illustrations, applications or "
+            "phrasing; find a fresh angle unique to today's passages):\n"
+            + "\n".join(f"- {c}" for c in covered))
+
+    prompt = DAY_PROMPT.format(        day=day, title=title, focus=focus, passages=passage_block,
         amalgam_block=amalgam_block,
         prev_block=prev_block, snippet=snippet,
         commentary_words=b["commentary_words"], questions=b["questions"])
@@ -336,6 +360,15 @@ async def generate_day(title: str, focus: str, passages: list[Passage],
                          json_mode=True, session=session, study_id=study_id,
                          custom_keys=custom_keys)
     data = res.data or {}
+    if covered_texts and isinstance(data, dict):
+        new_comm = str(data.get("commentary") or "")
+        if _too_similar(new_comm, covered_texts):
+            res = await complete(
+                prompt + "\n\nYOUR PREVIOUS ATTEMPT REPEATED EARLIER DAYS. Rewrite "
+                "with entirely different wording, points and applications.",
+                system=build_system(tradition=tradition), json_mode=True,
+                session=session, study_id=study_id, custom_keys=custom_keys)
+            data = res.data or data
     if not data and res.text:
         try:
             import json
@@ -488,6 +521,21 @@ async def generate_day(title: str, focus: str, passages: list[Passage],
     }
 
 
+def _words(text: str) -> set[str]:
+    return {w for w in re.findall(r"[a-z']{4,}", (text or "").lower())}
+
+
+def _too_similar(text: str, others: list[str], threshold: float = 0.55) -> bool:
+    a = _words(text)
+    if len(a) < 20:
+        return False
+    for o in others:
+        b = _words(o)
+        if b and len(a & b) / len(a | b) >= threshold:
+            return True
+    return False
+
+
 def _resolve(ref: Reference, translation: str = "KJV", session=None) -> str:
     """Pull verse text using bible_service with on-demand fallback. Returns '' on any miss."""
     from app.services.bible_service import resolve_ref_text
@@ -617,3 +665,119 @@ async def plan_passages(topic: str, focus: str, count: int = 3,
         pass
     # Model gave nothing usable -> lexical corpus fallback (ref-specific rationale).
     return _corpus_passages(focus or topic, translation, limit=count)
+
+
+# ------------------------------------------------------- final summary day
+
+SUMMARY_DAY_PROMPT = """Write the FINAL day of a {n_days}-day Bible study titled "{title}"
+(topic: "{topic}"). This last day is a SUMMARY of the whole study, not new
+teaching. It must draw together EVERY day below and the reader's own words.
+
+WHAT EACH DAY COVERED:
+{days_block}
+
+THE READER'S OWN NOTES, REFLECTIONS AND ANSWERS FROM THE STUDY (their voice -
+weave these in by name of day, quote short phrases, honour what they wrote):
+{notes_block}
+
+KEY SCRIPTURE FROM THE STUDY (already provided; do not write out verses):
+{scripture_block}
+
+Produce a JSON object with exactly these keys (no other text, no markdown fences):
+{{
+  "heading": str (a short title for the closing summary),
+  "opening_prayer": str (2-3 sentences gathering thanks for the whole journey),
+  "commentary": str (~{commentary_words} words, 3-5 paragraphs separated by blank
+      lines (\\n\\n): trace the arc from day 1 to day {last_content_day}, name the
+      main themes and how they connect, reference what the reader noted or
+      wrestled with (if they wrote nothing, say so gently and invite them to),
+      and end with concrete next steps. Use **bold** for key themes and
+      *italics* for verse citations),
+  "questions": [str] (exactly {questions} questions that help the reader review the
+      whole study and commit to application),
+  "closing_prayer": str (leave empty string ""; the reader generates it on demand)
+}}"""
+
+
+def _notes_lines(notes: dict | None, questions: list[str] | None = None) -> list[str]:
+    out: list[str] = []
+    for k, v in (notes or {}).items():
+        v_str = str(v or "").strip()
+        if not v_str:
+            continue
+        if k.startswith("question_"):
+            try:
+                idx = int(k.split("_")[1])
+                q = (questions or [])[idx] if idx < len(questions or []) else f"Question {idx + 1}"
+                out.append(f"Answer to '{q}': {v_str}")
+            except Exception:       # noqa: BLE001
+                out.append(f"Answer: {v_str}")
+        elif k == "selah":
+            out.append(f"Selah reflection: {v_str}")
+        elif k == "discussions":
+            out.append(f"Note on community voices: {v_str}")
+        else:
+            out.append(f"Note ({k}): {v_str}")
+    return out
+
+
+async def generate_summary_day(title: str, topic: str, days: list[dict],
+                               minutes: int, day: int,
+                               *, tradition: str = None, session=None,
+                               study_id: int | None = None,
+                               custom_keys: dict[str, str] | None = None) -> dict[str, Any]:
+    """Final day: summarise every prior day using the reader's own input.
+
+    `days` items: {day_number, heading, summary, notes (dict|None),
+    questions (list), verse_notes (list[str]), scripture (list[dict])}.
+    """
+    from app.services.prompts import build_system
+    b = budget(minutes)
+    days_block = "\n".join(
+        f"- Day {d['day_number']} - {d.get('heading') or 'Untitled'}: {d.get('summary') or ''}"
+        for d in days) or "(no days available)"
+    note_lines: list[str] = []
+    for d in days:
+        lines = _notes_lines(d.get("notes"), d.get("questions"))
+        lines += [f"Verse note: {v}" for v in d.get("verse_notes", []) if v]
+        if lines:
+            note_lines.append(f"Day {d['day_number']}:\n  " + "\n  ".join(lines))
+    notes_block = "\n".join(note_lines) or "(the reader has not recorded any notes yet)"
+    scripture_blocks: list[dict] = []
+    for d in days:
+        for s in (d.get("scripture") or [])[:1]:
+            scripture_blocks.append(s)
+    scripture_block = "\n".join(
+        f"Day {d['day_number']} - {s.get('ref')}: {(s.get('text') or '')[:400]}"
+        for d in days for s in (d.get("scripture") or [])[:1]) or "(none)"
+
+    prompt = SUMMARY_DAY_PROMPT.format(
+        n_days=len(days) + 1, title=title, topic=topic, days_block=days_block,
+        notes_block=notes_block, scripture_block=scripture_block,
+        commentary_words=b["commentary_words"], questions=b["questions"],
+        last_content_day=day - 1)
+    if study_id is not None:
+        events.emit("info", "study",
+                    f"Day {day}: Summarising the whole study with your notes...",
+                    study_id=study_id, day_number=day, progress=65, step="commentary")
+    res = await complete(prompt, system=build_system(tradition=tradition),
+                         json_mode=True, session=session, study_id=study_id,
+                         custom_keys=custom_keys)
+    data = res.data if isinstance(res.data, dict) else {}
+    qs = data.get("questions") or []
+    if isinstance(qs, str):
+        qs = [q.strip() for q in qs.splitlines() if q.strip()]
+    commentary = data.get("commentary") or ""
+    if isinstance(commentary, list):
+        commentary = "\n\n".join(str(p).strip() for p in commentary)
+    return {
+        "heading": str(data.get("heading") or "Summary of the Whole Study").strip(),
+        "opening_prayer": str(data.get("opening_prayer") or "").strip(),
+        "scripture": [{"ref": s.get("ref"), "book": s.get("book"),
+                       "text": s.get("text", ""), "rationale": s.get("rationale", "")}
+                      for s in scripture_blocks],
+        "commentary": str(commentary).strip(),
+        "questions": [str(q).strip() for q in qs if str(q).strip()],
+        "closing_prayer": "",
+        "is_summary": True,
+    }
