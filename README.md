@@ -1,8 +1,22 @@
 # 📖 BibleStudy-Crafter
 
-> **Your personal, AI-powered Bible study creator that fits your exact schedule, uses real Scripture, and lets you customize everything.**
+> **Generate a multi-day Bible study on any topic, sized to the minutes you have, with verses pulled from real Bible texts, and edit any part of it.**
 
-Imagine having a smart study buddy who can build a custom Bible study on *any topic you want*, for *exactly how much time you have*, with *real Bible verses*, *helpful questions*, and *space for your own notes*. That's BibleStudy-Crafter!
+## ✅ What It Does
+
+Give it a **topic**, a **number of days**, and **minutes per day**. It builds a full study you can read, listen to, edit and journal in:
+
+- **Study generation**: a daily plan with scripture, commentary, reflection questions and a prayer, timed to your schedule.
+- **Verified scripture**: passages come from an offline database of Bible translations (KJV, WEB, BBE and others, with a translation switcher), not from model memory.
+- **Select-to-Revise**: highlight any sentence, question or prayer and describe the change. Only that selection is rewritten.
+- **Journaling**: answer questions, write verse notes and source reflections. Everything auto-saves.
+- **Voices on Verses**: real discussions and historical writings, grouped by tone (encouraging, thoughtful, challenging), with a reader for each source and optional live web search (Brave).
+- **Key Learnings infographics**: SVG summaries with pillars, a core thesis, an anchor verse and a daily action, with copy and re-extract.
+- **Art studio (Prompt Crafter)**: generate cover art and posters from style, mood and aspect-ratio presets, with a prompt assistant, a per-day gallery and history.
+- **Audio narration**: text-to-speech player with voice choice and speed control.
+- **Biblical maps**: inline dual-layer atlas (side-by-side, peel slider, historical, modern) with key-site chips and 1,200+ geocoded sites, plus the standalone [Map Crafter Studio](map_crafter/).
+- **Accounts and your own keys**: email or Google sign-in, a study library, and bring-your-own provider keys (Gemini, Claude, Ollama, Brave, fal, Replicate). It works with no keys at all, or fully local with Ollama.
+- **Self-hosted**: Docker Compose stack (web, API, worker, PostgreSQL, Redis) with `make up`, plus Cloud Build and Cloud Run deployment files.
 
 ---
 
@@ -108,7 +122,32 @@ make restart   # Restart web and api containers (keeps your study data safe)
 make logs      # View live logs
 make seed      # Seed offline Bible translations into the database
 make test      # Run backend test suite
+make build     # Build container images
+make ps        # Show running services
 ```
+
+---
+
+## 🗂️ Project Structure
+
+| Folder | Purpose |
+|---|---|
+| `api/` | FastAPI backend |
+| `web/` | Web frontend |
+| `worker/` | Background job worker |
+| `seeder/` | Offline Bible translation seeding |
+| `data/` | Bible text data (KJV, WEB, BBE) |
+| `map_crafter/` | Standalone serverless Bible Map Crafter Studio |
+| `scripts/` | Utility scripts |
+| `docs/` | Guides and reports |
+
+## 📚 Documentation
+
+- [How to Use Guide](docs/how_to_use_guide.md)
+- [Google Cloud Deployment Guide](docs/google_cloud_deployment_guide.md)
+- [OpenBible Geocoding Integration Report](docs/openbible_geocoding_integration_report.md)
+- [Highlight Map Crafter Integration Blueprint](docs/highlight_map_crafter_integration_blueprint.md)
+- [Presentation](docs/presentation.html)
 
 ---
 
