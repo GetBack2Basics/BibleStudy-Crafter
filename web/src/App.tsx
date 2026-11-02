@@ -941,9 +941,7 @@ function StudyDetail() {
                         1
 
   // Collapsible state for each day and the current day
-  const [openDays, setOpenDays] = useState<Record<number, boolean>>(() => ({
-    1: true,
-  }))
+  const [openDays, setOpenDays] = useState<Record<number, boolean>>({})
 
   const toggleDay = (dNum: number) => {
     setOpenDays((prev) => ({
@@ -1182,7 +1180,6 @@ function DayCard({
   selectedVoice?: TTSChoice | null
   onOpenVoicePicker?: () => void
 }) {
-  const dayLink = `/study/${studyId}/day/${day.day_number}`
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState<DayDraft | null>(day.blocks_json ?? null)
   const [notes, setNotes] = useState<Record<string, string>>(day.notes ?? {})
@@ -1259,6 +1256,49 @@ function DayCard({
 
   const activeCover = dayAssets.find((a) => (a.kind === 'cover_art' || a.kind === 'image') && a.is_active) || null
   const activeInfographic = dayAssets.find((a) => a.kind === 'infographic' && a.is_active) || null
+
+  // Auto-generate day-specific cover art from the memory verse when none exists yet.
+  const [assetsLoaded, setAssetsLoaded] = useState(false)
+  const autoCoverRequestedRef = useRef(false)
+  useEffect(() => {
+    setAssetsLoaded(false)
+    autoCoverRequestedRef.current = false
+  }, [studyId, day.day_number])
+  useEffect(() => {
+    if (dayOpen) {
+      assetApi.list(studyId, day.day_number).then(() => setAssetsLoaded(true), () => {})
+    }
+  }, [dayOpen, studyId, day.day_number])
+  useEffect(() => {
+    if (!dayOpen || !assetsLoaded || autoCoverRequestedRef.current || isGenerating) return
+    if (dayAssets.some((a) => a.kind === 'cover_art' || a.kind === 'image')) return
+    const scr = draft?.scripture
+    const first = Array.isArray(scr) ? scr[0] : null
+    const verseRef = first?.ref || (typeof scr === 'string' ? scr : '')
+    const verseText = (first?.text || '').replace(/[\u201c\u201d"]/g, '').trim()
+    if (!verseRef && !verseText) return
+    autoCoverRequestedRef.current = true
+    const prompt =
+      `Reverent biblical fine art illustrating the memory verse ${verseRef}: ${verseText.slice(0, 220)}. ` +
+      `Symbolic environmental imagery, no identifiable faces, classical oil painting, warm golden light, no text or lettering`
+    assetApi
+      .renderArt(studyId, day.day_number, {
+        kind: 'cover_art',
+        prompt,
+        style_preset: 'classical_oil',
+        aspect_ratio: '16:9',
+        is_active: true,
+      })
+      .then(() => loadDayAssets())
+      .catch(() => { autoCoverRequestedRef.current = false })
+  }, [dayOpen, assetsLoaded, dayAssets, draft, isGenerating, studyId, day.day_number])
+
+  // Poll while a cover is rendering so it appears automatically.
+  useEffect(() => {
+    if (!dayAssets.some((a) => a.status === 'rendering')) return
+    const t = setInterval(loadDayAssets, 3000)
+    return () => clearInterval(t)
+  }, [dayAssets])
 
   const handleOpenCrafter = (tab: 'presets' | 'assistant' | 'playground' | 'gallery' = 'presets') => {
     setCrafterInitialTab(tab)
@@ -1432,15 +1472,6 @@ function DayCard({
                       Current Day
                     </span>
                   )}
-                  {dayOpen ? (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md bg-surface-container text-secondary">
-                      Expanded
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md bg-surface-container text-secondary">
-                      Collapsed
-                    </span>
-                  )}
                 </div>
 
                 <div className="flex items-center gap-2 min-w-0 mt-0.5">
@@ -1470,26 +1501,11 @@ function DayCard({
                 <span>{dayOpen ? 'Collapse' : 'Expand'}</span>
               </button>
 
-              {/* Dedicated Focus / Standalone Page Link */}
-              <Link
-                to={dayLink}
-                onClick={(e) => e.stopPropagation()}
-                title={`Open Day ${day.day_number} in standalone reader`}
-                className="btn-outline text-xs py-1 px-2.5 hidden sm:inline-flex items-center gap-1"
-              >
-                <I name="open_in_new" cls="text-[14px]" />
-                <span className="hidden lg:inline">Focus</span>
-              </Link>
-
-              {/* Status Badge */}
-              {isGenerating ? (
+              {/* Status Badge (only while generating) */}
+              {isGenerating && (
                 <span className="text-caption-caps font-caption-caps px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/25 flex items-center gap-1.5 animate-pulse font-semibold">
                   <span className="material-symbols-outlined text-[13px] animate-spin">progress_activity</span>
                   Generating · {dayProgress?.progress != null ? `${dayProgress.progress}%` : 'Working…'}
-                </span>
-              ) : (
-                <span className={`text-caption-caps font-caption-caps px-2 py-0.5 rounded bg-secondary-container ${STATUS_CLS[day.status]}`}>
-                  {day.status}
                 </span>
               )}
 
@@ -1981,7 +1997,7 @@ function DraftEditor({
   const activeArtworkUrl =
     activeCoverAsset && activeCoverAsset.status === 'ready' && activeCoverAsset.has_content
       ? assetApi.mediaUrl(activeCoverAsset.id)
-      : 'https://lh3.googleusercontent.com/aida-public/AB6AXuAlwjjFWGLJyNg1evmXVgz9BDI7LgN0qaf6C77zZddgIkhEYBxbr3Ixcxh_3koHw1fPhQXfKYaaaCZw-SrUcwEl0qJnNVC-xYnFd5_5UJInle3j_lsOhoxwK5NG9YBDwvG_xFWuv1uoNfgTWQ2mI_t6yXBuW3dli063RejSo6KVWQHvj1RlYuiYtg2lMVgzfiss1UsoSxbq_2u-r_GBMiJ5uzkLeXJinXeEeihIoH3p6QFTMUaBW6eDPA'
+      : null
 
   return (
     <div className="flex flex-col gap-6 text-body-reading text-on-surface">
@@ -2094,11 +2110,17 @@ function DraftEditor({
       {/* Visual Narrative: Sacred Art Piece */}
       <figure className="flex flex-col gap-2">
         <div className="relative w-full h-48 sm:h-64 rounded-2xl overflow-hidden shadow-sm bg-surface-container-high border border-outline-variant/20">
-          <img
-            className="w-full h-full object-cover object-center"
-            alt={activeCoverAsset?.prompt || 'Biblical atmosphere narrative art'}
-            src={activeArtworkUrl}
-          />
+          {activeArtworkUrl ? (
+            <img
+              className="w-full h-full object-cover object-center"
+              alt={activeCoverAsset?.prompt || 'Biblical atmosphere narrative art'}
+              src={activeArtworkUrl}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary-container/30 via-surface-container-high to-tertiary-container/20 text-on-surface-variant text-ui-label-xs animate-pulse">
+              Generating artwork from today&apos;s memory verseâ€¦
+            </div>
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-on-background/50 via-transparent to-transparent"></div>
           <span className="absolute bottom-3 left-3 px-2.5 py-1 rounded-full bg-surface-container-lowest/85 backdrop-blur-md text-on-surface font-caption-caps text-caption-caps shadow-xs">
             JERUSALEM · C. 33 A.D.

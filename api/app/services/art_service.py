@@ -14,6 +14,7 @@ import base64
 import json
 import logging
 import re
+import zlib
 from dataclasses import asdict, dataclass
 from typing import Any, Optional
 
@@ -648,7 +649,7 @@ async def render_image_asset(
             events.emit("info", "art", "Using Pollinations AI image pool...", study_id=None)
             clean_prompt = re.sub(r"[^\w\s,.-]", "", prompt)[:300]
             encoded_prompt = httpx.URL(f"https://image.pollinations.ai/prompt/{clean_prompt}").raw_path.decode()
-            poll_url = f"https://image.pollinations.ai{encoded_prompt}?width={w}&height={h}&nologo=true&seed=42"
+            poll_url = f"https://image.pollinations.ai{encoded_prompt}?width={w}&height={h}&nologo=true&seed={zlib.crc32(prompt.encode()) % 1000000}"
             async with httpx.AsyncClient(timeout=30.0) as client:
                 resp = await client.get(poll_url)
                 if resp.status_code == 200 and len(resp.content) > 1000 and "image" in resp.headers.get("content-type", ""):
