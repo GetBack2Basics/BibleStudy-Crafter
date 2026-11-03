@@ -1258,12 +1258,15 @@ def update_day_maps_with_locations(
     )
 
     period_key = existing_maps.get("period") or "roman_judea"
+    _m = re.search(r"[?&]book=([^&]+)", existing_maps.get("map_crafter_url") or "")
+    existing_book = _m.group(1) if _m else ""
     site_names_param = ",".join([loc["name"] for loc in current[:10]])
     map_crafter_url = (
         f"https://storage.googleapis.com/biblestudy-map-crafter/index.html?"
         f"period={period_key}&"
         f"lat={view_meta['center'][0]}&lng={view_meta['center'][1]}&"
         f"zoom={view_meta['zoom']}&sites={site_names_param}"
+        + (f"&book={existing_book}" if existing_book else "")
     )
 
     updated = dict(existing_maps)

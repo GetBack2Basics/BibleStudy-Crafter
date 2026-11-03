@@ -519,6 +519,7 @@ export default function BiblicalMapSection({
               selectedPlace={selectedPlace}
               onSelectPlace={setSelectedPlace}
               mapImageUrl={mapsData?.ancient_map_url}
+              studioUrl={getMapCrafterStudioUrl()}
             />
             {/* Right: Modern Context Map Card */}
             <MapPane
@@ -528,6 +529,7 @@ export default function BiblicalMapSection({
               selectedPlace={selectedPlace}
               onSelectPlace={setSelectedPlace}
               mapImageUrl={mapsData?.modern_map_url}
+              studioUrl={getMapCrafterStudioUrl()}
             />
           </div>
         )}
@@ -608,6 +610,7 @@ export default function BiblicalMapSection({
             selectedPlace={selectedPlace}
             onSelectPlace={setSelectedPlace}
             mapImageUrl={mapsData?.ancient_map_url}
+            studioUrl={getMapCrafterStudioUrl()}
             isFull
           />
         )}
@@ -621,6 +624,7 @@ export default function BiblicalMapSection({
             selectedPlace={selectedPlace}
             onSelectPlace={setSelectedPlace}
             mapImageUrl={mapsData?.modern_map_url}
+            studioUrl={getMapCrafterStudioUrl()}
             isFull
           />
         )}
@@ -1314,6 +1318,7 @@ interface MapPaneProps {
   onSelectPlace: (loc: BiblicalLocation) => void
   isFull?: boolean
   mapImageUrl?: string
+  studioUrl?: string
 }
 
 function MapPane({
@@ -1324,6 +1329,7 @@ function MapPane({
   onSelectPlace,
   isFull = false,
   mapImageUrl,
+  studioUrl,
 }: MapPaneProps) {
   const isHist = variant === 'historical'
 
@@ -1385,6 +1391,18 @@ function MapPane({
               : 'opacity-90 contrast-[1.05]'
           }`}
           loading="lazy"
+        />
+      )}
+
+      {/* Click-through to Map Crafter with the link this map was generated with */}
+      {studioUrl && (
+        <a
+          href={studioUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="absolute inset-0 z-[1] cursor-pointer"
+          title="Open this map in Map Crafter"
+          aria-label="Open this map in Map Crafter"
         />
       )}
 

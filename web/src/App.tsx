@@ -252,7 +252,17 @@ export default function App() {
   }
 
   const loadUser = () => {
-    auth.me().then(setCurrentUser).catch(() => {})
+    auth.me().then(async (u) => {
+      if (u) { setCurrentUser(u); return }
+      // Token rejected (stale/expired): try one refresh, else drop to login screen.
+      const next = await auth.refresh()
+      const retry = next ? await auth.me() : null
+      if (retry) { setCurrentUser(retry); return }
+      auth.clear()
+      setAuthed(false)
+      setCurrentUser(null)
+      setStudiesList([])
+    }).catch(() => {})
   }
 
   const handleLogout = async () => {

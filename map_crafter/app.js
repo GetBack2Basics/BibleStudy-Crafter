@@ -204,6 +204,8 @@ async function loadData() {
   }
 }
 
+let urlViewport = null; // { lat, lng, zoom } from deep-link, if provided
+
 // 2. Parse URL parameters (e.g. from BibleStudy-Crafter deep-link)
 function parseUrlParameters() {
   const params = new URLSearchParams(window.location.search);
@@ -221,6 +223,12 @@ function parseUrlParameters() {
     currentBookKml = params.get('book').toLowerCase();
     const bookSelect = document.getElementById('select-book-kml');
     if (bookSelect) bookSelect.value = currentBookKml;
+  }
+  const dlLat = parseFloat(params.get('lat'));
+  const dlLng = parseFloat(params.get('lng'));
+  const dlZoom = parseFloat(params.get('zoom'));
+  if (isFinite(dlLat) && isFinite(dlLng)) {
+    urlViewport = { lat: dlLat, lng: dlLng, zoom: isFinite(dlZoom) ? dlZoom : DEFAULT_ZOOM };
   }
   if (params.get('density')) {
     currentLabelDensity = params.get('density');
@@ -257,8 +265,8 @@ function initMap() {
         },
       ],
     },
-    center: LEVANT_CENTER,
-    zoom: DEFAULT_ZOOM,
+    center: urlViewport ? [urlViewport.lng, urlViewport.lat] : LEVANT_CENTER,
+    zoom: urlViewport ? urlViewport.zoom : DEFAULT_ZOOM,
     pitch: 30,
     bearing: 0,
   });
