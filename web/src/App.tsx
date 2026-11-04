@@ -1960,6 +1960,19 @@ function DraftEditor({
   const setField = (patch: Partial<DayDraft>) => onChange({ ...draft, ...patch })
   const saveNotesHandler = onSaveNotes || onNotesChange
   const [copiedMemoryVerse, setCopiedMemoryVerse] = useState(false)
+  const [mapVerseRequest, setMapVerseRequest] = useState<{ ref: string; text: string; ts: number } | null>(null)
+
+  const handleMapVerse = (ref: string, text: string) => {
+    const sel = typeof window !== 'undefined' ? window.getSelection()?.toString().trim() : ''
+    const effectiveText = sel && text.includes(sel) ? `${sel} (${text})` : text
+    setMapVerseRequest({ ref, text: effectiveText, ts: Date.now() })
+    const mapCrafterUrl = `https://storage.googleapis.com/biblestudy-map-crafter/index.html?verse=${encodeURIComponent(ref)}&text=${encodeURIComponent(effectiveText)}&theme=${getStoredTheme()}`
+    window.open(mapCrafterUrl, '_blank', 'noopener,noreferrer')
+    setTimeout(() => {
+      const el = document.getElementById('biblical-map-section')
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 120)
+  }
   const [selahNote, setSelahNote] = useState(notes.selah ?? '')
   const [savedSelahFeedback, setSavedSelahFeedback] = useState(false)
   const [memoryVerseHighlighted, setMemoryVerseHighlighted] = useState<boolean>(
@@ -2084,6 +2097,15 @@ function DraftEditor({
           </button>
           <button
             type="button"
+            onClick={() => handleMapVerse(memoryVerseRef, memoryVerseText)}
+            className="h-7 w-7 rounded-full bg-surface-container hover:bg-surface-container-high text-primary hover:bg-primary/15 flex items-center justify-center active:scale-95 transition-all cursor-pointer"
+            title={`Open map with locations from ${memoryVerseRef}`}
+            aria-label={`Open map with locations from ${memoryVerseRef}`}
+          >
+            <span className="material-symbols-outlined text-[15px]">map</span>
+          </button>
+          <button
+            type="button"
             onClick={() => {
               const el = document.getElementById('selah-reflection-card')
               if (el) el.scrollIntoView({ behavior: 'smooth' })
@@ -2182,6 +2204,7 @@ function DraftEditor({
           primaryTranslation={primaryTranslation}
           onReadAloud={() => onPlaySection?.('scripture')}
           isReading={Boolean(isPlayingAudio && playingSection === 'scripture')}
+          onMapVerse={handleMapVerse}
         />
       </div>
 
@@ -2208,14 +2231,15 @@ function DraftEditor({
       </div>
 
       {/* Biblical Geography & Setting: Historical Period & Modern Context Maps */}
-      {draft.commentary && (
+      {(draft.commentary || draft.scripture || mapVerseRequest) && (
         <BiblicalMapSection
           studyId={studyId}
           dayNumber={day}
           commentary={draft.commentary}
-          hasCommentary={Boolean(draft.commentary)}
+          hasCommentary={Boolean(draft.commentary || draft.scripture)}
           cachedMaps={draft.maps}
           onMapsLoaded={(maps) => setField({ maps })}
+          mapVerseRequest={mapVerseRequest}
         />
       )}
 
@@ -3626,6 +3650,7 @@ function PassageEditor({
   primaryTranslation = 'KJV',
   onReadAloud,
   isReading = false,
+  onMapVerse,
 }: {
   studyId: number
   day: number
@@ -3634,6 +3659,7 @@ function PassageEditor({
   primaryTranslation?: string
   onReadAloud?: () => void
   isReading?: boolean
+  onMapVerse?: (ref: string, text: string) => void
 }) {
   const [list, setList] = useState<PassageOut[]>([])
   const [all, setAll] = useState<TranslationInfo[]>([])
@@ -3905,7 +3931,7 @@ function PassageEditor({
             </div>
 
             {/* Micro Action Toolbar for passage */}
-            <div className="flex items-center gap-1.5 pt-1 border-t border-outline-variant/10">
+            <div className="flex items-center justify-end gap-1.5 pt-1 border-t border-outline-variant/10">
               <button
                 type="button"
                 onClick={() => handleHighlightPassage(p)}
@@ -3919,6 +3945,17 @@ function PassageEditor({
               >
                 <span className={`material-symbols-outlined text-[14px] ${p.highlights && p.highlights.length > 0 ? 'text-on-primary' : 'text-primary'}`}>brush</span>
               </button>
+              {onMapVerse && (
+                <button
+                  type="button"
+                  onClick={() => onMapVerse(p.ref, p.text)}
+                  className="h-7 w-7 rounded-full bg-surface-container hover:bg-surface-container-high text-primary hover:bg-primary/15 flex items-center justify-center active:scale-95 transition-all cursor-pointer"
+                  title={`Open map with locations from ${p.ref}`}
+                  aria-label={`Open map with locations from ${p.ref}`}
+                >
+                  <span className="material-symbols-outlined text-[15px]">map</span>
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => handleCopyPassage(p)}
@@ -4017,6 +4054,19 @@ function PassageEditor({
                 </div>
               )}
               {fs.rationale && <div className="text-ui-label-sm italic text-secondary">Context: {fs.rationale}</div>}
+              {onMapVerse && (
+                <div className="flex items-center justify-end gap-1.5 pt-1 border-t border-outline-variant/10">
+                  <button
+                    type="button"
+                    onClick={() => onMapVerse(fs.ref, fs.text || fs.ref)}
+                    className="h-7 w-7 rounded-full bg-surface-container hover:bg-surface-container-high text-primary hover:bg-primary/15 flex items-center justify-center active:scale-95 transition-all cursor-pointer"
+                    title={`Open map with locations from ${fs.ref}`}
+                    aria-label={`Open map with locations from ${fs.ref}`}
+                  >
+                    <span className="material-symbols-outlined text-[15px]">map</span>
+                  </button>
+                </div>
+              )}
             </article>
           ))}
         </div>

@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { studies, type BiblicalLocation, type DayMapsOut, type ParsedLocationMatch } from '../lib/studies'
 import { resolveHistoricalPlates } from '../lib/historicalPlates'
+import { getStoredTheme } from '../lib/theme'
 
 interface BiblicalMapSectionProps {
   studyId: number
@@ -9,6 +10,7 @@ interface BiblicalMapSectionProps {
   hasCommentary: boolean
   cachedMaps?: DayMapsOut | null
   onMapsLoaded?: (maps: DayMapsOut) => void
+  mapVerseRequest?: { ref: string; text: string; ts: number } | null
 }
 
 const I = ({ name, cls = 'text-[18px]' }: { name: string; cls?: string }) => (
@@ -21,6 +23,7 @@ export default function BiblicalMapSection({
   hasCommentary,
   cachedMaps,
   onMapsLoaded,
+  mapVerseRequest,
 }: BiblicalMapSectionProps) {
   const [mapsData, setMapsData] = useState<DayMapsOut | null>(cachedMaps ?? null)
   const [loading, setLoading] = useState(false)
@@ -55,6 +58,44 @@ export default function BiblicalMapSection({
   // Era Mode: 'study' (default study era data) vs 'none' (No Eras / clean map with no data shown)
   const [eraFilter, setEraFilter] = useState<'study' | 'none'>('study')
   const [customAddedLocations, setCustomAddedLocations] = useState<BiblicalLocation[]>([])
+  const [activeVerseRef, setActiveVerseRef] = useState<string | null>(null)
+  const lastProcessedVerseTs = useRef<number>(0)
+
+  useEffect(() => {
+    if (!mapVerseRequest || mapVerseRequest.ts === lastProcessedVerseTs.current) return
+    lastProcessedVerseTs.current = mapVerseRequest.ts
+    const { ref, text } = mapVerseRequest
+    const combinedText = `${ref} ${text}`.trim()
+    setActiveVerseRef(ref)
+    ;(async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const res = await studies.parseMapText(studyId, dayNumber, combinedText)
+        const found = res.locations || []
+        if (found.length > 0) {
+          const updated = await studies.addMapLocations(studyId, dayNumber, found, true)
+          setEraFilter('study')
+          setMapsData(updated)
+          setCustomAddedLocations(found)
+          setSelectedPlace(found[0])
+          onMapsLoaded?.(updated)
+          setToastMessage(`📍 Mapped ${found.length} location(s) from ${ref}: ${found.map((l) => l.name).join(', ')}`)
+          setTimeout(() => setToastMessage(null), 6000)
+        } else {
+          setPastedText(`${ref} — ${text}`)
+          setParsedResults([])
+          setShowParseModal(true)
+          setToastMessage(`Opened location scanner for ${ref}`)
+          setTimeout(() => setToastMessage(null), 4000)
+        }
+      } catch (err) {
+        console.error('Failed to map verse locations:', err)
+      } finally {
+        setLoading(false)
+      }
+    })()
+  }, [mapVerseRequest, studyId, dayNumber])
 
   const PRESET_VERSES = [
     {
@@ -185,21 +226,23 @@ export default function BiblicalMapSection({
     }
   }
 
-  if (!hasCommentary) return null
+  if (!hasCommentary && !mapVerseRequest) return null
 
   const allLocations = Array.isArray(mapsData?.locations) ? mapsData.locations : []
   const locations = eraFilter === 'none' ? customAddedLocations : allLocations
-  const eraTitle = eraFilter === 'none' ? 'No Eras (Clean Map)' : (mapsData?.period_title || 'Biblical Setting')
+  const eraTitle = eraFilter === 'none' ? 'No Eras (Clean Map)' : activeVerseRef ? `${activeVerseRef} · ${mapsData?.period_title || 'Biblical Setting'}` : (mapsData?.period_title || 'Biblical Setting')
 
   const getMapCrafterStudioUrl = () => {
     const rawUrl = mapsData?.map_crafter_url || 'https://storage.googleapis.com/biblestudy-map-crafter/index.html'
+    const themeParam = `theme=${getStoredTheme()}`
+    let url = rawUrl.includes('?') ? `${rawUrl}&${themeParam}` : `${rawUrl}?${themeParam}`
     if (eraFilter === 'none') {
-      if (rawUrl.includes('period=')) {
-        return rawUrl.replace(/period=[^&]*/, 'period=none')
+      if (url.includes('period=')) {
+        return url.replace(/period=[^&]*/, 'period=none')
       }
-      return rawUrl.includes('?') ? `${rawUrl}&period=none` : `${rawUrl}?period=none`
+      return `${url}&period=none`
     }
-    return rawUrl
+    return url
   }
 
   return (
@@ -1409,18 +1452,18 @@ function MapPane({
       {/* Top Banner Tag */}
       <div className="z-10 flex items-center justify-between pointer-events-none">
         <span
-          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[8.5px] font-bold uppercase tracking-wider shadow-xs ${
+          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wider shadow-xs ${
             isHist
               ? 'bg-[#e2d5c5] text-[#4e342e] border border-[#d7ccc8]'
               : 'bg-[#263238]/90 text-[#eceff1] border border-[#455a64]'
           }`}
         >
-          <I name={isHist ? 'history' : 'public'} cls="text-[11px]" />
+          <I name={isHist ? 'history' : 'public'} cls="text-[13px]" />
           {isHist ? `📜 Historical (${eraTitle})` : `🛰️ Present-Day (${eraTitle})`}
         </span>
 
         <span
-          className={`text-[7px] font-medium px-1.5 py-0.5 rounded-md ${
+          className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${
             isHist ? 'text-[#6d4c41] bg-[#efebe9]/60' : 'text-[#90a4ae] bg-[#212121]/60'
           }`}
         >
@@ -1463,31 +1506,31 @@ function MapPane({
         <div className="absolute inset-0 pointer-events-none z-0">
           {isHist ? (
             <>
-              <span className="absolute top-[20%] left-[65%] text-[6.5px] font-serif font-bold tracking-widest text-[#8d6e63]/40 uppercase select-none">
+              <span className="absolute top-[20%] left-[65%] text-[10px] font-serif font-bold tracking-widest text-[#8d6e63]/50 uppercase select-none">
                 GALILEE / DECAPOLIS
               </span>
-              <span className="absolute top-[45%] left-[55%] text-[6.5px] font-serif font-bold tracking-widest text-[#8d6e63]/40 uppercase select-none">
+              <span className="absolute top-[45%] left-[55%] text-[10px] font-serif font-bold tracking-widest text-[#8d6e63]/50 uppercase select-none">
                 SAMARIA
               </span>
-              <span className="absolute top-[68%] left-[45%] text-[6.5px] font-serif font-bold tracking-widest text-[#8d6e63]/40 uppercase select-none">
+              <span className="absolute top-[68%] left-[45%] text-[10px] font-serif font-bold tracking-widest text-[#8d6e63]/50 uppercase select-none">
                 JUDEA
               </span>
-              <span className="absolute bottom-[10%] left-[20%] text-[5.5px] font-serif text-[#8d6e63]/40 uppercase select-none">
+              <span className="absolute bottom-[10%] left-[20%] text-[9.5px] font-serif text-[#8d6e63]/50 uppercase select-none">
                 MEDITERRANEAN SEA (GREAT SEA)
               </span>
             </>
           ) : (
             <>
-              <span className="absolute top-[18%] left-[62%] text-[6px] font-sans font-semibold tracking-wider text-[#78909c]/40 uppercase select-none">
+              <span className="absolute top-[18%] left-[62%] text-[10px] font-sans font-semibold tracking-wider text-[#78909c]/50 uppercase select-none">
                 NORTHERN DISTRICT (ISRAEL)
               </span>
-              <span className="absolute top-[48%] left-[58%] text-[6px] font-sans font-semibold tracking-wider text-[#78909c]/40 uppercase select-none">
+              <span className="absolute top-[48%] left-[58%] text-[10px] font-sans font-semibold tracking-wider text-[#78909c]/50 uppercase select-none">
                 WEST BANK
               </span>
-              <span className="absolute top-[72%] left-[48%] text-[6px] font-sans font-semibold tracking-wider text-[#78909c]/40 uppercase select-none">
+              <span className="absolute top-[72%] left-[48%] text-[10px] font-sans font-semibold tracking-wider text-[#78909c]/50 uppercase select-none">
                 JERUSALEM DISTRICT
               </span>
-              <span className="absolute bottom-[10%] left-[20%] text-[5.5px] font-sans text-[#78909c]/40 uppercase select-none">
+              <span className="absolute bottom-[10%] left-[20%] text-[9.5px] font-sans text-[#78909c]/50 uppercase select-none">
                 EASTERN MEDITERRANEAN
               </span>
             </>
@@ -1522,7 +1565,7 @@ function MapPane({
 
               {/* Simple Small Round Icon with Ancient/Modern Name */}
               <div
-                className={`relative flex items-center gap-1 px-1.5 py-0.5 rounded-full shadow-xs transition-all duration-200 group-hover:scale-115 ${
+                className={`relative flex items-center gap-1.5 px-2.5 py-1 rounded-full shadow-xs transition-all duration-200 group-hover:scale-110 ${
                   isSelected
                     ? isHist
                       ? 'bg-[#fdfbf7] text-[#3e2723] ring-1.5 ring-[#b71c1c] shadow-sm'
@@ -1534,7 +1577,7 @@ function MapPane({
               >
                 {/* Small Round Dot Icon */}
                 <span
-                  className={`w-1.5 h-1.5 rounded-full shrink-0 transition-all ${
+                  className={`w-2 h-2 rounded-full shrink-0 transition-all ${
                     isSelected
                       ? isHist
                         ? 'bg-[#b71c1c] ring-1 ring-[#ffebee]'
@@ -1545,9 +1588,9 @@ function MapPane({
                   }`}
                 />
 
-                {/* Ancient or Modern Name Label - Reduced by 50% from 11px to 6.5px */}
+                {/* Ancient or Modern Name Label */}
                 <span
-                  className={`text-[6.5px] leading-none select-none tracking-tight ${
+                  className={`text-[11px] leading-none select-none tracking-tight ${
                     isSelected ? 'font-bold' : 'font-semibold'
                   } ${isHist ? 'font-serif text-[#3e2723]' : 'font-sans text-[#f8fafc]'}`}
                 >
@@ -1562,7 +1605,7 @@ function MapPane({
       </div>
 
       {/* Bottom Legend Pill */}
-      <div className="z-10 flex items-center justify-between text-[7.5px] pointer-events-none mt-auto">
+      <div className="z-10 flex items-center justify-between text-[11px] pointer-events-none mt-auto">
         <span
           className={`px-2 py-1 rounded backdrop-blur-xs font-mono ${
             isHist ? 'bg-[#efebe9]/80 text-[#5d4037]' : 'bg-[#212121]/80 text-[#90a4ae]'

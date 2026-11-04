@@ -205,10 +205,64 @@ async function loadData() {
 }
 
 let urlViewport = null; // { lat, lng, zoom } from deep-link, if provided
+let urlAutoFitLocations = false;
+let urlVerseLabel = '';
 
-// 2. Parse URL parameters (e.g. from BibleStudy-Crafter deep-link)
+function applyAppTheme(theme) {
+  const t = theme === 'dark' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', t);
+  try {
+    localStorage.setItem('biblestudy_map_crafter_theme', t);
+  } catch (_) {}
+  const iconEl = document.getElementById('theme-toggle-icon');
+  const labelEl = document.getElementById('theme-toggle-label');
+  if (iconEl) iconEl.textContent = t === 'light' ? '☀️' : '🌙';
+  if (labelEl) labelEl.textContent = t === 'light' ? 'Light' : 'Dark';
+}
+
+function ensureParsedLocationFeature(loc) {
+  if (!loc || !loc.id) return;
+  let feat = sitesGeoJSON?.features?.find((f) => f.properties.id === loc.id);
+  if (!feat && sitesGeoJSON?.features && loc.coordinates) {
+    feat = {
+      type: 'Feature',
+      properties: {
+        id: loc.id,
+        name: loc.name,
+        ancient_name: loc.ancient_name || loc.name,
+        modern_name: loc.modern_name || loc.name,
+        modern_country: loc.modern_country || '',
+        period: 'all,early_church,roman_judea',
+        biblical_region: loc.modern_country || 'Levant',
+        elevation_m: 200,
+        category: loc.category || 'settlement',
+        description: loc.description || `Biblical site identified from scripture: ${loc.name}`,
+        verse_count: 5,
+        verses_summary: loc.name,
+        tier: loc.tier || 2,
+        min_zoom: 2.0,
+        tier_name: loc.tier === 1 ? 'major' : 'regional',
+        is_top_10: loc.tier === 1
+      },
+      geometry: {
+        type: 'Point',
+        coordinates: loc.coordinates
+      }
+    };
+    sitesGeoJSON.features.push(feat);
+  }
+  pinnedSiteIds.add(loc.id);
+}
+
+// 2. Parse URL parameters (e.g. from BibleStudy-Crafter deep-link or Verse Map button)
 function parseUrlParameters() {
   const params = new URLSearchParams(window.location.search);
+
+  // Theme synchronization with BibleStudy-Crafter
+  const urlTheme = params.get('theme');
+  const savedTheme = urlTheme || localStorage.getItem('biblestudy_map_crafter_theme') || localStorage.getItem('biblestudy_theme') || 'light';
+  applyAppTheme(savedTheme);
+
   if (params.get('period')) {
     const p = params.get('period').toLowerCase();
     currentEra = (p === 'none' || p === 'no_era' || p === 'clean') ? 'none' : p;
@@ -234,6 +288,100 @@ function parseUrlParameters() {
     currentLabelDensity = params.get('density');
     const densitySelect = document.getElementById('select-label-density');
     if (densitySelect) densitySelect.value = currentLabelDensity;
+  }
+
+  const sitesParam = params.get('sites');
+  const verseParam = (params.get('verse') || '').trim();
+  const textParam = (params.get('text') || '').trim();
+
+  if (sitesParam || verseParam || textParam) {
+    pinnedSiteIds.clear();
+    selectedRegions.clear();
+  }
+
+  // A. Explicit site slugs / names passed in ?sites=...
+  if (sitesParam && sitesGeoJSON?.features) {
+    const rawTokens = sitesParam.split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
+    rawTokens.forEach((tok) => {
+      const feat = sitesGeoJSON.features.find(
+        (f) =>
+          f.properties.id.toLowerCase() === tok ||
+          (f.properties.name || '').toLowerCase() === tok ||
+          (f.properties.name || '').toLowerCase().replace(/ \d+$/, '').replace(/\s+/g, '_') === tok
+      );
+      if (feat) {
+        pinnedSiteIds.add(feat.properties.id);
+      } else if (REGIONAL_SITE_DEFAULTS[tok]) {
+        ensureParsedLocationFeature(REGIONAL_SITE_DEFAULTS[tok]);
+      }
+    });
+    if (pinnedSiteIds.size > 0) {
+      urlAutoFitLocations = true;
+    }
+  }
+
+  // B. Bible Verse reference & text passed from BibleStudy-Crafter verse map icon (?verse=...&text=...)
+  if (verseParam || textParam) {
+    urlVerseLabel = verseParam || 'Scripture Passage';
+    const combinedText = `${verseParam} ${textParam}`.trim();
+
+    // Populate floating Scripture Verse Banner on map
+    const bannerEl = document.getElementById('map-verse-banner');
+    const bannerRefEl = document.getElementById('map-verse-banner-ref');
+    const bannerTextEl = document.getElementById('map-verse-banner-text');
+    if (bannerEl && bannerRefEl && bannerTextEl) {
+      bannerRefEl.textContent = `📖 ${verseParam || 'SCRIPTURE PASSAGE'}`;
+      bannerTextEl.textContent = textParam || verseParam;
+      bannerEl.style.display = 'flex';
+    }
+
+    // Pre-populate Parse Modal input
+    const parseInput = document.getElementById('parse-text-input');
+    if (parseInput) {
+      parseInput.value = verseParam && textParam ? `${verseParam} — ${textParam}` : combinedText;
+    }
+
+    // Parse all locations mentioned in the verse text
+    const parsedLocs = parseLocationsFromText(combinedText);
+
+    // Also match sites whose verses_summary cites this verse reference (e.g. "John 4:5" or "Luke 24:13")
+    if (verseParam && sitesGeoJSON?.features) {
+      const refClean = verseParam.replace(/[–—]/g, '-').split('-')[0].trim().toLowerCase();
+      if (refClean.length >= 4) {
+        sitesGeoJSON.features.forEach((f) => {
+          const vs = (f.properties.verses_summary || '').toLowerCase();
+          if (vs && vs.includes(refClean)) {
+            pinnedSiteIds.add(f.properties.id);
+          }
+        });
+      }
+    }
+
+    parsedLocs.forEach((loc) => {
+      ensureParsedLocationFeature(loc);
+      if (BIBLICAL_REGIONS_META && BIBLICAL_REGIONS_META[loc.name]) {
+        selectedRegions.add(loc.name);
+      }
+    });
+
+    currentParsedLocations = parsedLocs;
+
+    // If the verse has no explicit place names in its text, fall back to loading the Biblical Book's KML overlay
+    if (pinnedSiteIds.size === 0 && verseParam) {
+      const bookMatch = verseParam.match(/^([1-3]?\s*[A-Za-z]+)/);
+      if (bookMatch) {
+        const rawBook = bookMatch[1].trim().toLowerCase();
+        const foundBook = BIBLICAL_BOOKS.find(
+          (b) => b.name.toLowerCase() === rawBook || b.code.toLowerCase() === rawBook || b.name.toLowerCase().startsWith(rawBook)
+        );
+        if (foundBook) {
+          currentBookKml = foundBook.code;
+          activeBooks.add(foundBook.code);
+        }
+      }
+    } else if (pinnedSiteIds.size > 0) {
+      urlAutoFitLocations = true;
+    }
   }
 }
 
@@ -282,6 +430,22 @@ function initMap() {
     setupVectorClickEngine();
     if (currentBookKml) {
       loadBookKML(currentBookKml);
+    }
+    if (urlAutoFitLocations && !urlViewport && pinnedSiteIds.size > 0) {
+      const ids = Array.from(pinnedSiteIds);
+      if (ids.length === 1) {
+        const feat = sitesGeoJSON?.features?.find((f) => f.properties.id === ids[0]);
+        if (feat && feat.geometry?.coordinates) {
+          const [lng, lat] = feat.geometry.coordinates;
+          map.flyTo({ center: [lng, lat], zoom: 10, pitch: 35, duration: 1100 });
+          setTimeout(() => openPopupForFeature(feat), 450);
+        }
+      } else {
+        fitActiveLayersView();
+      }
+      if (urlVerseLabel) {
+        showToast(`📖 ${urlVerseLabel}: Mapped ${ids.length} biblical location(s)`, 4500);
+      }
     }
     map.on('zoomend', () => scheduleRenderMarkers());
     map.on('moveend', () => scheduleRenderMarkers());
@@ -2962,6 +3126,14 @@ function setupUIEventListeners() {
   // Add Site Button
   document.getElementById('btn-add-site')?.addEventListener('click', () => {
     document.getElementById('modal-add-site')?.classList.add('open');
+  });
+
+  // Theme Toggle Button (Light Warm Parchment vs Dark Midnight Sanctuary)
+  document.getElementById('btn-toggle-theme')?.addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme') || 'light';
+    const next = current === 'light' ? 'dark' : 'light';
+    applyAppTheme(next);
+    showToast(next === 'light' ? '☀️ Warm Academic Parchment Theme' : '🌙 Midnight Sanctuary Theme');
   });
 
   // Add locations via Text / Verse Parser Buttons (LHS Panel and Top Header)
